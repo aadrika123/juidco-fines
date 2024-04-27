@@ -304,7 +304,7 @@ class UserMasterController extends Controller
         try {
             $apiId = "0907";
             $version = "01";
-            $ulbId = $req->ulbId ?? authUser()->ulb_id;
+            $ulbId = $req->ulbId ?? authUser($req)->ulb_id;
             if (!$ulbId)
                 throw new Exception("Please Provide Ulb");
 
@@ -376,6 +376,7 @@ class UserMasterController extends Controller
     {
         $validator = Validator::make($req->all(), [
             'userType' => 'required|in:EO,EC',
+            'ulbId'    => 'required|int'
         ]);
         if ($validator->fails())
             return validationError($validator);
@@ -383,27 +384,40 @@ class UserMasterController extends Controller
             $apiId = "0909";
             $version = "01";
             $docUrl = Config::get('constants.DOC_URL');
+            $ECRole = Config::get('constants.ROLES.ENFORCEMENTCELL');
+            $EORole = Config::get('constants.ROLES.ENFORCEMENTOFFICER');
             $mUser = $this->_mUsers;
+            $ulbId = $req->ulbId;
 
-            $data = $mUser->select(
-                'id',
-                'user_name',
-                'mobile',
-                'email',
-                'user_type',
-                'address',
-                DB::raw(
-                    "CASE 
-                            WHEN profile_image IS NULL THEN ''
-                                else 
-                            concat('$docUrl/',profile_image)
-                    END as profile_image"
+            $data = $mUser
+                ->select(
+                    'users.id',
+                    'name as user_name',
+                    'mobile',
+                    'email',
+                    'user_type',
+                    'address',
+                    DB::raw(
+                        "CASE 
+                                WHEN photo IS NULL THEN ''
+                                    else 
+                                concat('$docUrl/',photo)
+                            END as photo"
+                    )
                 )
-            )
-                ->where('user_type', $req->userType)
-                ->where('suspended', false)
-                ->orderBy('user_name')
-                ->get();
+                ->where('ulb_id', $ulbId)
+                ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', 'users.id')
+                ->where('wf_roleusermaps.is_suspended', false);
+
+            //Enforcement Cell
+            if ($req->userType == 'EC')
+                $data  = $data->where('wf_roleusermaps.wf_role_id', $ECRole)
+                    ->get();
+
+            //Enforcement Officer
+            if ($req->userType == 'EO')
+                $data  = $data->where('wf_roleusermaps.wf_role_id', $EORole)
+                    ->get();
 
             DB::commit();
             return responseMsgs(true, "Officer Detail", $data, $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);

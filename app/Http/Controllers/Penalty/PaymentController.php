@@ -67,7 +67,9 @@ class PaymentController extends Controller
             if (!$challanDetails)
                 throw new Exception("Challan Not Found");
             $orderData = $api->order->create(array('amount' => $challanDetails->total_amount * 100, 'currency' => 'INR',));
-            $user  = authUser();
+
+            if ($req->authRequired == true)
+                $user = authUser($req);
 
             $mReqs = [
                 "order_id"       => $orderData['id'],
@@ -77,7 +79,7 @@ class PaymentController extends Controller
                 "user_id"        => $user->id ?? 0,
                 "workflow_id"    => $penaltyDetails->workflow_id ?? 0,
                 "amount"         => $challanDetails->total_amount,
-                "ulb_id"         => $user->ulb_id ?? $penaltyDetails->ulb_id,
+                "ulb_id"         => $penaltyDetails->ulb_id ?? $user->ulb_id,
                 "ip_address"     => getClientIpAddress()
             ];
             $data = $mRazorpayReq->store($mReqs);
@@ -108,7 +110,9 @@ class PaymentController extends Controller
             $challanDetails    = PenaltyChallan::where('penalty_record_id', $req->applicationId)->where('status', 1)->first();
 
             $receiptIdParam    = Config::get('constants.ID_GENERATION_PARAMS.RECEIPT');
-            $user              = authUser();
+
+            if ($req->authRequired == true)
+                $user      = authUser($req);
 
             $violationDtl  = $mViolation->violationById($penaltyDetails->violation_id);
             $sectionId     = $violationDtl->section_id;
@@ -280,7 +284,7 @@ class PaymentController extends Controller
         try {
             $apiId = "0705";
             $version = "01";
-            $user = authUser();
+            $user = authUser($req);
             $userId = $user->id;
             $ulbId = $user->ulb_id;
             $mPenaltyTransaction           = new PenaltyTransaction();

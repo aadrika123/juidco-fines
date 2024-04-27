@@ -16,6 +16,7 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $guarded = [];
+    protected $connection = "pgsql_master";
 
     /**
      * The attributes that should be hidden for serialization.
@@ -57,10 +58,10 @@ class User extends Authenticatable
             'ulb_masters.ulb_name',
             DB::raw(
                 "CASE 
-                    WHEN profile_image IS NULL THEN ''
+                    WHEN photo IS NULL THEN ''
                         else 
-                    concat('$docUrl/',profile_image)
-            END as profile_image,
+                    concat('$docUrl/',photo)
+            END as photo,
             CASE 
                     WHEN signature IS NULL THEN ''
                         else
@@ -147,10 +148,10 @@ class User extends Authenticatable
             "role_name",
             DB::raw(
                 "CASE 
-                        WHEN profile_image IS NULL THEN ''
+                        WHEN photo IS NULL THEN ''
                             else 
-                        concat('$docUrl/',profile_image)
-                END as profile_image,
+                        concat('$docUrl/',photo)
+                END as photo,
                 CASE 
                         WHEN signature IS NULL THEN ''
                             else

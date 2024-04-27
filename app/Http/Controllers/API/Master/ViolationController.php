@@ -120,7 +120,10 @@ class ViolationController extends Controller
         try {
             $apiId = "0404";
             $version = "01";
-            $getData = $this->_mViolations->recordDetails()->get();
+            $ulbId = $req->ulbId ?? authUser($req)->ulb_id;
+            $getData = $this->_mViolations->recordDetails()
+                ->where('departments.ulb_id', $ulbId)
+                ->get();
             return responseMsgs(true, "View All Records", $getData, $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);

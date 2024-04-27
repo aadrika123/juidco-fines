@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\InfractionRecordingFormRequest;
 use App\IdGenerator\IdGeneration;
 use App\Models\Master\Section;
+use App\Models\Master\UlbMaster;
 use App\Models\Master\Violation;
 use App\Models\Payment\RazorpayResponse;
 use App\Models\PenaltyChallan;
@@ -14,11 +15,13 @@ use App\Models\PenaltyFinalRecord;
 use App\Models\PenaltyRecord;
 use App\Models\PenaltyTransaction;
 use App\Models\WfRoleusermap;
+use App\Models\WfWorkflow;
 use App\Models\WfWorkflowrolemap;
 use App\Pipelines\FinePenalty\SearchByApplicationNo;
 use App\Pipelines\FinePenalty\SearchByChallan;
 use App\Pipelines\FinePenalty\SearchByMobile;
 use App\Traits\Fines\FinesTrait;
+use App\Traits\Workflow\Workflow;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -43,6 +46,7 @@ class PenaltyRecordController extends Controller
 {
 
     use FinesTrait;
+    use Workflow;
     private $mPenaltyRecord;
 
     public function __construct()
@@ -58,26 +62,38 @@ class PenaltyRecordController extends Controller
     public function store(InfractionRecordingFormRequest $req)
     {
         try {
-            $apiId = "0601";
-            $version = "01";
-            $mSection = new Section();
-            $mViolation = new Violation();
+            $apiId            = "0601";
+            $version          = "01";
+            $mSection         = new Section();
+            $mViolation       = new Violation();
+            $mWfWorkflow      = new WfWorkflow();
             $mPenaltyDocument = new PenaltyDocument();
+            $wfMasterId         = Config::get('constants.WF_MASTER_ID');
             $applicationIdParam = Config::get('constants.ID_GENERATION_PARAMS.APPLICATION');
-            $user = authUser();
+            $user = authUser($req);
             $ulbId = $user->ulb_id;
 
             $violationDtl = $mViolation->violationById($req->violationId);
             if (!$violationDtl)
                 throw new Exception("Provide Valid Violation Id");
 
-            $req->penaltyAmount = $violationDtl->penalty_amount;
+            $penaltyAmount = $violationDtl->penalty_amount;
 
             if ($req->categoryTypeId == 1)
-                $req->penaltyAmount = $this->checkRickshawCondition($req);              #_Check condition for E-Rickshaw
+                $penaltyAmount = $this->checkRickshawCondition($req);              #_Check condition for E-Rickshaw
 
+            $wfWorkflow    =  $mWfWorkflow->getWorklow($ulbId, $wfMasterId);
+            $refInitiatorRoleId = $this->getInitiatorId($wfWorkflow->id);                                // Get Current Initiator ID
+            $initiatorRole = collect(DB::select($refInitiatorRoleId))->first();
             $sectionId = $violationDtl->section_id;
             $section = $mSection->sectionById($sectionId)->violation_section;
+
+            $req->merge([
+                'penaltyAmount' => $penaltyAmount,
+                'initiatorRoleId' => $initiatorRole->role_id,
+                'workflowId' => $wfWorkflow->id,
+                'ulbId' => $ulbId,
+            ]);
 
             DB::beginTransaction();
             $idGeneration = new IdGeneration($applicationIdParam, $ulbId, $section, 0);
@@ -153,8 +169,12 @@ class PenaltyRecordController extends Controller
             $apiId = "0603";
             $version = "01";
             $perPage = $req->perPage ?? 10;
+            $user    = authUser($req);
+            $ulbId = $user->ulb_id;
+
             $recordData = $this->mPenaltyRecord->recordDetail()
-                ->where('penalty_applied_records.status', 1);
+                ->where('penalty_applied_records.status', 1)
+                ->where('penalty_applied_records.ulb_id', $ulbId);
 
             $penaltyDetails = app(Pipeline::class)
                 ->send($recordData)
@@ -579,9 +599,9 @@ class PenaltyRecordController extends Controller
             $perPage = $req->perPage ?? 10;
             $mPenaltyChallan = new PenaltyChallan();
             $user = authUser($req);
-            // $userId = $user->id;
-            // $ulbId = $user->ulb_id;
-            $challanDtl = $mPenaltyChallan->details();
+            $ulbId = $user->ulb_id;
+            $challanDtl = $mPenaltyChallan->details()
+                ->where('penalty_final_records.ulb_id', $ulbId);
 
             if ($req->challanType)
                 $challanDtl = $challanDtl->where('penalty_final_records.challan_type', $req->challanType);
@@ -620,8 +640,9 @@ class PenaltyRecordController extends Controller
             $docUrl = Config::get('constants.DOC_URL');
             $todayDate = Carbon::now();
             $mPenaltyChallan = new PenaltyChallan();
+            $mUlbMasters = new UlbMaster();
             $perPage = $req->perPage ?? 10;
-            $user = authUser();
+            // $user = authUser($req);
 
             $finalRecord = PenaltyChallan::select(
                 'penalty_final_records.*',
@@ -674,8 +695,11 @@ class PenaltyRecordController extends Controller
             else
                 $data['challan_print_type'] = 0;
 
+            $ulbDetails = $mUlbMasters->getUlbDetails($data['ulb_id']);
+
             $totalAmountInWord = getHindiIndianCurrency($data['total_amount']);
             $data['amount_in_words'] = $totalAmountInWord . ' मात्र';
+            $data['ulbDetails'] = $ulbDetails;
 
             return responseMsgs(true, "", $data,  $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -763,8 +787,8 @@ class PenaltyRecordController extends Controller
         try {
             $apiId = "0615";
             $version = "01";
+            $mUlbMasters = new UlbMaster();
             $mPenaltyTransaction = new PenaltyTransaction();
-            $user = authUser($req);
             $todayDate = Carbon::now();
             $tranDtl = $mPenaltyTransaction->tranDtl()
                 ->where('tran_no', $req->transactionNo)
@@ -772,8 +796,11 @@ class PenaltyRecordController extends Controller
             if (collect($tranDtl)->isEmpty())
                 throw new Exception("No Transaction Found");
 
+            $ulbDetails = $mUlbMasters->getUlbDetails($tranDtl->ulb_id);
+
             $totalAmountInWord = getHindiIndianCurrency($tranDtl->total_amount);
             $tranDtl->amount_in_words = $totalAmountInWord . ' मात्र';
+            $tranDtl->ulbDetails = $ulbDetails;
 
             return responseMsgs(true, "", $tranDtl,  $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -790,24 +817,36 @@ class PenaltyRecordController extends Controller
         try {
             $apiId = "0616";
             $version = "01";
-            $mSection = new Section();
-            $mViolation = new Violation();
-            $mPenaltyChallan = new PenaltyChallan();
-            $mPenaltyDocument = new PenaltyDocument();
+            $mSection            = new Section();
+            $mViolation          = new Violation();
+            $mWfWorkflow         = new WfWorkflow();
+            $mPenaltyChallan     = new PenaltyChallan();
+            $mPenaltyDocument    = new PenaltyDocument();
             $mPenaltyFinalRecord = new PenaltyFinalRecord();
-            $challanIdParam = Config::get('constants.ID_GENERATION_PARAMS.CHALLAN');
-            $applicationIdParam = Config::get('constants.ID_GENERATION_PARAMS.APPLICATION');
-            $user = authUser();
+            $wfMasterId          = Config::get('constants.WF_MASTER_ID');
+            $challanIdParam      = Config::get('constants.ID_GENERATION_PARAMS.CHALLAN');
+            $applicationIdParam  = Config::get('constants.ID_GENERATION_PARAMS.APPLICATION');
+            $user = authUser($req);
             $ulbId = $user->ulb_id;
             $violationDtl = $mViolation->violationById($req->violationId);
             if (!$violationDtl)
                 throw new Exception("Provide Valid Violation Id");
-            $req->penaltyAmount = $violationDtl->penalty_amount;
+            $penaltyAmount = $violationDtl->penalty_amount;
             if ($req->categoryTypeId == 1)
-                $req->penaltyAmount = $this->checkRickshawCondition($req);
+                $penaltyAmount = $this->checkRickshawCondition($req);
 
+            $wfWorkflow    =  $mWfWorkflow->getWorklow($ulbId, $wfMasterId);
+            $refInitiatorRoleId = $this->getInitiatorId($wfWorkflow);                                // Get Current Initiator ID
+            $initiatorRole = collect(DB::select($refInitiatorRoleId))->first();
             $sectionId     = $violationDtl->section_id;
             $section       = $mSection->sectionById($sectionId)->violation_section;
+
+            $req->merge([
+                'penaltyAmount' => $penaltyAmount,
+                'initiatorRoleId' => $initiatorRole->role_id,
+                'workflowId' => $wfWorkflow->id,
+                'ulbId' => $ulbId,
+            ]);
 
             DB::beginTransaction();
             $idGeneration  = new IdGeneration($applicationIdParam, $ulbId, $section, 0);
@@ -1127,9 +1166,9 @@ class PenaltyRecordController extends Controller
             'amount'                     => $req->penaltyAmount,
             'previous_violation_offence' => $req->previousViolationOffence ?? 0,
             'application_no'             => $applicationNo,
-            'current_role'               => 2,
-            'workflow_id'                => 1,
-            'ulb_id'                     => 2,
+            'current_role'               => $req->initiatorRoleId,
+            'workflow_id'                => $req->workflowId,
+            'ulb_id'                     => $req->ulbId,
             'guardian_name'              => $req->guardianName,
             'violation_place'            => $req->violationPlace,
             'challan_type'               => $req->challanType,

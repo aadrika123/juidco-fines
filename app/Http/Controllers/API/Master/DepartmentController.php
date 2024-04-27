@@ -31,13 +31,15 @@ class DepartmentController extends Controller
         try {
             $apiId = "0201";
             $version = "01";
+            $user = authUser($req);
             $isGroupExists = $this->_mDepartments->checkExisting($req);
             if (collect($isGroupExists)->isNotEmpty())
                 throw new Exception("Department Already Existing");
 
             $metaReqs = [
                 'department_name' => strtoupper($req->departmentName),
-                'created_by'      => authUser()->id
+                'created_by'      => $user->id,
+                'ulb_id'          => $user->ulb_id
             ];
             $this->_mDepartments->store($metaReqs); // Store in Violations table
             return responseMsgs(true, "Records Added Successfully", $metaReqs, $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
@@ -101,7 +103,10 @@ class DepartmentController extends Controller
         try {
             $apiId = "0204";
             $version = "01";
-            $getData = $this->_mDepartments->recordDetails()->get();
+            $user = authUser($req);
+            $getData = $this->_mDepartments->recordDetails()
+                ->where('ulb_id', $user->ulb_id)
+                ->get();
             return responseMsgs(true, "View All Records", $getData, $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);

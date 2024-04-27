@@ -38,6 +38,7 @@ class PenaltyTransaction extends Model
             'challan_date',
             'violations.violation_name',
             'departments.department_name as department',
+            'penalty_final_records.ulb_id',
             DB::raw(
                 "CASE 
                     WHEN signature IS NULL THEN ''

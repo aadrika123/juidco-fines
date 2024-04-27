@@ -25,13 +25,14 @@ class SectionController extends Controller
     {
         $validator = Validator::make($req->all(), [
             "departmentId"          => 'required|int',
-            'violationSection'      => 'required|string'
+            'violationSection'      => 'required|int'
         ]);
         if ($validator->fails())
             return validationError($validator);
         try {
             $apiId = "0301";
             $version = "01";
+            $user = authUser($req);
             $isGroupExists = $this->_mSections->checkExisting($req);
             if (collect($isGroupExists)->isNotEmpty())
                 throw new Exception("Section Already Existing");
@@ -39,7 +40,8 @@ class SectionController extends Controller
             $metaReqs = [
                 'department_id' => $req->departmentId,
                 'violation_section' => strtoupper($req->violationSection),
-                'created_by'        => authUser()->id
+                'created_by'        => $user->id,
+                'ulb_id'            => $user->ulb_id
             ];
             $this->_mSections->store($metaReqs); // Store in Violations table
             return responseMsgs(true, "Records Added Successfully", $metaReqs, $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
@@ -105,7 +107,10 @@ class SectionController extends Controller
         try {
             $apiId = "0304";
             $version = "01";
-            $getData = $this->_mSections->recordDetails($req)->get();
+            $user    = authUser($req);
+            $getData = $this->_mSections->recordDetails($req)
+                ->where('departments.ulb_id', $user->ulb_id)
+                ->get();
             return responseMsgs(true, "View All Records", $getData, $apiId, $version,  responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", $apiId, $version,  responseTime(), $req->getMethod(), $req->deviceId);

@@ -5,6 +5,11 @@ return [
     "RAZORPAY_KEY"    => env('RAZORPAY_KEY'),
     "RAZORPAY_SECRET" => env('RAZORPAY_SECRET'),
 
+    "WF_MASTER_ID"     => 38,
+    "ROLES" => [
+        "ENFORCEMENTCELL"    => 38,
+        "ENFORCEMENTOFFICER" => 45,
+    ],
     "E_RICKSHAW_FINES" => [
         0 => "3000",
         1 => "5000",

@@ -181,7 +181,7 @@ class UserController extends Controller
                 'email'         => $details->email,
                 'ulb_name'      => $details->ulb_name,
                 'signature'     => $details->signature,
-                'profile_image' => $details->profile_image,
+                'photo'         => $details->photo,
             ];
 
             return responseMsgs(true, "Data Fetched", $usersDetails, $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);

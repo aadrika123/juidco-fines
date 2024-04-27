@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class WfWorkflowrolemap extends Model
 {
     use HasFactory;
+    protected $connection = "pgsql_master";
 
     /**
      * | Get Ulb Workflows By Role Ids
