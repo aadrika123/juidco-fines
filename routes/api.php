@@ -73,7 +73,7 @@ Route::middleware([])->group(function () {
      * | API Violation CRUD operation
          Controller No : 4
      */
-    Route::controller(ViolationController::class)->group(function () {
+    Route::controller(ViolationController::class)->group(function () { 
         Route::post('fines/violation/crud/save', 'createViolation');                                                  #_Save -------------------------------- 0401
         Route::post('violation/crud/edit', 'updateViolation');                                                  #_Edit  ------------------------------- 0402
         Route::post('fines/violation/crud/get', 'ViolationById');                                                     #_Get By Id --------------------------- 0403
