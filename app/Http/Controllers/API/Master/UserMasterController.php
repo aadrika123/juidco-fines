@@ -419,8 +419,8 @@ class UserMasterController extends Controller
                 $data  = $data->where('wf_roleusermaps.wf_role_id', $EORole)
                     ->get();
 
-            if (collect($data)->isEmpty())
-                throw new Exception("Data Not Found");
+            // if (collect($data)->isEmpty())
+            //     throw new Exception("Data Not Found");
 
             DB::commit();
             return responseMsgs(true, "Officer Detail", $data, $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
