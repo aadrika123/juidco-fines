@@ -426,7 +426,7 @@ class UserMasterController extends Controller
             return responseMsgs(true, "Officer Detail", $data, $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "",           $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), [],           $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
 }
