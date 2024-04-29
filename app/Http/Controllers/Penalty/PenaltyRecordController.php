@@ -951,6 +951,7 @@ class PenaltyRecordController extends Controller
             $apiId = "0617";
             $version = "01";
             $user = authUser($req);
+            $ulbId = $user->ulb_id;
             $perPage = $req->perPage ?? 10;
             $todayDate =  $req->date ?? now()->toDateString();
             $data = PenaltyFinalRecord::select(
@@ -969,6 +970,7 @@ class PenaltyRecordController extends Controller
                 ->join('penalty_challans', 'penalty_challans.penalty_record_id', 'penalty_final_records.id')
                 ->whereBetween('penalty_final_records.created_at', [$req->fromDate . ' 00:00:00', $req->uptoDate . ' 23:59:59'])
                 ->where('penalty_challans.status', 1)
+                ->where('penalty_final_records.ulb_id', $ulbId)
                 ->orderbyDesc('penalty_final_records.id');
 
             if ($req->violationId) {
@@ -1006,6 +1008,7 @@ class PenaltyRecordController extends Controller
             $userId = $req->userId;
             if ($req->type == 'mobile')
                 $userId = $user->id;
+            $ulbId = $user->ulb_id;
             $perPage = $req->perPage ?? 10;
             $todayDate =  $req->date ?? now()->toDateString();
             $data = PenaltyFinalRecord::select(
@@ -1030,6 +1033,7 @@ class PenaltyRecordController extends Controller
                 ->join('challan_categories', 'challan_categories.id', 'penalty_final_records.category_type_id')
                 ->whereBetween('penalty_challans.challan_date', [$req->fromDate, $req->uptoDate])
                 ->where('penalty_challans.status', 1)
+                ->where('penalty_final_records.ulb_id', $ulbId)
                 ->orderbyDesc('penalty_challans.id');
 
             if ($req->challanType)
@@ -1071,6 +1075,7 @@ class PenaltyRecordController extends Controller
             $userId = $req->userId;
             if ($req->type == 'mobile')
                 $userId = $user->id;
+            $ulbId = $user->ulb_id;
             $perPage = $req->perPage ?? 10;
             $data = PenaltyTransaction::select(
                 '*'
@@ -1086,6 +1091,7 @@ class PenaltyRecordController extends Controller
                 ->join('violations', 'violations.id', 'penalty_final_records.violation_id')
                 ->join('sections', 'sections.id', '=', 'violations.section_id')
                 ->join('penalty_challans', 'penalty_challans.id', 'penalty_transactions.challan_id')
+                ->where('penalty_final_records.ulb_id', $ulbId)
                 ->where('penalty_transactions.status', 1)
                 ->whereBetween('tran_date', [$req->fromDate, $req->uptoDate]);
 
@@ -1123,11 +1129,14 @@ class PenaltyRecordController extends Controller
             $version = "01";
             $mPenaltyRecord = new PenaltyRecord();
             $mPenaltyFinalRecord = new PenaltyFinalRecord();
+            $user = authUser($req);
+            $ulbId = $user->ulb_id;
             $finalRecord = $mPenaltyFinalRecord->recordDetail()
                 ->selectRaw('total_amount')
                 ->selectRaw('user_name')
                 ->join('penalty_challans', 'penalty_challans.penalty_record_id', 'penalty_final_records.id')
                 ->join('users', 'users.id', 'penalty_final_records.approved_by')
+                ->where('penalty_final_records.ulb_id', $ulbId)
                 ->where('penalty_final_records.id', $req->applicationId)
                 ->first();
             if (!$finalRecord)
