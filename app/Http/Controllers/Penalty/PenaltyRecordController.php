@@ -841,7 +841,7 @@ class PenaltyRecordController extends Controller
             if (!$wfWorkflow)
                 throw new Exception("Workflow not mapped to respective ulb");
 
-            $refInitiatorRoleId = $this->getInitiatorId($wfWorkflow);                                // Get Current Initiator ID
+            $refInitiatorRoleId = $this->getInitiatorId($wfWorkflow->id);                                // Get Current Initiator ID
             $initiatorRole = collect(DB::select($refInitiatorRoleId))->first();
             $sectionId     = $violationDtl->section_id;
             $section       = $mSection->sectionById($sectionId)->violation_section;
