@@ -169,7 +169,7 @@ Route::middleware([])->group(function () {
         Route::post('user/crud/list', 'getUserList');                                           #_Get All ----------------- 0904
         Route::post('user/crud/delete', 'deleteUser');                                          #_Delete ------------------ 0905
         Route::post('user/set-password', 'setPassword')->withoutMiddleware(['auth:sanctum','expireBearerToken']);     #_Set Password ------------ 0906
-        Route::post('fines/ward-list', 'wardList');                                                   #_Ward List --------------- 0907
+        // Route::post('fines/ward-list', 'wardList');                                                   #_Ward List --------------- 0907
         Route::post('user/role-assign', 'roleAssign');                                          #_Role Assignment --------- 0908
         Route::post('fines/user/enf-officer', 'getOfficers');      #_Get Officer Details ----- 0909
     });

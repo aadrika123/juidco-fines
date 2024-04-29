@@ -83,6 +83,8 @@ class PenaltyRecordController extends Controller
                 $penaltyAmount = $this->checkRickshawCondition($req);              #_Check condition for E-Rickshaw
 
             $wfWorkflow    =  $mWfWorkflow->getWorklow($ulbId, $wfMasterId);
+            if (!$wfWorkflow)
+                throw new Exception("Workflow not mapped to respective ulb");
             $refInitiatorRoleId = $this->getInitiatorId($wfWorkflow->id);                                // Get Current Initiator ID
             $initiatorRole = collect(DB::select($refInitiatorRoleId))->first();
             $sectionId = $violationDtl->section_id;
@@ -836,6 +838,9 @@ class PenaltyRecordController extends Controller
                 $penaltyAmount = $this->checkRickshawCondition($req);
 
             $wfWorkflow    =  $mWfWorkflow->getWorklow($ulbId, $wfMasterId);
+            if (!$wfWorkflow)
+                throw new Exception("Workflow not mapped to respective ulb");
+
             $refInitiatorRoleId = $this->getInitiatorId($wfWorkflow);                                // Get Current Initiator ID
             $initiatorRole = collect(DB::select($refInitiatorRoleId))->first();
             $sectionId     = $violationDtl->section_id;
