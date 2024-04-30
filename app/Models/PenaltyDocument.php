@@ -48,7 +48,7 @@ class PenaltyDocument extends Model
                 $docMetadata = new PenaltyDocument([
                     'applied_record_id' => $id,
                     'unique_id' => $docStatus['data']['uniqueId'],
-                    'ref_no' => $docStatus['data']['ReferenceNo'],
+                    'reference_no' => $docStatus['data']['ReferenceNo'],
                     'document_name' => $documentName,
                     'latitude'      => $req->latitude ?? null,
                     'longitude'     => $req->longitude ?? null,
@@ -133,7 +133,8 @@ class PenaltyDocument extends Model
             'latitude',
             'longitude',
             'document_name',
-            DB::raw("concat('$docUrl/',document_path) as doc_path"),
+            'reference_no'
+            // DB::raw("concat('$docUrl/',document_path) as doc_path"),
         )
             ->where('applied_record_id', $applicationDtls->id)
             ->where('challan_type', $applicationDtls->challan_type)

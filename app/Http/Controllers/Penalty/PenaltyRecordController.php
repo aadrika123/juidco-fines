@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Penalty;
 
+use App\DocUpload;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\InfractionRecordingFormRequest;
 use App\IdGenerator\IdGeneration;
@@ -134,6 +135,8 @@ class PenaltyRecordController extends Controller
             $apiId = "0602";
             $version = "01";
             $docUrl = Config::get('constants.DOC_URL');
+            $docUpload = new DocUpload;
+            $docByReference = "";
             $penaltyDetails = $this->mPenaltyRecord->recordDetail()
                 //query for chalan no
                 ->where('penalty_applied_records.id', $req->id)
@@ -145,12 +148,15 @@ class PenaltyRecordController extends Controller
             $document = PenaltyDocument::select(
                 'id',
                 'document_name',
-                'document_type',
-                DB::raw("concat('$docUrl/',penalty_documents.document_path) as geo_tagged_image")
+                'reference_no'
+                // DB::raw("concat('$docUrl/',penalty_documents.document_path) as geo_tagged_image")
             )
                 ->where('penalty_documents.applied_record_id', $penaltyDetails->id)
                 ->where('penalty_documents.challan_type', 'Via Verification')
                 ->get();
+
+            if (collect($document)->isNotEmpty())
+                $docByReference = $docUpload->getDocUrl($document);           #_Calling BLL for Document Path from DMS
 
             $data['penaltyDetails'] = $penaltyDetails;
             $data['document'] = $document;
@@ -265,13 +271,16 @@ class PenaltyRecordController extends Controller
             $apiId = "0606";
             $version = "01";
             $mPenaltyDocument = new PenaltyDocument();
+            $docUpload = new DocUpload;
             $applicationDtls = $this->mPenaltyRecord->find($req->applicationId);
             if (!$applicationDtls)
                 throw new Exception("Application Not Found for this application Id");
 
-            $show = $mPenaltyDocument->getDocument($applicationDtls);  // get record by id
-            if (collect($show)->isEmpty())
+            $document = $mPenaltyDocument->getDocument($applicationDtls);  // get record by id
+            if (collect($document)->isEmpty())
                 throw new Exception("Data Not Found");
+
+            $show = $docUpload->getDocUrl($document);  // get record by id
 
             return responseMsgs(true, "View Records", $show, $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -644,6 +653,8 @@ class PenaltyRecordController extends Controller
             $mPenaltyChallan = new PenaltyChallan();
             $mUlbMasters = new UlbMaster();
             $perPage = $req->perPage ?? 10;
+            $docUpload = new DocUpload;
+            $docByReference = "";
             // $user = authUser($req);
 
             $finalRecord = PenaltyChallan::select(
@@ -681,13 +692,17 @@ class PenaltyRecordController extends Controller
             $appliedRecordId =  $finalRecord->applied_record_id ?? $finalRecord->application_id;
 
             $document = PenaltyDocument::select(
-                DB::raw("concat('$docUrl/',penalty_documents.document_path) as geo_tagged_image")
+                'reference_no'
+                // DB::raw("concat('$docUrl/',penalty_documents.document_path) as geo_tagged_image")
             )
                 ->where('penalty_documents.applied_record_id', $appliedRecordId)
                 ->where('penalty_documents.challan_type', $finalRecord->challan_type)
                 ->first();
 
             $data = collect($finalRecord)->merge($document);
+
+            if ($document)
+                $docByReference = $docUpload->getSingleDocUrl($document);           #_Calling BLL for Document Path from DMS
 
             if ($data->isEmpty())
                 throw new Exception("No Data Found againt this challan.");
@@ -700,7 +715,8 @@ class PenaltyRecordController extends Controller
             $ulbDetails = $mUlbMasters->getUlbDetails($data['ulb_id']);
 
             $totalAmountInWord = getHindiIndianCurrency($data['total_amount']);
-            $data['amount_in_words'] = $totalAmountInWord . ' मात्र';
+            $data['amount_in_words']  = $totalAmountInWord . ' मात्र';
+            $data['geo_tagged_image'] = $docByReference['doc_path'] ?? "";
             $data['ulbDetails'] = $ulbDetails;
 
             return responseMsgs(true, "", $data,  $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
@@ -926,7 +942,7 @@ class PenaltyRecordController extends Controller
                 }
             }
 
-            return responseMsgs(true, "", $data,  $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "You have successfully generated challan against" . $finalRecord->full_name ?? "Violator", $data,  $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "",  $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
@@ -1232,6 +1248,8 @@ class PenaltyRecordController extends Controller
             $mPenaltyChallan = new PenaltyChallan();
             $perPage = $req->perPage ?? 10;
             $user = authUser($req);
+            $docUpload = new DocUpload;
+            $docByReference = "";
 
             $finalRecord = PenaltyChallan::select(
                 'penalty_final_records.*',
@@ -1245,7 +1263,7 @@ class PenaltyRecordController extends Controller
                 'ward_name',
                 DB::raw(
                     "TO_CHAR(penalty_challans.challan_date,'DD-MM-YYYY') as challan_date,
-                     TO_CHAR(penalty_challans.payment_date,'DD-MM-YYYY') as payment_date",
+                    TO_CHAR(penalty_challans.payment_date,'DD-MM-YYYY') as payment_date",
                 )
             )
                 ->join('penalty_final_records', 'penalty_final_records.id', 'penalty_challans.penalty_record_id')
@@ -1264,12 +1282,15 @@ class PenaltyRecordController extends Controller
             $document = PenaltyDocument::select(
                 'id',
                 'document_name',
-                'document_type',
-                DB::raw("concat('$docUrl/',penalty_documents.document_path) as geo_tagged_image")
+                'reference_no',
+                // DB::raw("concat('$docUrl/',penalty_documents.document_path) as geo_tagged_image")
             )
                 ->where('penalty_documents.applied_record_id', $appliedRecordId)
                 ->where('penalty_documents.challan_type', $finalRecord->challan_type)
                 ->get();
+
+            if (collect($document)->isNotEmpty())
+                $docByReference = $docUpload->getDocUrl($document);           #_Calling BLL for Document Path from DMS
 
             $data['challanDetails'] = $finalRecord;
             $data['document'] = $document;

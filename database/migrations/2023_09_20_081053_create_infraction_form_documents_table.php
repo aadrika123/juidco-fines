@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('infraction_form_documents', function (Blueprint $table) {
             $table->id();
             $table->integer('irf_id');
-            $table->string('document_type');
-            $table->string('document_path');
+            $table->string('unique_id');
+            $table->string('reference_no');
             $table->decimal('latitude', 10, 6);
             $table->decimal('longitude', 10, 6);
             $table->string('document_verified_by');
