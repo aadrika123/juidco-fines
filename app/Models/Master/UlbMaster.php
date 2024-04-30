@@ -39,7 +39,6 @@ class UlbMaster extends Model
             "hindi_address" => $ulb->hindi_address,
             "mobile_no" => $ulb->mobile_no,
             "mobile_no_2" => $ulb->toll_free_no,
-            "website" => $ulb->current_website,
             "email" => $ulb->email,
             "state_logo" => $docBaseUrl . "/" . "custom/jhk-govt-logo.png",
             "ulb_logo" => $docBaseUrl . "/" . $ulb->logo,

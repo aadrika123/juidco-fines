@@ -37,8 +37,8 @@ class InfractionRecordingFormRequest extends FormRequest
             'previousViolationOffence' => 'nullable|boolean',
             'wardId' => 'nullable|int',
             // 'photo' => 'required',
-            // 'latitude' => 'required',
-            // 'longitude' => 'required',
+            'latitude' => 'nullable',
+            'longitude' => 'nullable',
             'audioVideo' => 'nullable',
             'pdf' => 'nullable'
         ];

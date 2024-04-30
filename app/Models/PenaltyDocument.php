@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\DocUpload;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Config;
@@ -32,20 +33,22 @@ class PenaltyDocument extends Model
         foreach ($documentTypes as $inputName => $documentName) {
             if ($req->file($inputName)) {
                 $file = $req->file($inputName);
-                $refImageName = Str::random(5);
-                $extention = $file->extension();
+                $req->merge([
+                    'document' => $file
+                ]);
 
                 #_Doc Upload through a Class
-                $imageName = $docUpload->upload($refImageName, $file, 'FinePenalty/');
+                // $imageName = $docUpload->uploadOld($refImageName, $file, 'FinePenalty/');
 
-                // $extention = $file->getClientOriginalExtension();
-                // $imageName = time() . '-' . $refImageName . '.' . $extention;
-                // $file->move(public_path('FinePenalty/'), $imageName);
-
+                #_Doc Upload through DMS
+                $docStatus = $docUpload->upload($req);
+                if ($docStatus['status'] != true)
+                    throw new Exception("Doc Upload Failed");
+                
                 $docMetadata = new PenaltyDocument([
                     'applied_record_id' => $id,
-                    'document_type' => $extention,
-                    'document_path' => 'FinePenalty/' . $imageName,
+                    'unique_id' => $docStatus['data']['uniqueId'],
+                    'ref_no' => $docStatus['data']['ReferenceNo'],
                     'document_name' => $documentName,
                     'latitude'      => $req->latitude ?? null,
                     'longitude'     => $req->longitude ?? null,
@@ -55,7 +58,6 @@ class PenaltyDocument extends Model
                 $data["{$inputName}_details"] = $docMetadata;
             }
         }
-
         return $data;
     }
 
