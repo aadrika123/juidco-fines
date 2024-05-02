@@ -587,6 +587,7 @@ class PenaltyRecordController extends Controller
             $challanDtl = $mPenaltyChallan->recentChallanDetails()
                 ->where('challan_date', $todayDate)
                 ->where('penalty_final_records.applied_by', $userId)
+                // ->where('penalty_final_records.ulb_id', $ulbId)
                 ->take(10)
                 ->get();
 
@@ -1402,5 +1403,23 @@ class PenaltyRecordController extends Controller
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "",  $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         }
+    }
+
+    /**
+     * | TRe
+     */
+    public function testWhatsapp(Request $req)
+    {
+        $message = [
+            "Mrinal",
+            "500",
+            "water tanker",
+            "WT787878",
+            "1800123456",
+        ];
+        return Whatsapp_Send(8797770238, "wt_booking_initiated", [
+            "content_type" => "text",
+            $message
+        ]);
     }
 }

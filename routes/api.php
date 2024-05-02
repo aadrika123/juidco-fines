@@ -131,6 +131,8 @@ Route::middleware([])->group(function () {
         Route::post('fines/v2/penalty-record/crud/show', 'showV2');                                                              #_penalty record ------------------ 0622
         Route::post('fines/penalty-record/citizen-challan-search', 'citizenSearchChallan')->withoutMiddleware(['auth:sanctum','expireBearerToken']);   #_get search challans ------------- 0623
         Route::post('fines/penalty-record/get-tran-no', 'getTranNo')->withoutMiddleware(['auth:sanctum','expireBearerToken']);                         #_Get Tran No --------------------- 0624
+       
+        Route::post('testWhatsapp', 'testWhatsapp')->withoutMiddleware(['auth:sanctum','expireBearerToken']);                         #_Get Tran No --------------------- 0624
     });
 
     /**

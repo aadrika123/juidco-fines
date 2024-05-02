@@ -75,12 +75,14 @@ class PenaltyChallan extends Model
             'penalty_final_records.id as application_id',
             'full_name',
             'payment_status',
+            'tran_no',
             DB::raw(
                 "TO_CHAR(penalty_challans.challan_date,'DD-MM-YYYY') as challan_date,
                 TO_CHAR(penalty_challans.payment_date,'DD-MM-YYYY') as payment_date",
             )
         )
             ->join('penalty_final_records', 'penalty_final_records.id', 'penalty_challans.penalty_record_id')
+            ->leftjoin('penalty_transactions', 'penalty_transactions.challan_id', 'penalty_challans.id')
             ->orderbyDesc('penalty_challans.id');
     }
 }
