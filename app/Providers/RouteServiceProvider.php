@@ -35,6 +35,12 @@ class RouteServiceProvider extends ServiceProvider
 
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
+
+            // Rig Registration
+            Route::prefix('api/rig')
+                ->middleware('api')
+                ->namespace($this->namespace)
+                ->group(base_path('routes/rigregistration.php'));
         });
     }
 }
