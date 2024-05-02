@@ -159,6 +159,7 @@ class PaymentController extends Controller
                     "amount"         => $challanDetails->amount,
                     "penalty_amount" => $challanDetails->penalty_amount,
                     "total_amount"   => $challanDetails->total_amount,
+                    "ulb_id"         => $penaltyDetails->ulb_id,
                     "verify_status"  => 1,
                 ];
                 DB::beginTransaction();

@@ -777,6 +777,7 @@ class PenaltyRecordController extends Controller
                 "amount"         => $challanDetails->amount,
                 "penalty_amount" => $challanDetails->penalty_amount,
                 "total_amount"   => $challanDetails->total_amount,
+                "ulb_id"         => $penaltyDetails->ulb_id,
             ];
             $tranDtl = $mPenaltyTransaction->store($reqs);
             $penaltyDetails->payment_status = 1;
@@ -1406,7 +1407,22 @@ class PenaltyRecordController extends Controller
     }
 
     /**
-     * | TRe
+     * | Mini Dashboard
+     */
+    public function miniLiveDashboard(Request $req)
+    {
+        $ulbId = $req->ulbId;
+        $todayDate = Carbon::now();
+        $penaltyTransaction = PenaltyTransaction::whereDate('created_at', $todayDate);
+
+        if ($ulbId)
+            $penaltyTransaction =  $penaltyTransaction->where('ulb_id', $ulbId);
+
+       return $penaltyTransaction = $penaltyTransaction->get();
+    }
+
+    /**
+     * | Test Whatsaap
      */
     public function testWhatsapp(Request $req)
     {
