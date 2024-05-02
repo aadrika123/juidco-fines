@@ -61,67 +61,6 @@ class PenaltyDocument extends Model
         return $data;
     }
 
-
-    public function storeDocument1($req, $id, $applicationNo)
-    {
-        if ($req->file('photo')) {
-            $docPath = $req->file('photo')->move(public_path('FinePenalty/'), $req->photo->getClientOriginalName());
-            $file_name = 'FinePenalty/' . $req->photo->getClientOriginalName();
-            $docType = $req->photo->getClientOriginalExtension();
-            // Create a new PhotoMetadata record
-            $docMetadata = new PenaltyDocument([
-                'applied_record_id' => $id,
-                'document_type' => $docType,
-                'document_path' => $file_name,
-                'document_name' => "Violation Image",
-                'latitude' => $req->latitude,
-                'longitude' => $req->longitude,
-                'document_verified_by' => authUser()->id,
-                'document_verified_at' => Carbon::now(),
-            ]);
-            $docMetadata->save();
-            $data['photo_details'] = $docMetadata;
-        }
-
-        if ($req->file('audioVideo')) {
-            $docPath = $req->file('audioVideo')->move(public_path('FinePenalty/'), $req->audioVideo->getClientOriginalName());
-            $file_name = 'FinePenalty/' . $req->audioVideo->getClientOriginalName();
-            $docType = $req->audioVideo->getClientOriginalExtension();
-            // Create a new PhotoMetadata record
-            $docMetadata = new PenaltyDocument([
-                'applied_record_id' => $id,
-                'document_type' => $docType,
-                'document_path' => $file_name,
-                'document_name' => "Violation Video",
-                'latitude' => $req->latitude ?? null,
-                'longitude' => $req->longitude ?? null,
-                'document_verified_by' => authUser()->id,
-                'document_verified_at' => Carbon::now(),
-            ]);
-            $docMetadata->save();
-            $data['video_details'] = $docMetadata;
-        }
-        if ($req->file('pdf')) {
-            $docPath = $req->file('pdf')->move(public_path('FinePenalty/'), $req->pdf->getClientOriginalName());
-            $file_name = 'FinePenalty/' . $req->pdf->getClientOriginalName();
-            $docType = $req->pdf->getClientOriginalExtension();
-            // Create a new PhotoMetadata record
-            $docMetadata = new PenaltyDocument([
-                'applied_record_id' => $id,
-                'document_type' => $docType,
-                'document_path' => $file_name,
-                'document_name' => "Violation Document",
-                'latitude' => $req->latitude ?? null,
-                'longitude' => $req->longitude ?? null,
-                'document_verified_by' => authUser()->id,
-                'document_verified_at' => Carbon::now(),
-            ]);
-            $docMetadata->save();
-            $data['pdf_details'] = $docMetadata;
-        }
-        return $data;
-    }
-
     /**
      * | Get Uploaded Document
      */

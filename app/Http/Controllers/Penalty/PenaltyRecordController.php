@@ -15,9 +15,11 @@ use App\Models\PenaltyDocument;
 use App\Models\PenaltyFinalRecord;
 use App\Models\PenaltyRecord;
 use App\Models\PenaltyTransaction;
+use App\Models\StBooking;
 use App\Models\WfRoleusermap;
 use App\Models\WfWorkflow;
 use App\Models\WfWorkflowrolemap;
+use App\Models\WtBooking;
 use App\Pipelines\FinePenalty\SearchByApplicationNo;
 use App\Pipelines\FinePenalty\SearchByChallan;
 use App\Pipelines\FinePenalty\SearchByMobile;
@@ -1414,11 +1416,55 @@ class PenaltyRecordController extends Controller
         $ulbId = $req->ulbId;
         $todayDate = Carbon::now();
         $penaltyTransaction = PenaltyTransaction::whereDate('created_at', $todayDate);
+        $penaltyChallan     = PenaltyChallan::where('challan_date', $todayDate)
+            ->join('penalty_final_records', 'penalty_final_records.id', 'penalty_challans.penalty_record_id');
 
-        if ($ulbId)
+        $wtTransaction = WtBooking::where('payment_date', $todayDate);
+        $wtBooking     = WtBooking::where('booking_date', $todayDate);
+        $wtDelivery    = WtBooking::where('delivery_date', $todayDate);
+
+        $stTransaction = StBooking::where('payment_date', $todayDate);
+        $stBooking     = StBooking::where('booking_date', $todayDate);
+        $stDelivery    = StBooking::where('cleaning_date', $todayDate);
+
+        if ($ulbId) {
             $penaltyTransaction =  $penaltyTransaction->where('ulb_id', $ulbId);
+            $wtTransaction      =  $wtTransaction->where('ulb_id', $ulbId);
+            $stTransaction      =  $stTransaction->where('ulb_id', $ulbId);
 
-       return $penaltyTransaction = $penaltyTransaction->get();
+            $wtBooking          =  $wtBooking->where('ulb_id', $ulbId);
+            $stBooking          =  $stBooking->where('ulb_id', $ulbId);
+
+            $wtDelivery         =  $wtDelivery->where('ulb_id', $ulbId);
+            $stDelivery         =  $stDelivery->where('ulb_id', $ulbId);
+
+            $penaltyChallan     =  $penaltyChallan->where('penalty_final_records.ulb_id', $ulbId);
+        }
+
+        $penaltyCollectionAmt = $penaltyTransaction->sum('total_amount');
+        $wtCollectionAmt = $wtTransaction->sum('payment_amount');
+        $stCollectionAmt = $stTransaction->sum('payment_amount');
+
+        $wtBooking          =  $wtBooking->count();
+        $stBooking          =  $stBooking->count();
+
+        $wtDelivery         =  $wtDelivery->count();
+        $stDelivery         =  $stDelivery->count();
+
+        $penaltyChallan     =  $penaltyChallan->count();
+
+        $data['fines_collection']   = $penaltyCollectionAmt;
+        $data['challan_count']      = $penaltyChallan;
+        $data['unpaid_penalty_amount']  = 00;
+
+        $data['wt_collection']      = $wtCollectionAmt;
+        $data['wtBooking']          = $wtBooking;
+        $data['wtDelivery']         = $wtDelivery;
+        $data['st_collection']      = $stCollectionAmt;
+        $data['stBooking']          = $stBooking;
+        $data['stTripCount']        = $stDelivery;
+
+        return responseMsgs(true, "Mini Dashboard Data", $data, "0625", "01", responseTime(), $req->getMethod(), $req->deviceId);
     }
 
     /**
