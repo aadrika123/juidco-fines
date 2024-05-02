@@ -1463,6 +1463,7 @@ class PenaltyRecordController extends Controller
         $data['st_collection']      = $stCollectionAmt;
         $data['stBooking']          = $stBooking;
         $data['stTripCount']        = $stDelivery;
+        $data['total_collection']   = $penaltyCollectionAmt + $wtCollectionAmt + $stCollectionAmt;
 
         return responseMsgs(true, "Mini Dashboard Data", $data, "0625", "01", responseTime(), $req->getMethod(), $req->deviceId);
     }
