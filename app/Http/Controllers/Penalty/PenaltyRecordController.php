@@ -1451,18 +1451,19 @@ class PenaltyRecordController extends Controller
         $wtDelivery         =  $wtDelivery->count();
         $stDelivery         =  $stDelivery->count();
 
-        $penaltyChallan     =  $penaltyChallan->count();
+        $unpaidPenaltyAmount   =  $penaltyChallan->whereNull('payment_date')->sum('total_amount');
+        $penaltyChallan        =  $penaltyChallan->count();
 
         $data['fines_collection']   = $penaltyCollectionAmt;
         $data['challan_count']      = $penaltyChallan;
-        $data['unpaid_penalty_amount']  = 00;
+        $data['unpaid_penalty_amount']  = $unpaidPenaltyAmount;
 
         $data['wt_collection']      = $wtCollectionAmt;
-        $data['wtBooking']          = $wtBooking;
-        $data['wtDelivery']         = $wtDelivery;
+        $data['wt_booking']          = $wtBooking;
+        $data['wt_delivery']         = $wtDelivery;
         $data['st_collection']      = $stCollectionAmt;
-        $data['stBooking']          = $stBooking;
-        $data['stTripCount']        = $stDelivery;
+        $data['st_booking']          = $stBooking;
+        $data['st_trip_count']        = $stDelivery;
         $data['total_collection']   = $penaltyCollectionAmt + $wtCollectionAmt + $stCollectionAmt;
 
         return responseMsgs(true, "Mini Dashboard Data", $data, "0625", "01", responseTime(), $req->getMethod(), $req->deviceId);
