@@ -10,7 +10,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use App\Http\Requests\rig\RigRegistrationReq;
+use App\Http\Requests\Rig\RigRegistrationReq;
 use App\IdGenerator\IdGeneration;
 use App\MicroServices\DocumentUpload;
 use App\Models\Property\PropActiveSaf;
