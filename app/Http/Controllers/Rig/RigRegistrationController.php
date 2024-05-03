@@ -793,7 +793,7 @@ class RigRegistrationController extends Controller
             # DataArray
             $basicDetails       = $this->getBasicDetails($applicationDetails);
             $propertyDetails    = $this->getpropertyDetails($applicationDetails);
-            $petDetails         = $this->getrefRigDetails($applicationDetails);
+            $rigDetails         = $this->getrefRigDetails($applicationDetails);
 
             $firstView = [
                 'headerTitle'   => 'Basic Details',
@@ -804,15 +804,15 @@ class RigRegistrationController extends Controller
                 'data'          => $propertyDetails
             ];
             $thirdView = [
-                'headerTitle'   => 'Pet Details',
-                'data'          => $petDetails
+                'headerTitle'   => 'Rig Details',
+                'data'          => $rigDetails
             ];
             $fullDetailsData['fullDetailsData']['dataArray'] = new collection([$firstView, $secondView, $thirdView]);
 
             # CardArray
             $cardDetails = $this->getCardDetails($applicationDetails);
             $cardData = [
-                'headerTitle' => 'Pet Registration',
+                'headerTitle' => 'Rig Registration',
                 'data' => $cardDetails
             ];
             $fullDetailsData['fullDetailsData']['cardArray'] = new Collection($cardData);
@@ -829,7 +829,7 @@ class RigRegistrationController extends Controller
 
             # Level comment
             $mtableId = $applicationDetails->ref_application_id;
-            $mRefTable = "pet_active_registrations.id";                         // Static
+            $mRefTable = "rig_active_registrations.id";                         // Static
             // $levelComment['levelComment'] = $mWorkflowTracks->getTracksByRefId($mRefTable, $mtableId);
 
             #citizen comment
@@ -838,7 +838,7 @@ class RigRegistrationController extends Controller
 
             # Role Details
             $metaReqs = [
-                'customFor'     => 'Pet',
+                'customFor'     => 'Rig',
                 'wfRoleId'      => $applicationDetails->current_role_id,
                 'workflowId'    => $applicationDetails->workflow_id,
                 'lastRoleId'    => $applicationDetails->last_role_id
@@ -932,7 +932,7 @@ class RigRegistrationController extends Controller
 
         return new Collection([
 
-            ['displayString' => 'Sex',                              'key' => 'Sex',                             'value' => $sex],
+            ['displayString' => 'Gender',                              'key' => 'gender',                             'value' => $sex],
             ['displayString' => 'Driver DOB',                          'key' => 'DriverDob',                          'value' => $dob],
 
         ]);
