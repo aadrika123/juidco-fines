@@ -504,7 +504,7 @@ class PenaltyRecordController extends Controller
                 if ($section == 602) {
                     $whatsapp2 = (Whatsapp_Send(
                         $finalRecord->mobile,
-                        "rmc_fp_sec602",
+                        "juidco_fines_challan602",
                         [
                             "content_type" => "text",
                             [
@@ -520,7 +520,7 @@ class PenaltyRecordController extends Controller
                 } else {
                     $whatsapp2 = (Whatsapp_Send(
                         $finalRecord->mobile,
-                        "rmc_fp_1",
+                        "juidco_fines_challan",
                         [
                             "content_type" => "text",
                             [
@@ -914,7 +914,7 @@ class PenaltyRecordController extends Controller
                 if ($section == 602) {
                     $whatsapp2 = (Whatsapp_Send(
                         $finalRecord->mobile,
-                        "rmc_fp_sec602",
+                        "juidco_fines_challan602 ",
                         [
                             "content_type" => "text",
                             [
@@ -930,7 +930,7 @@ class PenaltyRecordController extends Controller
                 } else {
                     $whatsapp2 = (Whatsapp_Send(
                         $finalRecord->mobile,
-                        "rmc_fp_1",
+                        "juidco_fines_challan",
                         [
                             "content_type" => "text",
                             [
@@ -1421,11 +1421,11 @@ class PenaltyRecordController extends Controller
 
         $wtTransaction = WtBooking::where('payment_date', $todayDate);
         $wtBooking     = WtBooking::where('booking_date', $todayDate);
-        $wtDelivery    = WtBooking::where('delivery_date', $todayDate);
+        $wtDelivery    = WtBooking::where('delivery_date', $todayDate)->where('delivery_track_status', 2);
 
         $stTransaction = StBooking::where('payment_date', $todayDate);
         $stBooking     = StBooking::where('booking_date', $todayDate);
-        $stDelivery    = StBooking::where('cleaning_date', $todayDate);
+        $stDelivery    = StBooking::where('cleaning_date', $todayDate)->where('delivery_track_status', 2);
 
         if ($ulbId) {
             $penaltyTransaction =  $penaltyTransaction->where('ulb_id', $ulbId);
