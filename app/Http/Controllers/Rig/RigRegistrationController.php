@@ -775,7 +775,7 @@ class RigRegistrationController extends Controller
             $mRigActiveRegistration = new RigActiveRegistration();
             $mRigActiveApplicant    = new RigActiveApplicant();
             $mWorkflowMap           = new WfWorkflowrolemap();
-            $mWorkflowTracks        = new WorkflowTrack();
+            // $mWorkflowTracks        = new WorkflowTrack();
             // $mCustomDetails         = new CustomDetail();
             $applicationId          = $request->applicationId;
             $aplictionList          = array();
@@ -830,11 +830,11 @@ class RigRegistrationController extends Controller
             # Level comment
             $mtableId = $applicationDetails->ref_application_id;
             $mRefTable = "pet_active_registrations.id";                         // Static
-            $levelComment['levelComment'] = $mWorkflowTracks->getTracksByRefId($mRefTable, $mtableId);
+            // $levelComment['levelComment'] = $mWorkflowTracks->getTracksByRefId($mRefTable, $mtableId);
 
             #citizen comment
             $refCitizenId = $applicationDetails->citizen_id;
-            $citizenComment['citizenComment'] = $mWorkflowTracks->getCitizenTracks($mRefTable, $mtableId, $refCitizenId);
+            // $citizenComment['citizenComment'] = $mWorkflowTracks->getCitizenTracks($mRefTable, $mtableId, $refCitizenId);
 
             # Role Details
             $metaReqs = [
@@ -855,7 +855,7 @@ class RigRegistrationController extends Controller
 
             # Payments Details
             // return array_merge($aplictionList, $fullDetailsData,$levelComment,$citizenComment,$roleDetails,$timelineData,$departmentPost);
-            $returnValues = array_merge($aplictionList, $fullDetailsData, $levelComment, $citizenComment, $roleDetails, $timelineData,);
+            $returnValues = array_merge($aplictionList, $fullDetailsData,  $roleDetails, $timelineData,);
             return responseMsgs(true, "listed Data!", $returnValues, "", "02", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "02", ".ms", "POST", $request->deviceId);
