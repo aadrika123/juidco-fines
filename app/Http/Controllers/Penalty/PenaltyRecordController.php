@@ -1538,7 +1538,7 @@ class PenaltyRecordController extends Controller
         $data = json_decode($filtered, true);
         $data = array_values($data);
 
-        return responseMsgs(true, "Top Ulb Collection", $data, "0625", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        return responseMsgs(true, "Top Ulb Collection", $data, "0626", "01", responseTime(), $req->getMethod(), $req->deviceId);
     }
 
     /**
