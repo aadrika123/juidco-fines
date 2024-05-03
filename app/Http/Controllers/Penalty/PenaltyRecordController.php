@@ -1502,27 +1502,28 @@ class PenaltyRecordController extends Controller
     {
         $todayDate = Carbon::now();
         $penaltyTransaction = PenaltyTransaction::select('ulb_id', 'ulb_name', 'total_amount')
-        // whereDate('created_at', $todayDate)
+            // whereDate('created_at', $todayDate)
             ->join('ulb_masters', 'ulb_masters.id', 'penalty_transactions.ulb_id');
 
         $wtTransaction = WtBooking::select('ulb_id', 'ulb_name', 'payment_amount as total_amount')
-        // ->where('payment_date', $todayDate)
+            // ->where('payment_date', $todayDate)
             ->join('ulb_masters', 'ulb_masters.id', 'wt_bookings.ulb_id');
 
 
         $stTransaction = StBooking::select('ulb_id', 'ulb_name', 'payment_amount as total_amount')
-        // ->where('payment_date', $todayDate)
+            // ->where('payment_date', $todayDate)
             ->join('ulb_masters', 'ulb_masters.id', 'st_bookings.ulb_id');
 
         $rigTransaction        = RigTran::select('ulb_id', 'ulb_name', 'amount as total_amount')
-        //    ->where('tran_date', $todayDate)
-           ->join('ulb_masters', 'ulb_masters.id', 'rig_trans.ulb_id');
-           
-        //    $waterSepticCollection = $wtTransaction->union($stTransaction)->get();
-        //    $finesRigCollection = $penaltyTransaction->union($rigTransaction)->get();
+            //    ->where('tran_date', $todayDate)
+            ->join('ulb_masters', 'ulb_masters.id', 'rig_trans.ulb_id');
+
+        $waterSepticCollection = $wtTransaction->union($stTransaction)->get();
+        $finesRigCollection = $penaltyTransaction->union($rigTransaction)->get();
+        $combinedCollection = $waterSepticCollection->concat($finesRigCollection);
 
 
-        $allCollection = collect($allCollection)->groupBy('ulb_name');
+        $allCollection = collect($combinedCollection)->groupBy('ulb_name');
         // Map through each entity and calculate the sum of total_amount
         $sums = $allCollection->map(function ($entries) {
             return collect($entries)->sum('total_amount');
