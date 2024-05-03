@@ -1469,7 +1469,7 @@ class PenaltyRecordController extends Controller
         # Rig Registration  
         $rigCollection        =   $rigTransaction->sum('amount');
         $rigRegistration      =   $rigNewRegistration->where('application_type', 'New_Apply')->count();
-        $rigRenewal            =   $rigNewRegistration->where('application_type', 'Renewal')->count();
+        $rigRenewal           =   $rigNewRegistration->where('application_type', 'Renewal')->count();
 
 
 
@@ -1496,30 +1496,33 @@ class PenaltyRecordController extends Controller
 
     /**
      * | Top Ulb Collection
+        include today date as where condition
      */
     public function topUlbCollection(Request $req)
     {
-        $ulbId = $req->ulbId;
         $todayDate = Carbon::now();
         $penaltyTransaction = PenaltyTransaction::select('ulb_id', 'ulb_name', 'total_amount')
+        // whereDate('created_at', $todayDate)
             ->join('ulb_masters', 'ulb_masters.id', 'penalty_transactions.ulb_id');
 
-        $wtTransaction = WtBooking::where('payment_date', $todayDate);
-        $wtBooking     = WtBooking::where('booking_date', $todayDate);
-        $wtDelivery    = WtBooking::where('delivery_date', $todayDate)->where('delivery_track_status', 2);
-
-        $stTransaction = StBooking::where('payment_date', $todayDate);
-        $stBooking     = StBooking::where('booking_date', $todayDate);
-        $stDelivery    = StBooking::where('cleaning_date', $todayDate)->where('delivery_track_status', 2);
+        $wtTransaction = WtBooking::select('ulb_id', 'ulb_name', 'payment_amount as total_amount')
+        // ->where('payment_date', $todayDate)
+            ->join('ulb_masters', 'ulb_masters.id', 'wt_bookings.ulb_id');
 
 
-        $rigTransaction        = RigTran::where('tran_date', $todayDate);
-        $rigNewRegistration    = RigActiveRegistration::where('application_apply_date', $todayDate);
-        // $rigRenewal         = RigActiveRegistration::where('application_apply_date', $todayDate);
+        $stTransaction = StBooking::select('ulb_id', 'ulb_name', 'payment_amount as total_amount')
+        // ->where('payment_date', $todayDate)
+            ->join('ulb_masters', 'ulb_masters.id', 'st_bookings.ulb_id');
 
-        $allCollection = $penaltyTransaction->get();
+        $rigTransaction        = RigTran::select('ulb_id', 'ulb_name', 'amount as total_amount')
+        //    ->where('tran_date', $todayDate)
+           ->join('ulb_masters', 'ulb_masters.id', 'rig_trans.ulb_id');
+           
+        //    $waterSepticCollection = $wtTransaction->union($stTransaction)->get();
+        //    $finesRigCollection = $penaltyTransaction->union($rigTransaction)->get();
+
+
         $allCollection = collect($allCollection)->groupBy('ulb_name');
-
         // Map through each entity and calculate the sum of total_amount
         $sums = $allCollection->map(function ($entries) {
             return collect($entries)->sum('total_amount');
