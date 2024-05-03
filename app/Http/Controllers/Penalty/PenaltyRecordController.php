@@ -1421,7 +1421,8 @@ class PenaltyRecordController extends Controller
         $todayDate = Carbon::now();
         $penaltyTransaction = PenaltyTransaction::whereDate('created_at', $todayDate);
         $penaltyChallan     = PenaltyChallan::where('challan_date', $todayDate)
-            ->join('penalty_final_records', 'penalty_final_records.id', 'penalty_challans.penalty_record_id');
+            ->join('penalty_final_records', 'penalty_final_records.id', 'penalty_challans.penalty_record_id')
+            ->where('penalty_challans.status', 1);
 
         $wtTransaction = WtBooking::where('payment_date', $todayDate);
         $wtBooking     = WtBooking::where('booking_date', $todayDate);
@@ -1453,6 +1454,7 @@ class PenaltyRecordController extends Controller
             $rigNewRegistration =  $rigNewRegistration->where('ulb_id', $ulbId);
         }
 
+        $penaltyChallanCount  =  $penaltyChallan->count();
         $penaltyCollectionAmt = $penaltyTransaction->sum('total_amount');
         $wtCollectionAmt = $wtTransaction->sum('payment_amount');
         $stCollectionAmt = $stTransaction->sum('payment_amount');
@@ -1463,8 +1465,8 @@ class PenaltyRecordController extends Controller
         $wtDelivery         =  $wtDelivery->count();
         $stDelivery         =  $stDelivery->count();
 
+        $totalChallanAmount    =  $penaltyChallan->sum('total_amount');
         $unpaidPenaltyAmount   =  $penaltyChallan->whereNull('payment_date')->sum('total_amount');
-        $penaltyChallan        =  $penaltyChallan->count();
 
         # Rig Registration  
         $rigCollection        =   $rigTransaction->sum('amount');
@@ -1472,10 +1474,10 @@ class PenaltyRecordController extends Controller
         $rigRenewal           =   $rigNewRegistration->where('application_type', 'Renewal')->count();
 
 
-
         $data['fines_collection']   = $penaltyCollectionAmt;
-        $data['challan_count']      = $penaltyChallan;
+        $data['challan_count']      = $penaltyChallanCount;
         $data['unpaid_penalty_amount']  = $unpaidPenaltyAmount;
+        $data['total_penalty_amount']  = $totalChallanAmount;
 
         $data['wt_collection']      = $wtCollectionAmt;
         $data['wt_booking']          = $wtBooking;
