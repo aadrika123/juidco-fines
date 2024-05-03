@@ -146,8 +146,8 @@ class RigWorkflowController extends Controller
             $msg = "Inbox List Details!";
 
             // $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
-          return  $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
-            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+           return $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
             $rigList = $this->getrigApplicatioList($workflowIds, $ulbId)
                 ->whereIn('rig_active_registrations.current_role_id', $roleId)
