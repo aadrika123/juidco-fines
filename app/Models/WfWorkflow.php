@@ -16,4 +16,12 @@ class WfWorkflow extends Model
             ->where('ulb_id', $ulbId)
             ->first();
     }
+
+    public function getulbWorkflowId($wfMstId, $ulbId)
+    {
+        return WfWorkflow::where('wf_master_id', $wfMstId)
+            ->where('ulb_id', $ulbId)
+            ->where('is_suspended', false)
+            ->first();
+    }
 }

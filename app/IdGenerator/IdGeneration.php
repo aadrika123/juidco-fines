@@ -23,7 +23,12 @@ class IdGeneration
         $this->flag = $flag;
         $this->incrementStatus = true;
     }
-
+    public function ___construct(int $paramId, int $ulbId)
+    {
+        $this->paramId          = $paramId;
+        $this->ulbId            = $ulbId;
+        $this->incrementStatus  = true;
+    }
     /**
      * | Id Generation Business Logic 
      */
@@ -69,5 +74,40 @@ class IdGeneration
         }
 
         return $prefixString . $id . $flag;
+    }
+
+
+    public function generateId(): string
+    {
+        $paramId = $this->paramId;
+        $mIdGenerationParams = new IdGenerationParam();
+        $mUlbMaster = new UlbMaster();
+        $ulbDtls = $mUlbMaster::findOrFail($this->ulbId);
+
+        $ulbDistrictCode = $ulbDtls->district_code;
+        $ulbCategory = $ulbDtls->category;
+        $code = $ulbDtls->code;
+
+        $params = $mIdGenerationParams->getParams($paramId);
+        $prefixString = $params->string_val;
+        $stringVal = $ulbDistrictCode . $ulbCategory . $code;
+
+        $stringSplit = collect(str_split($stringVal));
+        $flag = ($stringSplit->sum()) % 9;
+        $intVal = $params->int_val;
+        // Case for the Increamental
+        if ($this->incrementStatus == true) {
+            $id = $stringVal . str_pad($intVal, 7, "0", STR_PAD_LEFT);
+            $intVal += 1;
+            $params->int_val = $intVal;
+            $params->save();
+        }
+
+        // Case for not Increamental
+        if ($this->incrementStatus == false) {
+            $id = $stringVal  . str_pad($intVal, 7, "0", STR_PAD_LEFT);
+        }
+
+        return $prefixString . '-' . $id . $flag;
     }
 }
