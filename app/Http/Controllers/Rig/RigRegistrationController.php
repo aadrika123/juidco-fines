@@ -776,7 +776,7 @@ class RigRegistrationController extends Controller
             $mRigActiveApplicant    = new RigActiveApplicant();
             $mWorkflowMap           = new WfWorkflowrolemap();
             $mWorkflowTracks        = new WorkflowTrack();
-            $mCustomDetails         = new CustomDetail();
+            // $mCustomDetails         = new CustomDetail();
             $applicationId          = $request->applicationId;
             $aplictionList          = array();
 
@@ -855,7 +855,7 @@ class RigRegistrationController extends Controller
 
             # Payments Details
             // return array_merge($aplictionList, $fullDetailsData,$levelComment,$citizenComment,$roleDetails,$timelineData,$departmentPost);
-            $returnValues = array_merge($aplictionList, $fullDetailsData, $levelComment, $citizenComment, $roleDetails, $timelineData, );
+            $returnValues = array_merge($aplictionList, $fullDetailsData, $levelComment, $citizenComment, $roleDetails, $timelineData,);
             return responseMsgs(true, "listed Data!", $returnValues, "", "02", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "02", ".ms", "POST", $request->deviceId);
