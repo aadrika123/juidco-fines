@@ -138,7 +138,7 @@ class RigWorkflowController extends Controller
     public function inbox(Request $request)
     {
         try {
-            $user   = authUser($request);
+           return $user   = authUser($request);
             $userId = $user->id;
             $ulbId  = $user->ulb_id;
             $pages  = $request->perPage ?? 10;
