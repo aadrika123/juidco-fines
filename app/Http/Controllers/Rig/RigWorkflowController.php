@@ -149,7 +149,7 @@ class RigWorkflowController extends Controller
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
-          return  $rigList = $this->getrigApplicatioList($workflowIds, $ulbId)
+             $rigList = $this->getrigApplicatioList($workflowIds, $ulbId)
                 ->whereIn('rig_active_registrations.current_role_id', $roleId)
                 // ->whereIn('rig_active_registrations.ward_id', $occupiedWards)
                 // ->where('rig_active_registrations.is_escalate', false)
