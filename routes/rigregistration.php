@@ -49,6 +49,7 @@ Route::middleware([])->group(function () {
 
         Route::post('get-approve-registrations', 'getApproveRegistration');                                     // Citizen
         Route::post('get-rejected-registrations', 'getRejectedRegistration');
+        Route::post('application/get-wf-detials', 'getApplicationsDetails');                                    // Workflow
 
         Route::post('get-renewal-history', 'getRenewalHistory');
     });

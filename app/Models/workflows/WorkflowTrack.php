@@ -88,7 +88,7 @@ class WorkflowTrack extends Model
      */
     public function getCitizenTracks($mRefTable, $tableId, $citizenId)
     {
-        return DB::connection('pgsql_masters')
+        return DB::connection('pgsql_master')
             ->table('workflow_tracks')
             ->select(
                 'workflow_tracks.ref_table_dot_id AS referenceTable',
