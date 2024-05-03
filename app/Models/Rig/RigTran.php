@@ -23,4 +23,15 @@ class RigTran extends Model
             ->where('status', 1)
             ->orderByDesc('id');
     }
+
+    /**
+     * | Get transaction details accoring to related Id and transaction type
+     */
+    public function getTranDetails($relatedId, $tranType)
+    {
+        return RigTran::where('related_id', $relatedId)
+            ->where('tran_type_id', $tranType)
+            ->where('status', 1)
+            ->orderByDesc('id');
+    }
 }

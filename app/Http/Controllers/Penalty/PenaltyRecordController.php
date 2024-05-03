@@ -15,6 +15,8 @@ use App\Models\PenaltyDocument;
 use App\Models\PenaltyFinalRecord;
 use App\Models\PenaltyRecord;
 use App\Models\PenaltyTransaction;
+use App\Models\Rig\RigActiveRegistration;
+use App\Models\Rig\RigTran;
 use App\Models\StBooking;
 use App\Models\WfRoleusermap;
 use App\Models\WfWorkflow;
@@ -1427,6 +1429,13 @@ class PenaltyRecordController extends Controller
         $stBooking     = StBooking::where('booking_date', $todayDate);
         $stDelivery    = StBooking::where('cleaning_date', $todayDate)->where('delivery_track_status', 2);
 
+
+        $rigTransaction        = RigTran::where('tran_date', $todayDate);
+        $rigNewRegistration    = RigActiveRegistration::where('application_apply_date', $todayDate);
+        
+        // $rigRenewal         = RigActiveRegistration::where('application_apply_date', $todayDate);
+
+
         if ($ulbId) {
             $penaltyTransaction =  $penaltyTransaction->where('ulb_id', $ulbId);
             $wtTransaction      =  $wtTransaction->where('ulb_id', $ulbId);
@@ -1439,6 +1448,9 @@ class PenaltyRecordController extends Controller
             $stDelivery         =  $stDelivery->where('ulb_id', $ulbId);
 
             $penaltyChallan     =  $penaltyChallan->where('penalty_final_records.ulb_id', $ulbId);
+
+            $rigTransaction     =  $rigTransaction->where('ulb_id', $ulbId);
+            $rigNewRegistration =  $rigNewRegistration->where('ulb_id', $ulbId);
         }
 
         $penaltyCollectionAmt = $penaltyTransaction->sum('total_amount');
@@ -1454,6 +1466,13 @@ class PenaltyRecordController extends Controller
         $unpaidPenaltyAmount   =  $penaltyChallan->whereNull('payment_date')->sum('total_amount');
         $penaltyChallan        =  $penaltyChallan->count();
 
+        # Rig Registration  
+        $rigCollection        =   $rigTransaction->sum('amount');
+        $rigRegistration      =   $rigNewRegistration->where('application_type', 'New_Apply')->count();
+        $rigRenewal            =   $rigNewRegistration->where('application_type', 'Renewal')->count();
+        
+
+
         $data['fines_collection']   = $penaltyCollectionAmt;
         $data['challan_count']      = $penaltyChallan;
         $data['unpaid_penalty_amount']  = $unpaidPenaltyAmount;
@@ -1464,7 +1483,12 @@ class PenaltyRecordController extends Controller
         $data['st_collection']      = $stCollectionAmt;
         $data['st_booking']          = $stBooking;
         $data['st_trip_count']        = $stDelivery;
-        $data['total_collection']   = $penaltyCollectionAmt + $wtCollectionAmt + $stCollectionAmt;
+
+
+        $data['rig_collection']        = $rigCollection;
+        $data['rig_new_reg_count']          = $rigRegistration;
+        $data['rig_renewal_count']          = $rigRenewal;
+        $data['total_collection']   = $penaltyCollectionAmt + $wtCollectionAmt + $stCollectionAmt + $rigCollection;
 
         return responseMsgs(true, "Mini Dashboard Data", $data, "0625", "01", responseTime(), $req->getMethod(), $req->deviceId);
     }

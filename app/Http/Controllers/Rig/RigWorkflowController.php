@@ -142,7 +142,7 @@ class RigWorkflowController extends Controller
             $userId = $user->id;
             $ulbId  = $user->ulb_id;
             $pages  = $request->perPage ?? 10;
-            $mWfWorkflowRoleMaps = new ModelsWfWorkflowrolemap();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $msg = "Inbox List Details!";
 
             // $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
