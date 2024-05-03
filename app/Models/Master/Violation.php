@@ -47,7 +47,7 @@ class Violation extends Model
     {
         return Violation::select(
             DB::raw("violations.id,violations.violation_name,violations.penalty_amount, violations.on_spot,
-            sections.violation_section, departments.department_name,users.user_name as created_by,
+            sections.violation_section, departments.department_name,users.name as created_by,
         CASE 
             WHEN violations.status = '0' THEN 'Deactivated'  
             WHEN violations.status = '1' THEN 'Active'
