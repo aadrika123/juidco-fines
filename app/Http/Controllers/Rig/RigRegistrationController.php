@@ -10,13 +10,14 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use App\Http\Requests\rig\RigRegistrationReq;
+use App\Http\Requests\Rig\RigRegistrationReq;
 use App\IdGenerator\IdGeneration;
 use App\MicroServices\DocumentUpload;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropProperty;
+use App\Models\Rig\CustomDetail as RigCustomDetail;
 use App\Models\Rig\MRigFee;
 use App\Models\Rig\RigActiveApplicant;
 use App\Models\Rig\RigActiveRegistration;
@@ -34,6 +35,8 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\WfWorkflow;
 use App\Models\WfWorkflowrolemap;
 use  App\Models\Rig\WfActiveDocument;
+use App\Models\Rig\CustomDetail;
+use Illuminate\Support\Collection;
 
 class RigRegistrationController extends Controller
 {
@@ -144,7 +147,7 @@ class RigRegistrationController extends Controller
             $mRigActiveRegistration     = new RigActiveRegistration();
             $mRigActiveApplicant        = new RigActiveApplicant();
             $mWfWorkflow                = new WfWorkflow();
-            $mWorkflowTrack             = new WorkflowTrack();
+            // $mWorkflowTrack             = new WorkflowTrack();
             $mRigRegistrationCharge     = new RigRegistrationCharge();
             $mMRigFee                   = new MRigFee();
             $mDocuments                 = $req->documents;
@@ -418,9 +421,9 @@ class RigRegistrationController extends Controller
             $mRigActiveRegistration = new RigActiveRegistration();
             $mRigTran               = new RigTran();
 
-            // if ($user->user_type != $confUserType['1']) {                                       // If not a citizen
-            //     throw new Exception("You are not an autherised Citizen!");
-            // }
+            if ($user->user_type != $confUserType['1']) {                                       // If not a citizen
+                throw new Exception("You are not an autherised Citizen!");
+            }
             # Collect querry Exceptions 
             try {
                 $refAppDetails = $mRigActiveRegistration->getAllApplicationDetails($user->id, $confDbKey['1'])
@@ -669,9 +672,9 @@ class RigRegistrationController extends Controller
             $confUserType               = $this->_userType;
             $mRigApprovedRegistration   = new RigApprovedRegistration();
 
-            // if ($user->user_type != $confUserType['1']) {                                       // If not a citizen
-            //     throw new Exception("You are not an autherised Citizen!");
-            // }
+            if ($user->user_type != $confUserType['1']) {                                       // If not a citizen
+                throw new Exception("You are not an autherised Citizen!");
+            }
             # Collect querry Exceptions 
             try {
                 $refApproveDetails = $mRigApprovedRegistration->getAllApprovdApplicationDetails()
@@ -742,5 +745,235 @@ class RigRegistrationController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
-    
+
+
+    //BEGIN///////////////////////////////////////////////////////////////////////////////
+    /**
+     * | Get Application details for workflow view 
+     * | @param request
+     * | @var ownerDetails
+     * | @var applicantDetails
+     * | @var applicationDetails
+     * | @var returnDetails
+     * | @return returnDetails : list of individual applications
+        | Serial No : 08
+        | Workinig 
+     */
+    public function getApplicationsDetails(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            # object assigning              
+            $mRigActiveRegistration = new RigActiveRegistration();
+            $mRigActiveApplicant    = new RigActiveApplicant();
+            $mWorkflowMap           = new WfWorkflowrolemap();
+            // $mWorkflowTracks        = new WorkflowTrack();
+            // $mCustomDetails         = new CustomDetail();
+            $applicationId          = $request->applicationId;
+            $aplictionList          = array();
+
+            # application details
+            $applicationDetails = $mRigActiveRegistration->getRigApplicationById($applicationId)->first();
+            if (!$applicationDetails) {
+                throw new Exception("Application data according to $request->applicationId not found");
+            }
+            # owner Details
+            $applyDate = Carbon::createFromFormat('Y-m-d', $applicationDetails->application_apply_date)->format('d-m-Y');
+            $aplictionList['application_no'] = $applicationDetails->application_no;
+            $aplictionList['apply_date']     = $applyDate;
+
+            # DataArray
+            $basicDetails       = $this->getBasicDetails($applicationDetails);
+            $propertyDetails    = $this->getpropertyDetails($applicationDetails);
+            $rigDetails         = $this->getrefRigDetails($applicationDetails);
+
+            $firstView = [
+                'headerTitle'   => 'Basic Details',
+                'data'          => $basicDetails
+            ];
+            $secondView = [
+                'headerTitle'   => 'Applicant Property Details',
+                'data'          => $propertyDetails
+            ];
+            $thirdView = [
+                'headerTitle'   => 'Rig Details',
+                'data'          => $rigDetails
+            ];
+            $fullDetailsData['fullDetailsData']['dataArray'] = new collection([$firstView, $secondView, $thirdView]);
+
+            # CardArray
+            $cardDetails = $this->getCardDetails($applicationDetails);
+            $cardData = [
+                'headerTitle' => 'Rig Registration',
+                'data' => $cardDetails
+            ];
+            $fullDetailsData['fullDetailsData']['cardArray'] = new Collection($cardData);
+
+            # TableArray
+            $ownerDetail = $mRigActiveApplicant->getApplicationDetails($applicationId)->get();
+            $ownerList = $this->getOwnerDetails($ownerDetail);
+            $ownerView = [
+                'headerTitle' => 'Owner Details',
+                'tableHead' => ["#", "Owner Name", "Mobile No", "Email", "Pan"],
+                'tableData' => $ownerList
+            ];
+            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerView]);
+
+            # Level comment
+            $mtableId = $applicationDetails->ref_application_id;
+            $mRefTable = "rig_active_registrations.id";                         // Static
+            // $levelComment['levelComment'] = $mWorkflowTracks->getTracksByRefId($mRefTable, $mtableId);
+
+            #citizen comment
+            $refCitizenId = $applicationDetails->citizen_id;
+            // $citizenComment['citizenComment'] = $mWorkflowTracks->getCitizenTracks($mRefTable, $mtableId, $refCitizenId);
+
+            # Role Details
+            $metaReqs = [
+                'customFor'     => 'Rig',
+                'wfRoleId'      => $applicationDetails->current_role_id,
+                'workflowId'    => $applicationDetails->workflow_id,
+                'lastRoleId'    => $applicationDetails->last_role_id
+            ];
+            $request->request->add($metaReqs);
+            $roleDetails['roleDetails'] = $mWorkflowMap->getRoleDetails($request);
+
+            # Timeline Data
+            $timelineData['timelineData'] = collect($request);
+
+            # Departmental Post
+            // $custom = $mCustomDetails->getCustomDetails($request);
+            // $departmentPost['departmentalPost'] = $custom;
+
+            # Payments Details
+            // return array_merge($aplictionList, $fullDetailsData,$levelComment,$citizenComment,$roleDetails,$timelineData,$departmentPost);
+            $returnValues = array_merge($aplictionList, $fullDetailsData,  $roleDetails, $timelineData,);
+            return responseMsgs(true, "listed Data!", $returnValues, "", "02", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "02", ".ms", "POST", $request->deviceId);
+        }
+    }
+
+
+    /**
+     * |------------------ Basic Details ------------------|
+     * | @param applicationDetails
+     * | @var collectionApplications
+        | Serial No : 08.01
+        | Workinig 
+     */
+    public function getBasicDetails($applicationDetails)
+    {
+        if ($applicationDetails->apply_through == 1) {
+            $applyThrough = "Holding";
+        } else {
+            $applyThrough = "Saf";
+        }
+        $applyDate = Carbon::createFromFormat('Y-m-d', $applicationDetails->application_apply_date)->format('d-m-Y');
+        return new Collection([
+            ['displayString' => 'Ward No',              'key' => 'WardNo',                  'value' => $applicationDetails->ward_name],
+            ['displayString' => 'Type of Connection',   'key' => 'TypeOfConnection',        'value' => $applicationDetails->application_type],
+            ['displayString' => 'Apply From',           'key' => 'ApplyFrom',               'value' => $applicationDetails->apply_mode],
+            ['displayString' => 'Apply Date',           'key' => 'ApplyDate',               'value' => $applyDate]
+        ]);
+    }
+
+    /**
+     * |------------------ Property Details ------------------|
+     * | @param applicationDetails
+     * | @var propertyDetails
+     * | @var collectionApplications
+        | Serial No : 08.02
+        | Workinig 
+     */
+    public function getpropertyDetails($applicationDetails)
+    {
+        $propertyDetails = array();
+        if (!is_null($applicationDetails->holding_no)) {
+            array_push($propertyDetails, ['displayString' => 'Holding No',    'key' => 'AppliedBy',  'value' => $applicationDetails->holding_no]);
+        }
+        if (!is_null($applicationDetails->saf_no)) {
+            array_push($propertyDetails, ['displayString' => 'Saf No',        'key' => 'AppliedBy',   'value' => $applicationDetails->saf_no]);
+        }
+        if ($applicationDetails->owner_type == 1) {
+            $ownerType = "Owner";
+        } else {
+            $ownerType = "Tenant";
+        }
+        array_push($propertyDetails, ['displayString' => 'Ward No',       'key' => 'WardNo',      'value' => $applicationDetails->ward_name]);
+        array_push($propertyDetails, ['displayString' => 'Address',       'key' => 'Address',     'value' => $applicationDetails->address]);
+        array_push($propertyDetails, ['displayString' => 'Owner Type',    'key' => 'OwnerType',   'value' => $ownerType]);
+
+        return $propertyDetails;
+    }
+
+    /**
+     * |------------------ Owner details ------------------|
+     * | @param ownerDetails
+        | Serial No : 08.04
+        | Workinig 
+     */
+    public function getrefRigDetails($applicationDetails)
+    {
+        if ($applicationDetails->sex == 1) {
+            $sex = "Male";
+        } else {
+            $sex = "Female";
+        }
+        $dob = Carbon::createFromFormat('Y-m-d', $applicationDetails->dob)->format('d-m-Y');
+
+        return new Collection([
+
+            ['displayString' => 'Gender',                              'key' => 'gender',                             'value' => $sex],
+            ['displayString' => 'Driver DOB',                          'key' => 'DriverDob',                          'value' => $dob],
+
+        ]);
+    }
+
+    /**
+     * |------------------ Get Card Details ------------------|
+     * | @param applicationDetails
+     * | @param ownerDetails
+     * | @var ownerDetail
+     * | @var collectionApplications
+        | Serial No : 08.05
+        | Workinig 
+     */
+    public function getCardDetails($applicationDetails)
+    {
+        $applyDate = Carbon::createFromFormat('Y-m-d', $applicationDetails->application_apply_date)->format('d-m-Y');
+        return new Collection([
+            ['displayString' => 'Ward No.',             'key' => 'WardNo.',             'value' => $applicationDetails->ward_name],
+            ['displayString' => 'Application No.',      'key' => 'ApplicationNo.',      'value' => $applicationDetails->application_no],
+            ['displayString' => 'Owner Name',           'key' => 'OwnerName',           'value' => $applicationDetails->applicant_name],
+            ['displayString' => 'Connection Type',      'key' => 'ConnectionType',      'value' => $applicationDetails->application_type],
+            ['displayString' => 'Apply-Date',           'key' => 'ApplyDate',           'value' => $applyDate],
+        ]);
+    }
+    /**
+     * |------------------ Owner details ------------------|
+     * | @param ownerDetails
+        | Serial No : 08.04
+        | Workinig 
+     */
+    public function getOwnerDetails($ownerDetails)
+    {
+        return collect($ownerDetails)->map(function ($value, $key) {
+            return [
+                $key + 1,
+                $value['applicant_name'],
+                $value['mobile_no'],
+                $value['email'],
+                $value['pan_no']
+            ];
+        });
+    }
 }

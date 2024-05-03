@@ -4,15 +4,15 @@ namespace App\Http\Controllers\Rig;
 
 use App\Http\Controllers\Controller;
 use App\Models\Rig\RefRequiredDocument;
-use App\Models\rig\rigActiveApplicant;
-use App\Models\rig\rigActiveDetail;
-use App\Models\rig\rigActiveRegistration;
+use App\Models\Rig\RigActiveApplicant;
+use App\Models\Rig\RigActiveDetail;
+use App\Models\Rig\RigActiveRegistration;
 use App\Models\Rig\RigApproveActiveDetail;
-use App\Models\rig\rigApproveApplicant;
-use App\Models\rig\rigApproveDetail;
-use App\Models\rig\rigApprovedRegistration;
-use App\Models\rig\rigRejectedRegistration;
-use App\Models\rig\rigRenewalRegistration;
+use App\Models\Rig\RigApproveApplicant;
+use App\Models\Rig\RigApproveDetail;
+use App\Models\Rig\RigApprovedRegistration;
+use App\Models\Rig\RigRejectedRegistration;
+use App\Models\Rig\RigRenewalRegistration;
 use App\Models\Rig\RigVehicleActiveDetail;
 use App\Models\Rig\WfActiveDocument as RigWfActiveDocument;
 use App\Models\WfWorkflowrolemap as ModelsWfWorkflowrolemap;
@@ -149,7 +149,7 @@ class RigWorkflowController extends Controller
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
-          return  $rigList = $this->getrigApplicatioList($workflowIds, $ulbId)
+             $rigList = $this->getrigApplicatioList($workflowIds, $ulbId)
                 ->whereIn('rig_active_registrations.current_role_id', $roleId)
                 // ->whereIn('rig_active_registrations.ward_id', $occupiedWards)
                 // ->where('rig_active_registrations.is_escalate', false)

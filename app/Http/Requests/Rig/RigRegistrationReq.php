@@ -5,7 +5,7 @@ namespace App\Http\Requests\Rig;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
- 
+
 class RigRegistrationReq extends FormRequest
 {
     /**
@@ -27,7 +27,7 @@ class RigRegistrationReq extends FormRequest
     {
         $rules = [
             'address'               => 'required|',
-            'applyThrough'          => 'required|int|in:1,2',
+            'applyThrough'          => 'nullable|int|in:1,2',
             'ownerCategory'         => 'required|in:1,2',
             'driverBirthDate'       => 'required|date|date_format:Y-m-d',
             'ulbId'                 => 'required|int',
