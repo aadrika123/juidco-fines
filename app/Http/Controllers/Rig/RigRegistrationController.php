@@ -600,6 +600,7 @@ class RigRegistrationController extends Controller
                 "isRenewal"         => $renewal,                                    // Static
                 "auth"              => $request->auth,
                 "documents"         => $request->documents,
+                "driverBirthDate"   => $refApprovedDetails->dob
 
             ];
             $rigRegistrationReq = new RigRegistrationReq($newReq);
@@ -792,7 +793,7 @@ class RigRegistrationController extends Controller
 
             # DataArray
             $basicDetails       = $this->getBasicDetails($applicationDetails);
-            $propertyDetails    = $this->getpropertyDetails($applicationDetails);
+            // $propertyDetails    = $this->getpropertyDetails($applicationDetails);
             $rigDetails         = $this->getrefRigDetails($applicationDetails);
 
             $firstView = [
@@ -800,14 +801,14 @@ class RigRegistrationController extends Controller
                 'data'          => $basicDetails
             ];
             $secondView = [
-                'headerTitle'   => 'Applicant Property Details',
-                'data'          => $propertyDetails
-            ];
-            $thirdView = [
-                'headerTitle'   => 'Rig Details',
+                'headerTitle'   => ' Rig Details',
                 'data'          => $rigDetails
             ];
-            $fullDetailsData['fullDetailsData']['dataArray'] = new collection([$firstView, $secondView, $thirdView]);
+            // $thirdView = [
+            //     'headerTitle'   => 'Rig Details',
+            //     'data'          => $rigDetails
+            // ];
+            $fullDetailsData['fullDetailsData']['dataArray'] = new collection([$firstView, $secondView,]);
 
             # CardArray
             $cardDetails = $this->getCardDetails($applicationDetails);
@@ -877,10 +878,17 @@ class RigRegistrationController extends Controller
         } else {
             $applyThrough = "Saf";
         }
+        // Check if the application type is "Renewal"
+        if ($applicationDetails->application_type === "Renewal") {
+            $applicationType = "Renewal";
+        } else {
+            // Extracting "NEW" from "New_Apply"
+            $applicationType = strtoupper(substr($applicationDetails->application_type, 0, 3));
+        }
         $applyDate = Carbon::createFromFormat('Y-m-d', $applicationDetails->application_apply_date)->format('d-m-Y');
         return new Collection([
             ['displayString' => 'Ward No',              'key' => 'WardNo',                  'value' => $applicationDetails->ward_name],
-            ['displayString' => 'Type of Connection',   'key' => 'TypeOfConnection',        'value' => $applicationDetails->application_type],
+            ['displayString' => 'Type of Connection',   'key' => 'TypeOfConnection',        'value' => $applicationType],
             ['displayString' => 'Apply From',           'key' => 'ApplyFrom',               'value' => $applicationDetails->apply_mode],
             ['displayString' => 'Apply Date',           'key' => 'ApplyDate',               'value' => $applyDate]
         ]);
@@ -933,7 +941,9 @@ class RigRegistrationController extends Controller
         return new Collection([
 
             ['displayString' => 'Gender',                              'key' => 'gender',                             'value' => $sex],
-            ['displayString' => 'Driver DOB',                          'key' => 'DriverDob',                          'value' => $dob],
+            ['displayString' => 'Driver DOB',                          'key' => 'driverDob',                          'value' => $dob],
+            ['displayString' => 'Diver Name',                          'key' => 'driverName',                          'value' => $applicationDetails->driver_name],
+            ['displayString' => 'Vehicle Name',                        'key' => 'vehicleName',                          'value' => $applicationDetails->vehicle_name],
 
         ]);
     }
@@ -956,6 +966,7 @@ class RigRegistrationController extends Controller
             ['displayString' => 'Owner Name',           'key' => 'OwnerName',           'value' => $applicationDetails->applicant_name],
             ['displayString' => 'Connection Type',      'key' => 'ConnectionType',      'value' => $applicationDetails->application_type],
             ['displayString' => 'Apply-Date',           'key' => 'ApplyDate',           'value' => $applyDate],
+            ['displayString' => 'Address',              'key' => 'Address',             'value' => $applicationDetails->address],
         ]);
     }
     /**
