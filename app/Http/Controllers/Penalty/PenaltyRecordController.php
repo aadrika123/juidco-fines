@@ -111,7 +111,8 @@ class PenaltyRecordController extends Controller
 
             $data = $this->mPenaltyRecord->store($metaReqs);
             if ($req->file('photo')) {
-                $req->challanType = "Via Verification";
+                // $req->challanType = "Via Verification";
+                $req->merge(["challanType" => "Via Verification"]);
                 $metaReqs['documents'] = $mPenaltyDocument->storeDocument($req, $data->id, $data->application_no);
             }
 
@@ -887,7 +888,8 @@ class PenaltyRecordController extends Controller
             $challanNo = $idGeneration->generate();
 
             if ($req->file('photo')) {
-                $req->challanType = "On Spot";
+                // $req->challanType = "On Spot";
+                $req->merge(["challanType" => "On Spot"]);
                 $metaReqs['documents'] = $mPenaltyDocument->storeDocument($req, $finalRecord->id, $finalRecord->application_no);
             }
 
@@ -1432,9 +1434,7 @@ class PenaltyRecordController extends Controller
 
         $rigTransaction        = RigTran::where('tran_date', $todayDate);
         $rigNewRegistration    = RigActiveRegistration::where('application_apply_date', $todayDate);
-
         // $rigRenewal         = RigActiveRegistration::where('application_apply_date', $todayDate);
-
 
         if ($ulbId) {
             $penaltyTransaction =  $penaltyTransaction->where('ulb_id', $ulbId);
@@ -1491,6 +1491,54 @@ class PenaltyRecordController extends Controller
         $data['total_collection']   = $penaltyCollectionAmt + $wtCollectionAmt + $stCollectionAmt + $rigCollection;
 
         return responseMsgs(true, "Mini Dashboard Data", $data, "0625", "01", responseTime(), $req->getMethod(), $req->deviceId);
+    }
+
+
+    /**
+     * | Top Ulb Collection
+     */
+    public function topUlbCollection(Request $req)
+    {
+        $ulbId = $req->ulbId;
+        $todayDate = Carbon::now();
+        $penaltyTransaction = PenaltyTransaction::select('ulb_id', 'ulb_name', 'total_amount')
+            ->join('ulb_masters', 'ulb_masters.id', 'penalty_transactions.ulb_id');
+
+        $wtTransaction = WtBooking::where('payment_date', $todayDate);
+        $wtBooking     = WtBooking::where('booking_date', $todayDate);
+        $wtDelivery    = WtBooking::where('delivery_date', $todayDate)->where('delivery_track_status', 2);
+
+        $stTransaction = StBooking::where('payment_date', $todayDate);
+        $stBooking     = StBooking::where('booking_date', $todayDate);
+        $stDelivery    = StBooking::where('cleaning_date', $todayDate)->where('delivery_track_status', 2);
+
+
+        $rigTransaction        = RigTran::where('tran_date', $todayDate);
+        $rigNewRegistration    = RigActiveRegistration::where('application_apply_date', $todayDate);
+        // $rigRenewal         = RigActiveRegistration::where('application_apply_date', $todayDate);
+
+        $allCollection = $penaltyTransaction->get();
+        $allCollection = collect($allCollection)->groupBy('ulb_name');
+
+        // Map through each entity and calculate the sum of total_amount
+        $sums = $allCollection->map(function ($entries) {
+            return collect($entries)->sum('total_amount');
+        });
+
+        // Sort the sums in descending order and take the top 10
+        $sortedSums = $sums->sortDesc()->take(10);
+
+        $filtered = collect($sortedSums)->map(function ($value, $key) {
+            return [
+                'label' => $key,
+                'value' => $value,
+            ];
+        });
+
+        $data = json_decode($filtered, true);
+        $data = array_values($data);
+
+        return responseMsgs(true, "Top Ulb Collection", $data, "0626", "01", responseTime(), $req->getMethod(), $req->deviceId);
     }
 
     /**

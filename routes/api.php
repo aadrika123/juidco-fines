@@ -132,8 +132,9 @@ Route::middleware([])->group(function () {
         Route::post('fines/penalty-record/citizen-challan-search', 'citizenSearchChallan')->withoutMiddleware(['auth:sanctum','expireBearerToken']);   #_get search challans ------------- 0623
         Route::post('fines/penalty-record/get-tran-no', 'getTranNo')->withoutMiddleware(['auth:sanctum','expireBearerToken']);                         #_Get Tran No --------------------- 0624
         Route::post('fines/mini-dashboard', 'miniLiveDashboard');                                                                  #_Mini Live Dashboard --------------------- 0625
+        Route::post('fines/top-collection', 'topUlbCollection');                                                                  #_Top Ulb Collections --------------------- 0626
        
-        Route::post('testWhatsapp', 'testWhatsapp')->withoutMiddleware(['auth:sanctum','expireBearerToken']);                         #_Whatsaap Test --------------------- 0624
+        Route::post('testWhatsapp', 'testWhatsapp')->withoutMiddleware(['auth:sanctum','expireBearerToken']);                     #_Whatsaap Test --------------------- 0624
     });
 
     /**
