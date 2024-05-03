@@ -1432,7 +1432,7 @@ class PenaltyRecordController extends Controller
 
         $rigTransaction        = RigTran::where('tran_date', $todayDate);
         $rigNewRegistration    = RigActiveRegistration::where('application_apply_date', $todayDate);
-        
+
         // $rigRenewal         = RigActiveRegistration::where('application_apply_date', $todayDate);
 
 
@@ -1470,7 +1470,7 @@ class PenaltyRecordController extends Controller
         $rigCollection        =   $rigTransaction->sum('amount');
         $rigRegistration      =   $rigNewRegistration->where('application_type', 'New_Apply')->count();
         $rigRenewal            =   $rigNewRegistration->where('application_type', 'Renewal')->count();
-        
+
 
 
         $data['fines_collection']   = $penaltyCollectionAmt;

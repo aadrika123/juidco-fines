@@ -144,7 +144,7 @@ class RigRegistrationController extends Controller
             $mRigActiveRegistration     = new RigActiveRegistration();
             $mRigActiveApplicant        = new RigActiveApplicant();
             $mWfWorkflow                = new WfWorkflow();
-            $mWorkflowTrack             = new WorkflowTrack();
+            // $mWorkflowTrack             = new WorkflowTrack();
             $mRigRegistrationCharge     = new RigRegistrationCharge();
             $mMRigFee                   = new MRigFee();
             $mDocuments                 = $req->documents;
