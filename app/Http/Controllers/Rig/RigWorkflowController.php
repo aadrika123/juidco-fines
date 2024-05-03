@@ -138,7 +138,7 @@ class RigWorkflowController extends Controller
     public function inbox(Request $request)
     {
         try {
-           return $user   = authUser($request);
+            $user   = authUser($request);
             $userId = $user->id;
             $ulbId  = $user->ulb_id;
             $pages  = $request->perPage ?? 10;
@@ -147,7 +147,7 @@ class RigWorkflowController extends Controller
 
             // $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
-            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+          return  $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
             $rigList = $this->getrigApplicatioList($workflowIds, $ulbId)
                 ->whereIn('rig_active_registrations.current_role_id', $roleId)
