@@ -436,16 +436,16 @@ class RigRegistrationController extends Controller
             } catch (QueryException $q) {
                 return responseMsgs(false, "An error occurred during the query!", $q->getMessage(), "", "01", ".ms", "POST", $req->deviceId);
             }
-
+            $returnData = collect($refAppDetails);
             # Get transaction no for the respective application
-            $returnData = collect($refAppDetails)->map(function ($value)
-            use ($mRigTran) {
-                if ($value->payment_status != 0) {
-                    $tranNo = $mRigTran->getTranDetails($value->id, $value->application_type_id)->first();
-                    $value->transactionNo = $tranNo->tran_no;
-                }
-                return $value;
-            });
+            // $returnData = collect($refAppDetails)->map(function ($value)
+            // use ($mRigTran) {
+            //     if ($value->payment_status != 0) {
+            //         $tranNo = $mRigTran->getTranDetails($value->id, $value->application_type_id)->first();
+            //         $value->transactionNo = $tranNo->tran_no;
+            //     }
+            //     return $value;
+            // });
             return responseMsgs(true, "list of active registration!", remove_null($returnData), "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
