@@ -34,4 +34,18 @@ class RigTran extends Model
             ->where('status', 1)
             ->orderByDesc('id');
     }
+
+    /**
+     * | Get transaction details according to transaction no
+     */
+    public function getTranDetailsByTranNo($tranNo)
+    {
+        return RigTran::select(
+            'rig_trans.id AS refTransId',
+            'rig_trans.*',
+        )
+            ->where('rig_trans.tran_no', $tranNo)
+            ->where('rig_trans.status', 1)
+            ->orderByDesc('rig_trans.id');
+    }
 }

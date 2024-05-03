@@ -75,4 +75,16 @@ class RigApprovedRegistration extends Model
             ->join('rig_approve_applicants', 'rig_approve_applicants.application_id', 'rig_approved_registrations.application_id')
             ->join('rig_approve_active_details', 'rig_approve_active_details.application_id', 'rig_approved_registrations.application_id');
     }
+
+     /**
+     * | Get application details according to id
+     */
+    public function getApproveDetailById($id)
+    {
+        return RigApprovedRegistration::join('ulb_masters', 'ulb_masters.id', '=', 'rig_approved_registrations.ulb_id')
+            ->join('rig_approve_active_details', 'rig_approve_active_details.application_id', 'rig_approved_registrations.application_id')
+            ->join('rig_approve_applicants', 'rig_approve_applicants.application_id', 'rig_approved_registrations.application_id')
+            ->where('rig_approved_registrations.application_id', $id)
+            ->where('rig_approved_registrations.status', '<>', 0);
+    }
 }

@@ -72,6 +72,7 @@ Route::middleware([])->group(function () {
     // payment operations 
     Route::controller(RigPaymentController::class)->group(function () {
         Route::post('razorpay/initiate-payment', 'initiatePayment');                                        #_Initiate Online Payment ----------------- 0701   
-        Route::post('razorpay/save-response', 'saveRazorpayResponse')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);   #_Save Response of Online Payment --------- 0702                                                                     
+        Route::post('razorpay/save-response', 'saveRazorpayResponse')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);   #_Save Response of Online Payment --------- 0702   
+        Route::post("application/payment-receipt", "generatePaymentReceipt");                                   // Admin / Citizen                                                                  
     });
 });
