@@ -159,4 +159,16 @@ class RigActiveRegistration extends Model
         return RigActiveRegistration::where('registration_id', $regstrationId)
             ->where('status', 1);
     }
+
+     /**
+     * | Get application details by id
+     */
+    public function getApplicationById($id)
+    {
+        return RigActiveRegistration::join('ulb_masters', 'ulb_masters.id', 'rig_active_registrations.ulb_id')
+            ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
+            ->join('rig_vehicle_active_details', 'rig_vehicle_active_details.application_id', 'rig_active_registrations.id')
+            ->where('rig_active_registrations.id', $id)
+            ->where('rig_active_registrations.status', 1);
+    }
 }

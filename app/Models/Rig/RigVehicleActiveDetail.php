@@ -22,6 +22,7 @@ class RigVehicleActiveDetail extends Model
         $mRigActiveDetail->driver_name              = $req->driverName;
         $mRigActiveDetail->vehicle_name             = $req->vehicleComapny;
         $mRigActiveDetail->vehicle_from             = $req->vehicleFrom;
+        $mRigActiveDetail->vehicle_no               = $req->registrationNumber;
         $mRigActiveDetail->save();
     }
 

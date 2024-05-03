@@ -41,6 +41,7 @@ class RigRegistrationReq extends FormRequest
             'telephone'             => "nullable|int|regex:/[0-9]{10}/",
             'vehicleComapny'        => "required",
             'vehicleFrom'           => "required",
+            'registrationNumber'    => "required",
             'documents'            => 'nullable|array',
             'documents.*.image'    => 'nullable|mimes:png,jpeg,pdf,jpg',
             'documents.*.docCode'  => 'nullable|string',

@@ -25,6 +25,7 @@ use App\Models\Rig\RigApprovedRegistration;
 use App\Models\Rig\RigRazorPayRequest;
 use App\Models\Rig\RigRazorPayResponse;
 use App\Models\Rig\RigRegistrationCharge;
+use App\Models\Rig\RigRejectedRegistration;
 use App\Models\Rig\RigTran;
 use App\Models\Rig\RigVehicleActiveDetail;
 use App\Models\Rig\WfActiveDocument as RigWfActiveDocument;
@@ -138,7 +139,7 @@ class RigPaymentController extends Controller
                 "user_id"        => $user->id ?? 0,
                 "workflow_id"    => $chargeDetails->workflow_id ?? 0,
                 "amount"         => $chargeDetails->amount,
-                "ulb_id"         => $chargeDetails->ulb_id ?? $user->ulb_id,
+                "ulb_id"         => $rigDetails->ulb_id,
                 "ip_address"     => getClientIpAddress()
             ];
             $data = $mRazorpayReq->store($mReqs);
@@ -230,5 +231,106 @@ class RigPaymentController extends Controller
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         }
+    }
+
+
+
+
+    /**
+     * | Get data for payment Receipt
+        | Serial No :
+        | Under Con
+     */
+    public function generatePaymentReceipt(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'transactionNo' => 'required|',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            $now            = Carbon::now();
+            $toward         = "Rig Registration Fee";
+            $mRigTran       = new RigTran();
+
+            # Get transaction details according to trans no
+            $transactionDetails = $mRigTran->getTranDetailsByTranNo($request->transactionNo)->first();
+            if (!$transactionDetails) {
+                throw new Exception("transaction details not found! for $request->transactionNo");
+            }
+            # check the transaction related details in related table
+            $applicationDetails = $this->getApplicationRelatedDetails($transactionDetails);
+
+            $returnData = [
+                "transactionNo" => $transactionDetails->tran_no,
+                "todayDate"     => $now->format('d-m-Y'),
+                "applicationNo" => $applicationDetails->application_no,
+                "applicantName" => $applicationDetails->applicant_name,
+                "paidAmount"    => $transactionDetails->amount,
+                "toward"        => $toward,
+                "paymentMode"   => $transactionDetails->payment_mode,
+                "ulb"           => $applicationDetails->ulb_name,
+                "paymentDate"   => Carbon::parse($transactionDetails->tran_date)->format('d-m-Y'),
+                "address"       => $applicationDetails->address,
+                "tokenNo"       => $transactionDetails->token_no,
+                "typeOfAnimal"  => $applicationDetails->animal,
+                "typeOfBreed"   => $applicationDetails->breed,
+                'type'          => $applicationDetails->type
+
+            ];
+            return responseMsgs(true, 'payment Receipt!', $returnData, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+    /**
+     * | Serch application from every registration table
+        | Serial No 
+        | Working
+     */
+    public function getApplicationRelatedDetails($transactionDetails)
+    {
+        $mRigActiveRegistration     = new RigActiveRegistration();
+        $mRigApprovedRegistration   = new RigApprovedRegistration();
+        $mRigRejectedRegistration   = new RigRejectedRegistration();
+
+        # first level chain
+        $refApplicationDetails = $mRigActiveRegistration->getApplicationById($transactionDetails->related_id)
+            ->select(
+                'ulb_masters.ulb_name',
+                'rig_active_registrations.application_no',
+                'rig_active_applicants.applicant_name',
+                'rig_active_registrations.address',
+            )->first();
+        if (!$refApplicationDetails) {
+            # Second level chain
+            $refApplicationDetails = $mRigApprovedRegistration->getApproveDetailById($transactionDetails->related_id)
+                ->select(
+                    'ulb_masters.ulb_name',
+                    'rig_approved_registrations.application_no',
+                    'rig_approve_applicants.applicant_name',
+                    'rig_approved_registrations.address',
+                )->first();
+        }
+
+        if (!$refApplicationDetails) {
+            # Fourth level chain
+            $refApplicationDetails = $mRigRejectedRegistration->getRejectedApplicationById($transactionDetails->related_id)
+                ->select(
+                    'ulb_masters.ulb_name',
+                    'rig_rejected_registrations.application_no',
+                    'rig_rejected_applicants.applicant_name',
+                    'rig_rejected_registrations.address',
+                )->first();
+        }
+        # Check the existence of final data
+        if (!$refApplicationDetails) {
+            throw new Exception("application details not found!");
+        }
+        return $refApplicationDetails;
     }
 }

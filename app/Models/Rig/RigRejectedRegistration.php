@@ -29,4 +29,15 @@ class RigRejectedRegistration extends Model
             ->join('rig_rejected_applicants', 'rig_rejected_applicants.application_id', 'rig_rejected_registrations.application_id')
             ->join('rig_vehicle_rejected_details', 'rig_vehicle_rejected_details.application_id', 'rig_rejected_registrations.application_id');
     }
+
+    /**
+     * | Get pet rejected application details by id
+     */
+    public function getRejectedApplicationById($id)
+    {
+        return RigRejectedRegistration::join('ulb_masters', 'ulb_masters.id', '=', 'rig_rejected_registrations.ulb_id') 
+            ->join('rig_rejected_applicants', 'rig_rejected_applicants.application_id', 'rig_rejected_registrations.application_id')
+            ->where('rig_rejected_registrations.application_id', $id)
+            ->where('rig_rejected_registrations.status', '<>', 0);
+    }
 }
