@@ -37,4 +37,13 @@ class RigRegistrationCharge extends Model
             ->where('status', 1)
             ->orderByDesc('id');
     }
+
+    /**
+     * | Save payment status for payment
+     */
+    public function saveStatus($id, $refRequest)
+    {
+        RigRegistrationCharge::where('id', $id)
+            ->update($refRequest);
+    }
 }

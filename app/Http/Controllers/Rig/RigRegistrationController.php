@@ -34,7 +34,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
 use App\Models\WfWorkflow;
 use App\Models\WfWorkflowrolemap;
-use  App\Models\Rig\WfActiveDocument;
+use App\Models\Rig\WfActiveDocument;
 use App\Models\Rig\CustomDetail;
 use Illuminate\Support\Collection;
 
@@ -147,7 +147,7 @@ class RigRegistrationController extends Controller
             $mRigActiveRegistration     = new RigActiveRegistration();
             $mRigActiveApplicant        = new RigActiveApplicant();
             $mWfWorkflow                = new WfWorkflow();
-            // $mWorkflowTrack             = new WorkflowTrack();
+            $mWorkflowTrack             = new WorkflowTrack();
             $mRigRegistrationCharge     = new RigRegistrationCharge();
             $mMRigFee                   = new MRigFee();
             $mDocuments                 = $req->documents;
@@ -181,7 +181,7 @@ class RigRegistrationController extends Controller
             if ($user->user_type == $this->_userType['1']) {
                 $citzenId = $user->id;
             } else {
-                $userId = $user->id;
+                $citzenId = $user->id;
             }
 
             # Get the Initiator and Finisher details 
@@ -243,21 +243,21 @@ class RigRegistrationController extends Controller
 
 
             # Save the data in workflow track
-            //  $metaReqs = new Request(
-            //     [
-            //         'citizenId'         => $citzenId ?? null,
-            //         'moduleId'          => $this->_rigModuleId,
-            //         'workflowId'        => $ulbWorkflowId->id,
-            //         'refTableDotId'     => $this->_tableName['2'] . '.id',                             // Static                              // Static
-            //         'refTableIdValue'   => $applicationDetails['id'],
-            //         'user_id'           => $userId ?? null,
-            //         'ulb_id'            => $ulbId,
-            //         'senderRoleId'      => null,
-            //         'receiverRoleId'    => $initiatorRoleId,
-            //         'auth'              => $req->auth
-            //     ]
-            // );
-            // $mWorkflowTrack->saveTrack($metaReqs);
+            $metaReqs = new Request(
+                [
+                    'citizenId'         => $citzenId ?? null,
+                    'moduleId'          => $this->_rigModuleId,
+                    'workflowId'        => $ulbWorkflowId->id,
+                    'refTableDotId'     => $this->_tableName['2'] . '.id',                             // Static                              // Static
+                    'refTableIdValue'   => $applicationDetails['id'],
+                    'user_id'           => $userId ?? null,
+                    'ulb_id'            => $ulbId,
+                    'senderRoleId'      => null,
+                    'receiverRoleId'    => $initiatorRoleId,
+                    'auth'              => $req->auth
+                ]
+            );
+            $mWorkflowTrack->saveTrack($metaReqs);
 
             DB::commit();
             # Data structure for return
@@ -439,16 +439,20 @@ class RigRegistrationController extends Controller
             } catch (QueryException $q) {
                 return responseMsgs(false, "An error occurred during the query!", $q->getMessage(), "", "01", ".ms", "POST", $req->deviceId);
             }
-            $returnData = collect($refAppDetails);
+            // $returnData = collect($refAppDetails);
             # Get transaction no for the respective application
-            // $returnData = collect($refAppDetails)->map(function ($value)
-            // use ($mRigTran) {
-            //     if ($value->payment_status != 0) {
-            //         $tranNo = $mRigTran->getTranDetails($value->id, $value->application_type_id)->first();
-            //         $value->transactionNo = $tranNo->tran_no;
-            //     }
-            //     return $value;
-            // });
+            $returnData = collect($refAppDetails)->map(function ($value) use ($mRigTran) {
+                if ($value->payment_status != 0) {
+                    $tranNo = $mRigTran->getTranDetails($value->id,)->first();
+                    // Check if $tranNo is not null before accessing its properties
+                    if ($tranNo) {
+                        $value->transactionNo = $tranNo->tran_no;
+                    } else {
+                        $value->transactionNo = null; // Or handle it as per your requirement
+                    }
+                }
+                return $value;
+            });
             return responseMsgs(true, "list of active registration!", remove_null($returnData), "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
@@ -776,7 +780,7 @@ class RigRegistrationController extends Controller
             $mRigActiveRegistration = new RigActiveRegistration();
             $mRigActiveApplicant    = new RigActiveApplicant();
             $mWorkflowMap           = new WfWorkflowrolemap();
-            // $mWorkflowTracks        = new WorkflowTrack();
+            $mWorkflowTracks        = new WorkflowTrack();
             // $mCustomDetails         = new CustomDetail();
             $applicationId          = $request->applicationId;
             $aplictionList          = array();
@@ -831,11 +835,11 @@ class RigRegistrationController extends Controller
             # Level comment
             $mtableId = $applicationDetails->ref_application_id;
             $mRefTable = "rig_active_registrations.id";                         // Static
-            // $levelComment['levelComment'] = $mWorkflowTracks->getTracksByRefId($mRefTable, $mtableId);
+            $levelComment['levelComment'] = $mWorkflowTracks->getTracksByRefId($mRefTable, $mtableId);
 
             #citizen comment
             $refCitizenId = $applicationDetails->citizen_id;
-            // $citizenComment['citizenComment'] = $mWorkflowTracks->getCitizenTracks($mRefTable, $mtableId, $refCitizenId);
+            $citizenComment['citizenComment'] = $mWorkflowTracks->getCitizenTracks($mRefTable, $mtableId, $refCitizenId);
 
             # Role Details
             $metaReqs = [
@@ -856,7 +860,7 @@ class RigRegistrationController extends Controller
 
             # Payments Details
             // return array_merge($aplictionList, $fullDetailsData,$levelComment,$citizenComment,$roleDetails,$timelineData,$departmentPost);
-            $returnValues = array_merge($aplictionList, $fullDetailsData,  $roleDetails, $timelineData,);
+            $returnValues = array_merge($aplictionList, $fullDetailsData, $levelComment, $citizenComment, $roleDetails, $timelineData,);
             return responseMsgs(true, "listed Data!", $returnValues, "", "02", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "02", ".ms", "POST", $request->deviceId);
@@ -988,5 +992,65 @@ class RigRegistrationController extends Controller
                 $value['pan_no']
             ];
         });
+    }
+
+    /**
+     * | Get the rejected application details 
+        | Serial No :
+        | Working
+     */
+    public function getRejectedApplicationDetails(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'registrationId' => 'required'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $viewRenewButton            = false;
+            $applicationId              = $req->registrationId;
+            $mRigRejectedRegistration   = new RigRejectedRegistration();
+            $mRigRegistrationCharge     = new RigRegistrationCharge();
+            $mRigTran                   = new RigTran();
+
+            $rejectedApplicationDetails = $mRigRejectedRegistration->getRigRejectedApplicationById($applicationId)
+                ->where('rig_rejected_registrations.status', '<>', 0)                                                       // Static
+                ->first();
+            if (is_null($rejectedApplicationDetails)) {
+                throw new Exception("application Not found!");
+            }
+            $chargeDetails = $mRigRegistrationCharge->getChargesbyId($rejectedApplicationDetails->application_id)
+                ->select(
+                    'id AS chargeId',
+                    'amount',
+                    'registration_fee',
+                    'paid_status',
+                    'charge_category',
+                    'charge_category_name'
+                )
+                ->where('paid_status', 1)                                                                                   // Static
+                ->first();
+            if (is_null($chargeDetails)) {
+                throw new Exception("Charges for respective application not found!");
+            }
+            # Get Transaction details 
+            $tranDetails = $mRigTran->getTranByApplicationId($rejectedApplicationDetails->application_id)->first();
+            if (!$tranDetails) {
+                throw new Exception("Transaction details not found there is some error in data !");
+            }
+
+            # return Details 
+            $rejectedApplicationDetails['transactionDetails']    = $tranDetails;
+            $chargeDetails['roundAmount']                       = round($chargeDetails['amount']);
+            $rejectedApplicationDetails['charges']               = $chargeDetails;
+            $rejectedApplicationDetails['viewRenewalButton']     = $viewRenewButton;
+            return responseMsgs(true, "Listed application details!", remove_null($rejectedApplicationDetails), "", "01", ".ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
+        }
     }
 }

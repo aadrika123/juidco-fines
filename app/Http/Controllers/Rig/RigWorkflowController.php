@@ -1053,4 +1053,55 @@ class RigWorkflowController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
+
+    
+    // public function backToCitizen(Request $req)
+    // {
+
+    //     $validated = Validator::make(
+    //         $req->all(),
+    //         [
+    //             'applicationId' => "required",
+    //         ]
+    //     );
+    //     if ($validated->fails())
+    //         return validationError($validated);
+    //     try {
+    //         // Variable initialization
+    //         $redis = Redis::connection();
+    //         $mAgencyHoarding = RigActiveRegistration::find($req->applicationId);
+    //         if ($mAgencyHoarding->doc_verify_status == 1)
+    //             throw new Exception("All Documents Are varified, So Application is Not BTC !!!");
+    //         if ($mAgencyHoarding->doc_upload_status == 1)
+    //             throw new Exception("No Any Document Rejected, So Application is Not BTC !!!");
+    //         $workflowId = $mAgencyHoarding->workflow_id;
+    //         $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
+    //         if (!$backId) {
+    //             $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
+    //                 ->where('is_initiator', true)
+    //                 ->first();
+    //             $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
+    //         }
+
+    //         $mAgencyHoarding->current_role_id = $backId->wf_role_id;
+    //         $mAgencyHoarding->parked = 1;
+    //         $mAgencyHoarding->save();
+
+    //         $metaReqs['moduleId'] = $this->_moduleId;
+    //         $metaReqs['workflowId'] = $mAgencyHoarding->workflow_id;
+    //         $metaReqs['refTableDotId'] = "agency_hoardings.id";
+    //         $metaReqs['refTableIdValue'] = $req->applicationId;
+    //         $metaReqs['verificationStatus'] = $req->verificationStatus;
+    //         $metaReqs['senderRoleId'] = $req->currentRoleId;
+    //         $req->request->add($metaReqs);
+
+    //         $req->request->add($metaReqs);
+    //         $track = new WorkflowTrack();
+    //         $track->saveTrack($req);
+
+    //         return responseMsgs(true, "Successfully Done", "", "", '050131', '01', responseTime(), 'POST', '');
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), "", "050131", "1.0", "", "POST", $req->deviceId ?? "");
+    //     }
+    // }
 }

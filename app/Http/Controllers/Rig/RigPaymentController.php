@@ -167,6 +167,7 @@ class RigPaymentController extends Controller
             $rigDetails          = RigActiveRegistration::find($req->applicationId);
             $chargeDetails       = RigRegistrationCharge::where('application_id', $req->applicationId)->where('status', 1)->first();
             $section             = 0;
+            $payStatus          = 1;
 
             $receiptIdParam    = Config::get('rig.ID_GENERATION_PARAMS.RECEIPT');
 
@@ -220,8 +221,10 @@ class RigPaymentController extends Controller
 
                 $tranDtl = $mRigTransaction->store($reqs);
                 $rigDetails->payment_status = 1;
-                $chargeDetails->payment_status = 1;
                 $rigDetails->save();
+
+                $chargeDetails->paid_status = 1;
+                $chargeDetails->save();
                 DB::commit();
                 $data->tran_no = $tranDtl->tran_no;
             } else
