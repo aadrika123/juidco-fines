@@ -1560,48 +1560,102 @@ class PenaltyRecordController extends Controller
     public function topUlbCollection(Request $req)
     {
         $todayDate = Carbon::now();
-        $penaltyTransaction = PenaltyTransaction::select(
-            'ulb_id',
-            'total_amount',
-            DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
-        )
-            // whereDate('created_at', $todayDate)
-            ->where('status', 1)
-            ->join('ulb_masters', 'ulb_masters.id', 'penalty_transactions.ulb_id');
+        // $penaltyTransaction = PenaltyTransaction::select(
+        //     'ulb_id',
+        //     'total_amount',
+        //     DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+        // )
+        //     // ->whereDate('created_at', $todayDate)
+        //     ->where('status', 1)
+        //     ->join('ulb_masters', 'ulb_masters.id', 'penalty_transactions.ulb_id');
 
-        $wtTransaction = WtBooking::select(
-            'ulb_id',
-            'payment_amount as total_amount',
-            DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
-        )
-            // ->where('payment_date', $todayDate)
-            ->where('status', 1)
-            ->join('ulb_masters', 'ulb_masters.id', 'wt_bookings.ulb_id');
+        $penaltyTransaction = DB::table('ulb_masters')
+            ->leftJoin('penalty_transactions', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'penalty_transactions.ulb_id')
+                    // ->where('penalty_transactions.tran_date', $todayDate)
+                    ->where('penalty_transactions.status', 1);
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+                DB::raw('COALESCE(SUM(penalty_transactions.total_amount), 0) as total_amount')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('total_amount');
 
+        // $wtTransaction = WtBooking::select(
+        //     'ulb_id',
+        //     'payment_amount as total_amount',
+        //     DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+        // )
+        //     // ->where('payment_date', $todayDate)
+        //     ->where('status', 1)
+        //     ->join('ulb_masters', 'ulb_masters.id', 'wt_bookings.ulb_id');
+        $wtTransaction = DB::connection('pgsql_tanker')->table('ulb_masters')
+            ->leftJoin('wt_bookings', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'wt_bookings.ulb_id')
+                    // ->where('wt_bookings.payment_date', $todayDate)
+                    ->where('wt_bookings.status', 1);
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+                DB::raw('COALESCE(SUM(wt_bookings.payment_amount), 0) as total_amount')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('total_amount');
 
-        $stTransaction = StBooking::select(
-            'ulb_id',
-            'payment_amount as total_amount',
-            DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
-        )
-            // ->where('payment_date', $todayDate)
-            ->where('status', 1)
-            ->join('ulb_masters', 'ulb_masters.id', 'st_bookings.ulb_id');
+        // $stTransaction = StBooking::select(
+        //     'ulb_id',
+        //     'payment_amount as total_amount',
+        //     DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+        // )
+        //     // ->where('payment_date', $todayDate)
+        //     ->where('status', 1)
+        //     ->join('ulb_masters', 'ulb_masters.id', 'st_bookings.ulb_id');
 
-        $rigTransaction = RigTran::select(
-            'ulb_id',
-            'amount as total_amount',
-            DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
-        )
-            //    ->where('tran_date', $todayDate)
-            ->where('status', 1)
-            ->join('ulb_masters', 'ulb_masters.id', 'rig_trans.ulb_id');
+        $stTransaction = DB::connection('pgsql_tanker')->table('ulb_masters')
+            ->leftJoin('st_bookings', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'st_bookings.ulb_id')
+                    // ->where('st_bookings.payment_date', $todayDate)
+                    ->where('st_bookings.status', 1);
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+                DB::raw('COALESCE(SUM(st_bookings.payment_amount), 0) as total_amount')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('total_amount');        
+
+        // $rigTransaction = RigTran::select(
+        //     'ulb_id',
+        //     'amount as total_amount',
+        //     DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+        // )
+        //     // ->where('tran_date', $todayDate)
+        //     ->where('status', 1)
+        //     ->join('ulb_masters', 'ulb_masters.id', 'rig_trans.ulb_id');
+
+        $rigTransaction = DB::table('ulb_masters')
+            ->leftJoin('rig_trans', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'rig_trans.ulb_id')
+                    // ->where('rig_trans.tran_date', $todayDate)
+                    ->where('rig_trans.status', 1);
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+                DB::raw('COALESCE(SUM(rig_trans.amount), 0) as total_amount')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('total_amount');
 
         $waterSepticCollection = $wtTransaction->union($stTransaction)->get();
         $finesRigCollection = $penaltyTransaction->union($rigTransaction)->get();
         $combinedCollection = $waterSepticCollection->concat($finesRigCollection);
 
-        // return  $combinedCollection ;
+        // return  $combinedCollection;
 
         $allCollection = collect($combinedCollection)->groupBy('ulb_name');
         // Map through each entity and calculate the sum of total_amount
