@@ -148,7 +148,7 @@ class RigRegistrationController extends Controller
             $mRigActiveRegistration     = new RigActiveRegistration();
             $mRigActiveApplicant        = new RigActiveApplicant();
             $mWfWorkflow                = new WfWorkflow();
-            $mWorkflowTrack             = new WorkflowTrack();
+            // $mWorkflowTrack             = new WorkflowTrack();
             $mRigRegistrationCharge     = new RigRegistrationCharge();
             $mMRigFee                   = new MRigFee();
             $mDocuments                 = $req->documents;
@@ -244,21 +244,23 @@ class RigRegistrationController extends Controller
 
 
             # Save the data in workflow track
-            $metaReqs = new Request(
-                [
-                    'citizenId'         => $citzenId ?? null,
-                    'moduleId'          => $this->_rigModuleId,
-                    'workflowId'        => $ulbWorkflowId->id,
-                    'refTableDotId'     => $this->_tableName['2'] . '.id',                             // Static                              // Static
-                    'refTableIdValue'   => $applicationDetails['id'],
-                    'user_id'           => $userId ?? null,
-                    'ulb_id'            => $ulbId,
-                    'senderRoleId'      => null,
-                    'receiverRoleId'    => $initiatorRoleId,
-                    'auth'              => $req->auth
-                ]
-            );
-            $mWorkflowTrack->saveTrack($metaReqs);
+
+            // $metaReqs = new Request(
+            //     [
+                
+            //         'citizenId'         => $citzenId ?? null,
+            //         'moduleId'          => $this->_rigModuleId,
+            //         'workflowId'        => $ulbWorkflowId->id,
+            //         'refTableDotId'     => $this->_tableName['2'] . '.id',                             // Static                              // Static
+            //         'refTableIdValue'   => $applicationDetails['id'],
+            //         'user_id'           => $userId ?? null,
+            //         'ulb_id'            => $ulbId,
+            //         'senderRoleId'      => null,
+            //         'receiverRoleId'    => $initiatorRoleId,
+            //         'auth'              => $req->auth
+            //     ]
+            // );
+            // $mWorkflowTrack->saveTrack($metaReqs);
 
             DB::commit();
             # Data structure for return
