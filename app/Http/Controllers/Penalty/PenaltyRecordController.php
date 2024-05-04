@@ -766,7 +766,8 @@ class PenaltyRecordController extends Controller
                 throw new Exception("Payment Already Done");
             if (!$challanDetails)
                 throw new Exception("Challan Not Found");
-
+            
+            $ulbDtls = UlbMaster::find($penaltyDetails->ulb_id);
             $violationDtl  = $mViolation->violationById($penaltyDetails->violation_id);
             $sectionId     = $violationDtl->section_id;
             $section       = $mSection->sectionById($sectionId)->violation_section;
@@ -793,6 +794,26 @@ class PenaltyRecordController extends Controller
             $challanDetails->payment_date = $todayDate;
             $challanDetails->save();
             DB::commit();
+
+            #_Whatsaap Message
+            if (strlen($penaltyDetails->mobile) == 10) {
+
+                $whatsapp2 = (Whatsapp_Send(
+                    $penaltyDetails->mobile,
+                    "juidco_fines_payment",
+                    [
+                        "content_type" => "text",
+                        [
+                            $penaltyDetails->full_name ?? "Violator",
+                            $tranDtl->total_amount,
+                            $challanDetails->challan_no,
+                            $tranDtl->tran_no,
+                            $ulbDtls->toll_free_no ?? 0000000000
+                        ]
+                    ]
+                ));
+            }
+
             return responseMsgs(true, "", $tranDtl,  $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
@@ -1189,7 +1210,7 @@ class PenaltyRecordController extends Controller
 
     /**
      * | Generate Request for table penalty_applied_records
-        static workflow_id,ulb_id,current_role, category_type
+        static category_type
      */
     public function generateRequest($req, $applicationNo)
     {
@@ -1500,9 +1521,9 @@ class PenaltyRecordController extends Controller
         $rigRegistration      =   $rigNewRegistration->where('application_type', 'New_Apply')->count();
         $rigRenewal           =   $rigRenewal->where('application_type', 'Renewal')->count();
 
-         # Rig collection amount
-         $rigNewRegsitrationAmt  = $rigRegistration * 25000;
-         $rigRenewRegistration   = $rigRenewal * 20000;
+        # Rig collection amount
+        $rigNewRegsitrationAmt  = $rigRegistration * 25000;
+        $rigRenewRegistration   = $rigRenewal * 20000;
 
         $data['fines_collection']   = $penaltyCollectionAmt;
         $data['challan_count']      = $penaltyChallanCount;
@@ -1512,8 +1533,8 @@ class PenaltyRecordController extends Controller
         $data['wt_today_delivery']  = $wtTodayDelivery;
         $data['st_today_delivery']  = $stTodayDelivery;
 
-        $data['wt_cancelled_delivery']  = $wtCancelledBooking+$wtCancelledTrip;
-        $data['st_cancelled_delivery']  = $stCancelledBooking+$stCancelledTrip;
+        $data['wt_cancelled_delivery']  = $wtCancelledBooking + $wtCancelledTrip;
+        $data['st_cancelled_delivery']  = $stCancelledBooking + $stCancelledTrip;
 
         $data['wt_collection']      = $wtCollectionAmt;
         $data['wt_booking']         = $wtBooking;
@@ -1522,7 +1543,7 @@ class PenaltyRecordController extends Controller
         $data['st_booking']         = $stBooking;
         $data['st_trip_count']      = $stDelivered;
 
-        $data['rig_collection']     = $rigCollection;
+        $data['rig_collection']     = round($rigCollection);
         $data['rig_new_reg_count']  = $rigRegistration;
         $data['rig_renewal_count']  = $rigRenewal;
         $data['rig_new_reg_amt']    = $rigNewRegsitrationAmt;

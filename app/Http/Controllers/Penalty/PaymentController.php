@@ -9,6 +9,7 @@ use App\Models\PenaltyChallan;
 use App\Models\PenaltyFinalRecord;
 use App\Models\PenaltyTransaction;
 use App\Models\Master\Section;
+use App\Models\Master\UlbMaster;
 use App\Models\Master\Violation;
 use App\Models\Payment\RazorpayReq;
 use App\Models\Payment\RazorpayResponse;
@@ -114,6 +115,7 @@ class PaymentController extends Controller
             if ($req->authRequired == true)
                 $user      = authUser($req);
 
+            $ulbDtls = UlbMaster::find($penaltyDetails->ulb_id);
             $violationDtl  = $mViolation->violationById($penaltyDetails->violation_id);
             $sectionId     = $violationDtl->section_id;
             $section       = $mSection->sectionById($sectionId)->violation_section;
@@ -171,6 +173,26 @@ class PaymentController extends Controller
                 $challanDetails->save();
                 DB::commit();
                 $data->tran_no = $tranDtl->tran_no;
+
+                #_Whatsaap Message
+                if (strlen($penaltyDetails->mobile) == 10) {
+
+                    $whatsapp2 = (Whatsapp_Send(
+                        $penaltyDetails->mobile,
+                        "juidco_fines_payment",
+                        [
+                            "content_type" => "text",
+                            [
+                                $penaltyDetails->full_name ?? "Violator",
+                                $tranDtl->total_amount,
+                                $challanDetails->challan_no,
+                                $tranDtl->tran_no,
+                                $ulbDtls->toll_free_no ?? 0000000000
+                            ]
+                        ]
+                    ));
+                }
+                
             } else
                 throw new Exception("Payment Cancelled");
             return responseMsgs(true, "Data Saved", $data, $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
