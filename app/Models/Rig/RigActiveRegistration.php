@@ -115,10 +115,6 @@ class RigActiveRegistration extends Model
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
             DB::raw("CASE 
-            WHEN rig_active_registrations.apply_through = '1' THEN 'Holding'
-            WHEN rig_active_registrations.apply_through = '2' THEN 'Saf'
-            END AS apply_through_name"),
-            DB::raw("CASE 
             WHEN rig_vehicle_active_details.sex = '1' THEN 'Male'
             WHEN rig_vehicle_active_details.sex = '2' THEN 'Female'
             END AS ref_gender"),
@@ -160,7 +156,7 @@ class RigActiveRegistration extends Model
             ->where('status', 1);
     }
 
-     /**
+    /**
      * | Get application details by id
      */
     public function getApplicationById($id)
@@ -170,5 +166,28 @@ class RigActiveRegistration extends Model
             ->join('rig_vehicle_active_details', 'rig_vehicle_active_details.application_id', 'rig_active_registrations.id')
             ->where('rig_active_registrations.id', $id)
             ->where('rig_active_registrations.status', 1);
+    }
+
+    /**
+     * | Get Application details according to the related details in request 
+     */
+    public function getActiveApplicationDetails($req, $key, $refNo)
+    {
+        return RigActiveRegistration::select(
+            'rig_active_registrations.id',
+            'rig_active_registrations.application_no',
+            'rig_active_registrations.application_type',
+            'rig_active_registrations.payment_status',
+            'rig_active_registrations.application_apply_date',
+            'rig_active_registrations.doc_upload_status',
+            'rig_active_registrations.renewal',
+            'rig_active_applicants.mobile_no',
+            'rig_active_applicants.applicant_name',
+        )
+            ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
+            ->where('rig_active_registrations.' . $key, 'LIKE', '%' . $refNo . '%')
+            ->where('rig_active_registrations.status', '<>',0)
+            ->where('rig_active_registrations.ulb_id', authUser($req)->ulb_id)
+            ->orderByDesc('rig_active_registrations.id');
     }
 }

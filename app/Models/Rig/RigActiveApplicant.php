@@ -49,4 +49,27 @@ class RigActiveApplicant extends Model
             ->where('status', 1)
             ->update($refReq);
     }
+
+    /**
+     * | Get active application details according to related details 
+     */
+    public function getRelatedApplicationDetails($req, $key, $refNo)
+    {
+        return RigActiveApplicant::select(
+            'rig_active_registrations.id',
+            'rig_active_registrations.application_no',
+            'rig_active_registrations.application_type',
+            'rig_active_registrations.payment_status',
+            'rig_active_registrations.application_apply_date',
+            'rig_active_registrations.doc_upload_status',
+            'rig_active_registrations.renewal',
+            'rig_active_applicants.mobile_no',
+            'rig_active_applicants.applicant_name',
+        )
+            ->join('rig_active_registrations', 'rig_active_registrations.id', 'rig_active_applicants.application_id')
+            ->where('rig_active_applicants.' . $key, 'LIKE', '%' . $refNo . '%')
+            ->where('rig_active_registrations.status', 1)
+            ->where('rig_active_registrations.ulb_id', authUser($req)->ulb_id)
+            ->orderByDesc('rig_active_registrations.id');
+    }
 }
