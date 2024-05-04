@@ -279,9 +279,10 @@ class RigPaymentController extends Controller
                 "paymentDate"   => Carbon::parse($transactionDetails->tran_date)->format('d-m-Y'),
                 "address"       => $applicationDetails->address,
                 "tokenNo"       => $transactionDetails->token_no,
-                "typeOfAnimal"  => $applicationDetails->animal,
-                "typeOfBreed"   => $applicationDetails->breed,
-                'type'          => $applicationDetails->type
+                'type'          => $applicationDetails->type,
+                "vehicleNo"     => $applicationDetails->vehicle_no,
+                "vehicleFrom"     => $applicationDetails->vehicle_from,
+                "vehicleName"     => $applicationDetails->vehicle_name,
 
             ];
             return responseMsgs(true, 'payment Receipt!', $returnData, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
@@ -308,6 +309,9 @@ class RigPaymentController extends Controller
                 'rig_active_registrations.application_no',
                 'rig_active_applicants.applicant_name',
                 'rig_active_registrations.address',
+                'rig_vehicle_active_details.vehicle_name',
+                'rig_vehicle_active_details.vehicle_from',
+                'rig_vehicle_active_details.vehicle_no',
             )->first();
         if (!$refApplicationDetails) {
             # Second level chain
@@ -317,6 +321,9 @@ class RigPaymentController extends Controller
                     'rig_approved_registrations.application_no',
                     'rig_approve_applicants.applicant_name',
                     'rig_approved_registrations.address',
+                    'rig_approve_active_details.vehicle_name',
+                    'rig_approve_active_details.vehicle_from',
+                    'rig_approve_active_details.vehicle_no',
                 )->first();
         }
 
