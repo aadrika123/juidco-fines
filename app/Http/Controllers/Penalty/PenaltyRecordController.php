@@ -1609,9 +1609,9 @@ class PenaltyRecordController extends Controller
     }
 
     /**
-     * | Weekly Collection Data
+     * | Today Collection Data
      */
-    public function weeklyCollection(Request $req)
+    public function todayUlbCollection(Request $req)
     {
         $todayDate = Carbon::now();
 
@@ -1633,7 +1633,7 @@ class PenaltyRecordController extends Controller
 
         $data['fines'] = $finestopULBCollection;
 
-        return responseMsgs(true, "Weekly Top ULB Collection", $data, "0627", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        return responseMsgs(true, "Today Top ULB Collection", $data, "0627", "01", responseTime(), $req->getMethod(), $req->deviceId);
     }
 
     /**
