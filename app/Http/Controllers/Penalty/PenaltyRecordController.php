@@ -1601,7 +1601,7 @@ class PenaltyRecordController extends Controller
         $finesRigCollection = $penaltyTransaction->union($rigTransaction)->get();
         $combinedCollection = $waterSepticCollection->concat($finesRigCollection);
 
-        return  $combinedCollection ;
+        // return  $combinedCollection ;
 
         $allCollection = collect($combinedCollection)->groupBy('ulb_name');
         // Map through each entity and calculate the sum of total_amount
