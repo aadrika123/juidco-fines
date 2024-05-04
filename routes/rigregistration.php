@@ -52,6 +52,7 @@ Route::middleware([])->group(function () {
         Route::post('application/get-wf-detials', 'getApplicationsDetails');                                    // Workflow
 
         Route::post('get-renewal-history', 'getRenewalHistory');
+        Route::post('get-rejected-registration-list', 'getRejectedApplicationDetails');                         // Admin
     });
 
     /**
@@ -67,6 +68,7 @@ Route::middleware([])->group(function () {
         Route::post('final-verify-reject', 'finalApprovalRejection');                                           // Workflow
         Route::post('list-approved-application', 'listfinisherApproveApplications');                            // Workflow
         Route::post('list-rejected-application', 'listfinisherRejectApplications');                             // Workflow
+        Route::post('back-to-citizen', 'backToCitizen');                                          // Workflow
     });
 
     // payment operations 

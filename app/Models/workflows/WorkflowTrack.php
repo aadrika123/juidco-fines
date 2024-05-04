@@ -17,9 +17,9 @@ class WorkflowTrack extends Model
 
     public function saveTrack($request)
     {
-        $userId     = $request->auth['id'];
+        //$userId     = $request->auth['id'];
         //$ulbId      = $request->ulb_id ?? $request->auth['ulb_id'];
-        $ulbId      = $request->ulb_id ?? authUser($request)->ulb_id;
+        //$ulbId      = $request->ulb_id ?? authUser($request)->ulb_id;
         $mTrackDate = Carbon::now();
         $track      = new WorkflowTrack;
 
@@ -35,8 +35,8 @@ class WorkflowTrack extends Model
         $track->sender_role_id      = $request->senderRoleId ?? null;
         $track->receiver_role_id    = $request->receiverRoleId ?? null;
         $track->verification_status = $request->verificationStatus;
-        $track->user_id             = $userId;
-        $track->ulb_id              = $ulbId;
+        $track->user_id             = $request['user_id'];
+        $track->ulb_id              = $request['ulb_id'];
         $track->save();
     }
 
@@ -64,7 +64,7 @@ class WorkflowTrack extends Model
      */
     public function getTracksByRefId($mRefTable, $tableId)
     {
-      return WorkflowTrack::select(
+        return WorkflowTrack::select(
             'workflow_tracks.ref_table_dot_id AS referenceTable',
             'workflow_tracks.ref_table_id_value AS applicationId',
             'workflow_tracks.message',
