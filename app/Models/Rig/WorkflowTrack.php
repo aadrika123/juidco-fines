@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\Workflows;
+namespace App\Models\Rig;
 
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;

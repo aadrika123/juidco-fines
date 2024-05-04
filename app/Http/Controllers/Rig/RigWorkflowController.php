@@ -20,7 +20,7 @@ use App\Models\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WfWorkflowrolemap;
-use App\Models\Workflows\WorkflowTrack;
+use App\Models\Rig\WorkflowTrack;
 use App\Pipelines\Marriage\SearchByApplicationNo as MarriageSearchByApplicationNo;
 use App\Pipelines\rig\SearchByApplicationNo as rigSearchByApplicationNo;
 use App\Traits\Workflow\Workflow;
@@ -389,9 +389,9 @@ class RigWorkflowController extends Controller
         if ($readRoleDtls->wf_role_id != $application->finisher_role_id) {
             throw new Exception("You are not the Finisher!");
         }
-        // if ($application->doc_upload_status == false || $application->payment_status != 1) {
-        //     throw new Exception("Document Not Fully Uploaded or Payment in not Done!");
-        // }
+        if ($application->doc_upload_status == false || $application->payment_status != 1) {
+            throw new Exception("Document Not Fully Uploaded or Payment in not Done!");
+        }
         if ($application->doc_verify_status == false) {
             throw new Exception("Document Not Fully Verified!");
         }
@@ -460,6 +460,7 @@ class RigWorkflowController extends Controller
             'refTableDotId'     => 'rig_active_registrations.id',                                   // Static
             'refTableIdValue'   => $applicationId,
             'user_id'           => authUser($request)->id,
+            'ulb_id'            =>  $applicationDetails->ulb_id
         ];
         $request->request->add($metaReqs);
         $rigTrack->saveTrack($request);

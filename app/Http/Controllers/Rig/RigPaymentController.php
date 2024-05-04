@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Rig;
 
 use App\DocUpload;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Rig\RigPaymentReq;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Traits\Workflow\Workflow;
 use Exception;
@@ -22,14 +23,17 @@ use App\Models\Rig\MRigFee;
 use App\Models\Rig\RigActiveApplicant;
 use App\Models\Rig\RigActiveRegistration;
 use App\Models\Rig\RigApprovedRegistration;
+use App\Models\Rig\RigChequeDtl;
 use App\Models\Rig\RigRazorPayRequest;
 use App\Models\Rig\RigRazorPayResponse;
 use App\Models\Rig\RigRegistrationCharge;
 use App\Models\Rig\RigRejectedRegistration;
 use App\Models\Rig\RigTran;
+use App\Models\Rig\RigTranDetail;
 use App\Models\Rig\RigVehicleActiveDetail;
+use App\Models\Rig\TempTransaction;
 use App\Models\Rig\WfActiveDocument as RigWfActiveDocument;
-use App\Models\Workflows\WorkflowTrack;
+use App\Models\Rig\WorkflowTrack;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Database\QueryException;
@@ -67,6 +71,8 @@ class RigPaymentController extends Controller
     private $_paymentMode;
     private $_PaymentUrl;
     private $_apiKey;
+    private $_offlineVerificationModes;
+    private $_offlineMode;
 
     # Class constructer 
     public function __construct()
@@ -89,6 +95,8 @@ class RigPaymentController extends Controller
         $this->_paymentMode         = Config::get("rig.PAYMENT_MODE");
         $this->_PaymentUrl          = Config::get('constants.95_PAYMENT_URL');
         $this->_apiKey              = Config::get('rig.API_KEY_PAYMENT');
+        $this->_offlineVerificationModes    = Config::get("rig.VERIFICATION_PAYMENT_MODES");
+        $this->_offlineMode                 = Config::get("rig.OFFLINE_PAYMENT_MODE");
         # Database connectivity
         // $this->_DB_NAME     = "pgsql_property";
         // $this->_DB          = DB::connection($this->_DB_NAME);
@@ -343,4 +351,296 @@ class RigPaymentController extends Controller
         }
         return $refApplicationDetails;
     }
+
+
+    /**
+     * | Pay the registration charges in offline mode 
+        | Serial no :
+        | Under construction 
+     */
+    public function offlinePayment(RigPaymentReq $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            ['remarks' => 'nullable',]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+
+            # Variable declaration
+            $section                    = 0;
+            $receiptIdParam             = Config::get('rig.ID_GENERATION_PARAMS.RECEIPT');
+            $user                       = authUser($req);
+            $todayDate                  = Carbon::now();
+            $epoch                      = strtotime($todayDate);
+            $offlineVerificationModes   = $this->_offlineVerificationModes;
+            $mRigTran                   = new RigTran();
+
+            # Check the params for checking payment method
+            $payRelatedDetails  = $this->checkParamForPayment($req, $req->paymentMode);
+            $ulbId              = $payRelatedDetails['applicationDetails']['ulb_id'];
+            $wardId             = $payRelatedDetails['applicationDetails']['ward_id'];
+            $tranType           = $payRelatedDetails['applicationDetails']['application_type'];
+            $tranTypeId         = $payRelatedDetails['chargeCategory'];
+
+            DB::beginTransaction();
+            # Generate transaction no 
+            $idGeneration  = new IdGeneration($receiptIdParam,  $ulbId, $section, 0);
+            $transactionNo = $idGeneration->generateId();
+            # Water Transactions
+            $req->merge([
+                'empId'         => $user->id,
+                'userType'      => $user->user_type,
+                'todayDate'     => $todayDate->format('Y-m-d'),
+                'tranNo'        => $transactionNo,
+                'ulbId'         => $ulbId,
+                'isJsk'         => true,
+                'wardId'        => $wardId,
+                'tranType'      => $tranType,                                                              // Static
+                'tranTypeId'    => $tranTypeId,
+                'amount'        => $payRelatedDetails['refRoundAmount'],
+                'roundAmount'   => $payRelatedDetails['regAmount'],
+                'tokenNo'       => $payRelatedDetails['applicationDetails']['ref_application_id'] . $epoch              // Here 
+            ]);
+
+            # Save the Details of the transaction
+            $RigTrans = $mRigTran->saveTranDetails($req);
+
+            # Save the Details for the Cheque,DD,nfet
+            if (in_array($req['paymentMode'], $offlineVerificationModes)) {
+                $req->merge([
+                    'chequeDate'    => $req['chequeDate'],
+                    'tranId'        => $RigTrans['transactionId'],
+                    'applicationNo' => $payRelatedDetails['applicationDetails']['chargeCategory'],
+                    'workflowId'    => $payRelatedDetails['applicationDetails']['workflow_id'],
+                    'ref_ward_id'   => $payRelatedDetails['applicationDetails']['ward_id']
+                ]);
+                $this->postOtherPaymentModes($req);
+            }
+            $this->saverigRequestStatus($req, $offlineVerificationModes, $payRelatedDetails['rigCharges'], $RigTrans['transactionId'], $payRelatedDetails['applicationDetails']);
+            $payRelatedDetails['applicationDetails']->payment_status = 1;
+            $payRelatedDetails['applicationDetails']->save();
+            DB::commit();
+            $returnData = [
+                "transactionNo" => $transactionNo
+            ];
+            return responseMsgs(true, "Paymet done!", $returnData, "", "01", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
+        }
+    }
+
+
+    /**
+     * | Save the status in active consumer table, transaction, 
+        | Serial No :
+        | Working
+     */
+    public function saveRigRequestStatus($request, $offlinePaymentVerModes, $charges, $waterTransId, $activeConRequest)
+    {
+        $mRigTranDetail         = new RigTranDetail();
+        $mRigActiveRegistration = new RigActiveRegistration();
+        $mRigTran               = new RigTran();
+        $applicationId          = $activeConRequest->ref_application_id;
+
+        if (in_array($request['paymentMode'], $offlinePaymentVerModes)) {
+            $charges->paid_status = 2;                                                      // Static
+            $refReq = [
+                "payment_status" => 2,                                                      // Update Application Payment Status // Static
+            ];
+            $tranReq = [
+                "verify_status" => 2
+            ];                                                                              // Update Charges Paid Status // Static
+            $mRigTran->saveStatusInTrans($waterTransId, $tranReq);
+            $mRigActiveRegistration->saveApplicationStatus($applicationId, $refReq);
+        } else {
+            $charges->paid_status = 1;                                                      // Update Charges Paid Status // Static
+            $refReq = [
+                "payment_status"    => 1,
+                "current_role_id"   => $activeConRequest->initiator_role_id
+            ];
+            $mRigActiveRegistration->saveApplicationStatus($applicationId, $refReq);
+        }
+        $charges->save();                                                                   // ❕❕ Save Charges ❕❕
+
+        $refTranDetails = [
+            "id"            => $applicationId,
+            "refChargeId"   => $charges->id,
+            "roundAmount"   => $request->roundAmount,
+            "tranTypeId"    => $request->tranTypeId
+        ];
+        # Save Trans Details                                                   
+        $mRigTranDetail->saveTransDetails($waterTransId, $refTranDetails);
+    }
+
+
+    /**
+     * | Check the details and the function for the payment 
+     * | return details for payment process
+     * | @param req
+        | Serial No: 
+        | Under Construction
+     */
+    public function checkParamForPayment($req, $paymentMode)
+    {
+        $applicationId          = $req->id;
+        $confPaymentMode        = $this->_paymentMode;
+        $confApplicationType    = $this->_applicationType;
+        $mRigActiveRegistration = new RigActiveRegistration();
+        $mRigRegistrationCharge = new RigRegistrationCharge();
+        $mRigTran               = new RigTran();
+
+        # Application details and Validation
+        $applicationDetail = $mRigActiveRegistration->getRigApplicationById($applicationId)
+            ->where('rig_vehicle_active_details.status', 1)
+            ->where('rig_active_applicants.status', 1)
+            ->first();
+        if (is_null($applicationDetail)) {
+            throw new Exception("Application details not found for ID:$applicationId!");
+        }
+        if ($applicationDetail->payment_status != 0) {
+            throw new Exception("payment is updated for application");
+        }
+        if ($applicationDetail->citizen_id && $applicationDetail->doc_upload_status == false) {
+            throw new Exception("All application related document not uploaded!");
+        }
+
+        # Application type hence the charge type
+        switch ($applicationDetail->renewal) {
+            case (0):
+                $chargeCategory = $confApplicationType['NEW_APPLY'];
+                break;
+            case (1):
+                $chargeCategory = $confApplicationType['RENEWAL'];
+                break;
+        }
+
+        # Charges for the application
+        $regisCharges = $mRigRegistrationCharge->getChargesbyId($applicationId)
+            ->where('charge_category', $chargeCategory)
+            ->where('paid_status', 0)
+            ->first();
+
+        if (is_null($regisCharges)) {
+            throw new Exception("Charges not found!");
+        }
+        if (in_array($regisCharges->paid_status, [1, 2])) {
+            throw new Exception("Payment has been done!");
+        }
+        if ($paymentMode == $confPaymentMode['1']) {
+            if ($applicationDetail->citizen_id != authUser($req)->id) {
+                throw new Exception("You are not he Autherized User!");
+            }
+        }
+
+        # Transaction details
+        $transDetails = $mRigTran->getTranDetails($applicationId, $chargeCategory)->first();
+        if ($transDetails) {
+            throw new Exception("Transaction has been Done!");
+        }
+
+        return [
+            "applicationDetails"    => $applicationDetail,
+            "rigCharges"            => $regisCharges,
+            "chargeCategory"        => $chargeCategory,
+            "chargeId"              => $regisCharges->id,
+            "regAmount"             => $regisCharges->amount,
+            "refRoundAmount"        => round($regisCharges->amount)
+        ];
+    }
+
+    /**
+     * | Post Other Payment Modes for Cheque,DD,Neft
+     * | @param req
+        | Serial No : 0
+        | Working
+        | Common function
+     */
+    public function postOtherPaymentModes($req)
+    {
+        $paymentMode        = $this->_offlineMode;
+        $moduleId           = $this->_rigModuleId;
+        $mTempTransaction   = new TempTransaction();
+        $mrigChequeDtl      = new RigChequeDtl();
+
+        if ($req['paymentMode'] != $paymentMode[3]) {                                   // Not Cash
+            $chequeReqs = [
+                'user_id'           => $req['userId'],
+                'application_id'    => $req['id'],
+                'transaction_id'    => $req['tranId'],
+                'cheque_date'       => $req['chequeDate'],
+                'bank_name'         => $req['bankName'],
+                'branch_name'       => $req['branchName'],
+                'cheque_no'         => $req['chequeNo']
+            ];
+            $mrigChequeDtl->postChequeDtl($chequeReqs);
+        }
+
+        $tranReqs = [
+            'transaction_id'    => $req['tranId'],
+            'application_id'    => $req['id'],
+            'module_id'         => $moduleId,
+            'workflow_id'       => $req['workflowId'],
+            'transaction_no'    => $req['tranNo'],
+            'application_no'    => $req['applicationNo'],
+            'amount'            => $req['amount'],
+            'payment_mode'      => strtoupper($req['paymentMode']),
+            'cheque_dd_no'      => $req['chequeNo'],
+            'bank_name'         => $req['bankName'],
+            'tran_date'         => $req['todayDate'],
+            'user_id'           => $req['userId'],
+            'ulb_id'            => $req['ulbId'],
+            'ward_no'           => $req['ref_ward_id']
+        ];
+        $mTempTransaction->tempTransaction($tranReqs);
+    }
+
+    /*
+      |List of unverified cash transaction
+     */
+    public function listUnverifiedCashPayment(Request $req)
+    {
+        $validator = Validator::make($req->all(), [
+            'fromDate' => 'nullable|date_format:Y-m-d',
+            'toDate' => $req->fromDate != NULL ? 'required|date_format:Y-m-d|after_or_equal:fromDate' : 'nullable|date_format:Y-m-d',
+        ]);
+        if ($validator->fails()) {
+            return responseMsgs(false, $validator->errors()->first(), [], "055024", "1.0", responseTime(), "POST", $req->deviceId);
+        }
+        try {
+            $RigPayment = new RigTran();
+            $data = $RigPayment->listUnverifiedCashPayment($req);
+            $data = $data->whereBetween('rig_trans.tran_date', [$req->fromDate, $req->toDate])
+            ->get();
+
+            $list = $data;
+            return responseMsgs(true, "List Uncleared Cash Payment", $list, "055024", "1.0", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "055024", "1.0", responseTime(), "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | Verified Payment one or more than one
+     * | API - 25
+     * | Function - 25
+     */
+    // public function verifiedCashPayment(Request $req)
+    // {
+    //     $validator = Validator::make($req->all(), [
+    //         'ids' => 'required|array',
+    //     ]);
+    //     if ($validator->fails()) {
+    //         return responseMsgs(false, $validator->errors()->first(), [], "055025", "1.0", responseTime(), "POST", $req->deviceId);
+    //     }
+    //     try {
+    //         MarShopPayment::whereIn('id', $req->ids)->update(['is_verified' => '1']);
+    //         return responseMsgs(true, "Payment Verified Successfully !!!",  '', "055025", "1.0", responseTime(), "POST", $req->deviceId);
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), [], "055025", "1.0", responseTime(), "POST", $req->deviceId);
+    //     }
+    // }
 }

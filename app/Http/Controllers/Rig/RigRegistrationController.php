@@ -27,8 +27,9 @@ use App\Models\Rig\RigRejectedRegistration;
 use App\Models\Rig\RigTran;
 use App\Models\Rig\RigVehicleActiveDetail;
 use App\Models\Rig\WfActiveDocument as RigWfActiveDocument;
-use App\Models\Workflows\WorkflowTrack;
+use App\Models\Rig\WorkflowTrack;
 use Carbon\Carbon;
+
 use Illuminate\Support\Str;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
@@ -243,8 +244,10 @@ class RigRegistrationController extends Controller
 
 
             # Save the data in workflow track
+
             $metaReqs = new Request(
                 [
+                
                     'citizenId'         => $citzenId ?? null,
                     'moduleId'          => $this->_rigModuleId,
                     'workflowId'        => $ulbWorkflowId->id,
@@ -1051,6 +1054,59 @@ class RigRegistrationController extends Controller
             return responseMsgs(true, "Listed application details!", remove_null($rejectedApplicationDetails), "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
+        }
+    }
+
+
+    /**
+     * | Search active applications according to certain search category
+        | Serial No :
+        | Working
+     */
+    public function searchApplication(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'filterBy'  => 'required|in:mobileNo,applicantName,applicationNo',
+                'parameter' => 'required',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            # Variable assigning
+            $key        = $request->filterBy;
+            $paramenter = $request->parameter;
+            $pages      = $request->perPage ?? 10;
+            $refstring  = Str::snake($key);
+            $msg        = "Rig active appliction details according to parameter!";
+
+            $mRigActiveRegistration = new RigActiveRegistration();
+            $mRigActiveApplicant    = new RigActiveApplicant();
+
+            # Distrubtion of search category
+            switch ($key) {
+                case ("mobileNo"):                                                                                                                      // Static
+                    $activeApplication = $mRigActiveApplicant->getRelatedApplicationDetails($request, $refstring, $paramenter)->paginate($pages);
+                    break;
+                case ("applicationNo"):
+                    $activeApplication = $mRigActiveRegistration->getActiveApplicationDetails($request, $refstring, $paramenter)->paginate($pages);
+                    break;
+                case ("applicantName"):
+                    $activeApplication = $mRigActiveApplicant->getRelatedApplicationDetails($request, $refstring, $paramenter)->paginate($pages);
+                default:
+                    throw new Exception("Data provided in filterBy is not valid!");
+            }
+            # Check if data not exist
+            $checkVal = collect($activeApplication)->last();
+            if (!$checkVal || $checkVal == 0) {
+                $msg = "Data Not found!";
+            }
+            return responseMsgs(true, $msg, remove_null($activeApplication), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 }
