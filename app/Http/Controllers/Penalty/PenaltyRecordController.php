@@ -767,6 +767,7 @@ class PenaltyRecordController extends Controller
             if (!$challanDetails)
                 throw new Exception("Challan Not Found");
 
+            $ulbDtls = UlbMaster::find($penaltyDetails->ulb_id);
             $violationDtl  = $mViolation->violationById($penaltyDetails->violation_id);
             $sectionId     = $violationDtl->section_id;
             $section       = $mSection->sectionById($sectionId)->violation_section;
@@ -793,6 +794,26 @@ class PenaltyRecordController extends Controller
             $challanDetails->payment_date = $todayDate;
             $challanDetails->save();
             DB::commit();
+
+            #_Whatsaap Message
+            if (strlen($penaltyDetails->mobile) == 10) {
+
+                $whatsapp2 = (Whatsapp_Send(
+                    $penaltyDetails->mobile,
+                    "juidco_fines_payment",
+                    [
+                        "content_type" => "text",
+                        [
+                            $penaltyDetails->full_name ?? "Violator",
+                            $tranDtl->total_amount,
+                            $challanDetails->challan_no,
+                            $tranDtl->tran_no,
+                            $ulbDtls->toll_free_no ?? 0000000000
+                        ]
+                    ]
+                ));
+            }
+
             return responseMsgs(true, "", $tranDtl,  $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
@@ -1189,7 +1210,7 @@ class PenaltyRecordController extends Controller
 
     /**
      * | Generate Request for table penalty_applied_records
-        static workflow_id,ulb_id,current_role, category_type
+        static category_type
      */
     public function generateRequest($req, $applicationNo)
     {
@@ -1421,29 +1442,29 @@ class PenaltyRecordController extends Controller
     {
         $ulbId = $req->ulbId;
         $todayDate = Carbon::now();
-        $penaltyTransaction = PenaltyTransaction::whereDate('created_at', $todayDate);
+        $penaltyTransaction = PenaltyTransaction::whereDate('created_at', $todayDate)->where('status', 1);
         $penaltyChallan     = PenaltyChallan::where('challan_date', $todayDate)
             ->join('penalty_final_records', 'penalty_final_records.id', 'penalty_challans.penalty_record_id')
             ->where('penalty_challans.status', 1);
 
-        $wtTransaction   = WtBooking::where('payment_date', $todayDate);
-        $wtBooking       = WtBooking::where('booking_date', $todayDate);
-        $wtTodayDelivery = WtBooking::where('delivery_date', $todayDate);
-        $wtDelivered     = WtBooking::where('delivery_date', $todayDate)->where('delivery_track_status', 2);
-        $wtCancelledTrip    = WtBooking::where('delivery_track_status', 1);
-        $wtCancelledBooking = WtCancellation::whereDate('cancel_date', $todayDate);
+        $wtTransaction   = WtBooking::where('payment_date', $todayDate)->where('status', 1);
+        $wtBooking       = WtBooking::where('booking_date', $todayDate)->where('status', 1);
+        $wtTodayDelivery = WtBooking::where('delivery_date', $todayDate)->where('status', 1);
+        $wtDelivered     = WtBooking::where('delivery_date', $todayDate)->where('delivery_track_status', 2)->where('status', 1);
+        $wtCancelledTrip    = WtBooking::where('delivery_track_status', 1)->where('status', 1);
+        $wtCancelledBooking = WtCancellation::whereDate('cancel_date', $todayDate)->where('status', 1);
 
-        $stTransaction     = StBooking::where('payment_date', $todayDate);
-        $stBooking         = StBooking::where('booking_date', $todayDate);
-        $stTodayDelivery   = StBooking::where('cleaning_date', $todayDate);
-        $stDelivered       = StBooking::where('cleaning_date', $todayDate)->where('delivery_track_status', 2);
-        $stCancelledTrip    = StBooking::where('delivery_track_status', 1);
-        $stCancelledBooking = StCancelledBooking::where('cancel_date', $todayDate);
+        $stTransaction     = StBooking::where('payment_date', $todayDate)->where('status', 1);
+        $stBooking         = StBooking::where('booking_date', $todayDate)->where('status', 1);
+        $stTodayDelivery   = StBooking::where('cleaning_date', $todayDate)->where('status', 1);
+        $stDelivered       = StBooking::where('cleaning_date', $todayDate)->where('delivery_track_status', 2)->where('status', 1);
+        $stCancelledTrip    = StBooking::where('delivery_track_status', 1)->where('status', 1);
+        $stCancelledBooking = StCancelledBooking::where('cancel_date', $todayDate)->where('status', 1);
 
 
-        $rigTransaction        = RigTran::where('tran_date', $todayDate);
-        $rigNewRegistration    = RigActiveRegistration::where('application_apply_date', $todayDate);
-        $rigRenewal            = RigActiveRegistration::where('application_apply_date', $todayDate);
+        $rigTransaction        = RigTran::where('tran_date', $todayDate)->where('status', 1);
+        $rigNewRegistration    = RigActiveRegistration::where('application_apply_date', $todayDate)->where('status', 1);
+        $rigRenewal            = RigActiveRegistration::where('application_apply_date', $todayDate)->where('status', 1);
 
         if ($ulbId) {
             $penaltyTransaction =  $penaltyTransaction->where('ulb_id', $ulbId);
@@ -1500,9 +1521,9 @@ class PenaltyRecordController extends Controller
         $rigRegistration      =   $rigNewRegistration->where('application_type', 'New_Apply')->count();
         $rigRenewal           =   $rigRenewal->where('application_type', 'Renewal')->count();
 
-         # Rig collection amount
-         $rigNewRegsitrationAmt  = $rigRegistration * 25000;
-         $rigRenewRegistration   = $rigRenewal * 20000;
+        # Rig collection amount
+        $rigNewRegsitrationAmt  = $rigRegistration * 25000;
+        $rigRenewRegistration   = $rigRenewal * 20000;
 
         $data['fines_collection']   = $penaltyCollectionAmt;
         $data['challan_count']      = $penaltyChallanCount;
@@ -1512,8 +1533,8 @@ class PenaltyRecordController extends Controller
         $data['wt_today_delivery']  = $wtTodayDelivery;
         $data['st_today_delivery']  = $stTodayDelivery;
 
-        $data['wt_cancelled_delivery']  = $wtCancelledBooking+$wtCancelledTrip;
-        $data['st_cancelled_delivery']  = $stCancelledBooking+$stCancelledTrip;
+        $data['wt_cancelled_delivery']  = $wtCancelledBooking + $wtCancelledTrip;
+        $data['st_cancelled_delivery']  = $stCancelledBooking + $stCancelledTrip;
 
         $data['wt_collection']      = $wtCollectionAmt;
         $data['wt_booking']         = $wtBooking;
@@ -1522,7 +1543,7 @@ class PenaltyRecordController extends Controller
         $data['st_booking']         = $stBooking;
         $data['st_trip_count']      = $stDelivered;
 
-        $data['rig_collection']     = $rigCollection;
+        $data['rig_collection']     = round($rigCollection);
         $data['rig_new_reg_count']  = $rigRegistration;
         $data['rig_renewal_count']  = $rigRenewal;
         $data['rig_new_reg_amt']    = $rigNewRegsitrationAmt;
@@ -1532,7 +1553,6 @@ class PenaltyRecordController extends Controller
         return responseMsgs(true, "Mini Dashboard Data", $data, "0625", "01", responseTime(), $req->getMethod(), $req->deviceId);
     }
 
-
     /**
      * | Top Ulb Collection
         include today date as where condition
@@ -1540,27 +1560,48 @@ class PenaltyRecordController extends Controller
     public function topUlbCollection(Request $req)
     {
         $todayDate = Carbon::now();
-        $penaltyTransaction = PenaltyTransaction::select('ulb_id', 'ulb_name', 'total_amount')
+        $penaltyTransaction = PenaltyTransaction::select(
+            'ulb_id',
+            'total_amount',
+            DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+        )
             // whereDate('created_at', $todayDate)
+            ->where('status', 1)
             ->join('ulb_masters', 'ulb_masters.id', 'penalty_transactions.ulb_id');
 
-        $wtTransaction = WtBooking::select('ulb_id', 'ulb_name', 'payment_amount as total_amount')
+        $wtTransaction = WtBooking::select(
+            'ulb_id',
+            'payment_amount as total_amount',
+            DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+        )
             // ->where('payment_date', $todayDate)
+            ->where('status', 1)
             ->join('ulb_masters', 'ulb_masters.id', 'wt_bookings.ulb_id');
 
 
-        $stTransaction = StBooking::select('ulb_id', 'ulb_name', 'payment_amount as total_amount')
+        $stTransaction = StBooking::select(
+            'ulb_id',
+            'payment_amount as total_amount',
+            DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+        )
             // ->where('payment_date', $todayDate)
+            ->where('status', 1)
             ->join('ulb_masters', 'ulb_masters.id', 'st_bookings.ulb_id');
 
-        $rigTransaction        = RigTran::select('ulb_id', 'ulb_name', 'amount as total_amount')
+        $rigTransaction = RigTran::select(
+            'ulb_id',
+            'amount as total_amount',
+            DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+        )
             //    ->where('tran_date', $todayDate)
+            ->where('status', 1)
             ->join('ulb_masters', 'ulb_masters.id', 'rig_trans.ulb_id');
 
         $waterSepticCollection = $wtTransaction->union($stTransaction)->get();
         $finesRigCollection = $penaltyTransaction->union($rigTransaction)->get();
         $combinedCollection = $waterSepticCollection->concat($finesRigCollection);
 
+        // return  $combinedCollection ;
 
         $allCollection = collect($combinedCollection)->groupBy('ulb_name');
         // Map through each entity and calculate the sum of total_amount
@@ -1582,6 +1623,86 @@ class PenaltyRecordController extends Controller
         $data = array_values($data);
 
         return responseMsgs(true, "Top Ulb Collection", $data, "0626", "01", responseTime(), $req->getMethod(), $req->deviceId);
+    }
+
+    /**
+     * | Today Collection Data
+     */
+    public function todayUlbCollection(Request $req)
+    {
+        $todayDate = Carbon::now();
+
+        $finestopULBCollection = DB::table('ulb_masters')
+            ->leftJoin('penalty_transactions', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'penalty_transactions.ulb_id')
+                    ->where('penalty_transactions.tran_date', $todayDate)
+                    ->where('penalty_transactions.status', 1);
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+                DB::raw('COALESCE(SUM(penalty_transactions.total_amount), 0) as daily_collection')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('daily_collection')
+            ->take(5)
+            ->get();
+
+        $rigMachinetopULBCollection = DB::table('ulb_masters')
+            ->leftJoin('rig_trans', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'rig_trans.ulb_id')
+                    ->where('rig_trans.tran_date', $todayDate)
+                    ->where('rig_trans.status', 1);
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+                DB::raw('COALESCE(SUM(rig_trans.amount), 0) as daily_collection')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('daily_collection')
+            ->take(5)
+            ->get();
+
+        $waterTankertopULBCollection = DB::connection('pgsql_tanker')->table('ulb_masters')
+            ->leftJoin('wt_bookings', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'wt_bookings.ulb_id')
+                    ->where('wt_bookings.payment_date', $todayDate)
+                    ->where('wt_bookings.status', 1);
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+                DB::raw('COALESCE(SUM(wt_bookings.payment_amount), 0) as daily_collection')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('daily_collection')
+            ->take(5)
+            ->get();
+
+        $septicTankertopULBCollection = DB::connection('pgsql_tanker')->table('ulb_masters')
+            ->leftJoin('st_bookings', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'st_bookings.ulb_id')
+                    ->where('st_bookings.payment_date', $todayDate)
+                    ->where('st_bookings.status', 1);
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+                DB::raw('COALESCE(SUM(st_bookings.payment_amount), 0) as daily_collection')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('daily_collection')
+            ->take(5)
+            ->get();
+
+        $data['fines'] = $finestopULBCollection;
+        $data['water_tanker'] = $waterTankertopULBCollection;
+        $data['septic_tanker'] = $septicTankertopULBCollection;
+        $data['septic_tanker'] = $septicTankertopULBCollection;
+        $data['rig_machine'] = $rigMachinetopULBCollection;
+
+        return responseMsgs(true, "Today Top ULB Collection", $data, "0627", "01", responseTime(), $req->getMethod(), $req->deviceId);
     }
 
     /**
