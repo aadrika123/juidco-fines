@@ -20,7 +20,7 @@ use App\Models\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WfWorkflowrolemap;
-use App\Models\Workflows\WorkflowTrack;
+use App\Models\Rig\WorkflowTrack;
 use App\Pipelines\Marriage\SearchByApplicationNo as MarriageSearchByApplicationNo;
 use App\Pipelines\rig\SearchByApplicationNo as rigSearchByApplicationNo;
 use App\Traits\Workflow\Workflow;

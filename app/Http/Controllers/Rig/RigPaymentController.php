@@ -33,7 +33,7 @@ use App\Models\Rig\RigTranDetail;
 use App\Models\Rig\RigVehicleActiveDetail;
 use App\Models\Rig\TempTransaction;
 use App\Models\Rig\WfActiveDocument as RigWfActiveDocument;
-use App\Models\Workflows\WorkflowTrack;
+use App\Models\Rig\WorkflowTrack;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Database\QueryException;
