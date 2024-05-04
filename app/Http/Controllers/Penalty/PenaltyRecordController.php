@@ -1560,23 +1560,39 @@ class PenaltyRecordController extends Controller
     public function topUlbCollection(Request $req)
     {
         $todayDate = Carbon::now();
-        $penaltyTransaction = PenaltyTransaction::select('ulb_id', 'ulb_name', 'total_amount')
+        $penaltyTransaction = PenaltyTransaction::select(
+            'ulb_id',
+            'total_amount',
+            DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+        )
             // whereDate('created_at', $todayDate)
             ->where('status', 1)
             ->join('ulb_masters', 'ulb_masters.id', 'penalty_transactions.ulb_id');
 
-        $wtTransaction = WtBooking::select('ulb_id', 'ulb_name', 'payment_amount as total_amount')
+        $wtTransaction = WtBooking::select(
+            'ulb_id',
+            'payment_amount as total_amount',
+            DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+        )
             // ->where('payment_date', $todayDate)
             ->where('status', 1)
             ->join('ulb_masters', 'ulb_masters.id', 'wt_bookings.ulb_id');
 
 
-        $stTransaction = StBooking::select('ulb_id', 'ulb_name', 'payment_amount as total_amount')
+        $stTransaction = StBooking::select(
+            'ulb_id',
+            'payment_amount as total_amount',
+            DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+        )
             // ->where('payment_date', $todayDate)
             ->where('status', 1)
             ->join('ulb_masters', 'ulb_masters.id', 'st_bookings.ulb_id');
 
-        $rigTransaction = RigTran::select('ulb_id', 'ulb_name', 'amount as total_amount')
+        $rigTransaction = RigTran::select(
+            'ulb_id',
+            'amount as total_amount',
+            DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+        )
             //    ->where('tran_date', $todayDate)
             ->where('status', 1)
             ->join('ulb_masters', 'ulb_masters.id', 'rig_trans.ulb_id');
@@ -1585,6 +1601,7 @@ class PenaltyRecordController extends Controller
         $finesRigCollection = $penaltyTransaction->union($rigTransaction)->get();
         $combinedCollection = $waterSepticCollection->concat($finesRigCollection);
 
+        return  $combinedCollection ;
 
         $allCollection = collect($combinedCollection)->groupBy('ulb_name');
         // Map through each entity and calculate the sum of total_amount
