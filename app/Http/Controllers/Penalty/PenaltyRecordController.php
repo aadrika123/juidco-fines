@@ -1631,7 +1631,59 @@ class PenaltyRecordController extends Controller
             ->take(5)
             ->get();
 
+        $rigMachinetopULBCollection = DB::table('ulb_masters')
+            ->leftJoin('rig_trans', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'rig_trans.ulb_id')
+                    ->where('rig_trans.tran_date', $todayDate)
+                    ->where('rig_trans.status', 1);
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                'ulb_masters.ulb_name',
+                DB::raw('COALESCE(SUM(rig_trans.amount), 0) as daily_collection')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('daily_collection')
+            ->take(5)
+            ->get();
+
+        $waterTankertopULBCollection = DB::connection('pgsql_tanker')->table('ulb_masters')
+            ->leftJoin('wt_bookings', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'wt_bookings.ulb_id')
+                    ->where('wt_bookings.payment_date', $todayDate)
+                    ->where('wt_bookings.status', 1);
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                'ulb_masters.ulb_name',
+                DB::raw('COALESCE(SUM(wt_bookings.payment_amount), 0) as daily_collection')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('daily_collection')
+            ->take(5)
+            ->get();
+
+        $septicTankertopULBCollection = DB::connection('pgsql_tanker')->table('ulb_masters')
+            ->leftJoin('st_bookings', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'st_bookings.ulb_id')
+                    ->where('st_bookings.payment_date', $todayDate)
+                    ->where('st_bookings.status', 1);
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                'ulb_masters.ulb_name',
+                DB::raw('COALESCE(SUM(st_bookings.payment_amount), 0) as daily_collection')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('daily_collection')
+            ->take(5)
+            ->get();
+
         $data['fines'] = $finestopULBCollection;
+        $data['water_tanker'] = $waterTankertopULBCollection;
+        $data['septic_tanker'] = $septicTankertopULBCollection;
+        $data['septic_tanker'] = $septicTankertopULBCollection;
+        $data['rig_machine'] = $rigMachinetopULBCollection;
 
         return responseMsgs(true, "Today Top ULB Collection", $data, "0627", "01", responseTime(), $req->getMethod(), $req->deviceId);
     }
