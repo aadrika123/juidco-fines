@@ -1443,7 +1443,7 @@ class PenaltyRecordController extends Controller
 
         $rigTransaction        = RigTran::where('tran_date', $todayDate);
         $rigNewRegistration    = RigActiveRegistration::where('application_apply_date', $todayDate);
-        // $rigRenewal         = RigActiveRegistration::where('application_apply_date', $todayDate);
+        $rigRenewal            = RigActiveRegistration::where('application_apply_date', $todayDate);
 
         if ($ulbId) {
             $penaltyTransaction =  $penaltyTransaction->where('ulb_id', $ulbId);
@@ -1469,6 +1469,7 @@ class PenaltyRecordController extends Controller
 
             $rigTransaction     =  $rigTransaction->where('ulb_id', $ulbId);
             $rigNewRegistration =  $rigNewRegistration->where('ulb_id', $ulbId);
+            $rigRenewal         =  $rigRenewal->where('ulb_id', $ulbId);
         }
 
         $penaltyChallanCount  =  $penaltyChallan->count();
@@ -1479,8 +1480,8 @@ class PenaltyRecordController extends Controller
         $wtBooking          =  $wtBooking->count();
         $stBooking          =  $stBooking->count();
 
-        $wtDelivered         =  $wtDelivered->count();
-        $stDelivered         =  $stDelivered->count();
+        $wtDelivered        =  $wtDelivered->count();
+        $stDelivered        =  $stDelivered->count();
 
         $wtTodayDelivery = $wtTodayDelivery->count();
         $stTodayDelivery = $stTodayDelivery->count();
@@ -1497,8 +1498,11 @@ class PenaltyRecordController extends Controller
         # Rig Registration  
         $rigCollection        =   $rigTransaction->sum('amount');
         $rigRegistration      =   $rigNewRegistration->where('application_type', 'New_Apply')->count();
-        $rigRenewal           =   $rigNewRegistration->where('application_type', 'Renewal')->count();
+        $rigRenewal           =   $rigRenewal->where('application_type', 'Renewal')->count();
 
+         # Rig collection amount
+         $rigNewRegsitrationAmt  = $rigRegistration * 25000;
+         $rigRenewRegistration   = $rigRenewal * 20000;
 
         $data['fines_collection']   = $penaltyCollectionAmt;
         $data['challan_count']      = $penaltyChallanCount;
@@ -1512,15 +1516,17 @@ class PenaltyRecordController extends Controller
         $data['st_cancelled_delivery']  = $stCancelledBooking+$stCancelledTrip;
 
         $data['wt_collection']      = $wtCollectionAmt;
-        $data['wt_booking']          = $wtBooking;
-        $data['wt_delivered']         = $wtDelivered;
+        $data['wt_booking']         = $wtBooking;
+        $data['wt_delivered']       = $wtDelivered;
         $data['st_collection']      = $stCollectionAmt;
-        $data['st_booking']          = $stBooking;
-        $data['st_trip_count']        = $stDelivered;
+        $data['st_booking']         = $stBooking;
+        $data['st_trip_count']      = $stDelivered;
 
-        $data['rig_collection']        = $rigCollection;
-        $data['rig_new_reg_count']          = $rigRegistration;
-        $data['rig_renewal_count']          = $rigRenewal;
+        $data['rig_collection']     = $rigCollection;
+        $data['rig_new_reg_count']  = $rigRegistration;
+        $data['rig_renewal_count']  = $rigRenewal;
+        $data['rig_new_reg_amt']    = $rigNewRegsitrationAmt;
+        $data['rig_renew_reg_amt']  = $rigRenewRegistration;
         $data['total_collection']   = $penaltyCollectionAmt + $wtCollectionAmt + $stCollectionAmt + $rigCollection;
 
         return responseMsgs(true, "Mini Dashboard Data", $data, "0625", "01", responseTime(), $req->getMethod(), $req->deviceId);
