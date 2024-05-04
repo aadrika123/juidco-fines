@@ -1572,7 +1572,7 @@ class PenaltyRecordController extends Controller
         $penaltyTransaction = DB::table('ulb_masters')
             ->leftJoin('penalty_transactions', function ($join) use ($todayDate) {
                 $join->on('ulb_masters.id', '=', 'penalty_transactions.ulb_id')
-                    // ->where('penalty_transactions.tran_date', $todayDate)
+                    ->where('penalty_transactions.tran_date', $todayDate)
                     ->where('penalty_transactions.status', 1);
             })
             ->select(
@@ -1594,7 +1594,7 @@ class PenaltyRecordController extends Controller
         $wtTransaction = DB::connection('pgsql_tanker')->table('ulb_masters')
             ->leftJoin('wt_bookings', function ($join) use ($todayDate) {
                 $join->on('ulb_masters.id', '=', 'wt_bookings.ulb_id')
-                    // ->where('wt_bookings.payment_date', $todayDate)
+                    ->where('wt_bookings.payment_date', $todayDate)
                     ->where('wt_bookings.status', 1);
             })
             ->select(
@@ -1617,7 +1617,7 @@ class PenaltyRecordController extends Controller
         $stTransaction = DB::connection('pgsql_tanker')->table('ulb_masters')
             ->leftJoin('st_bookings', function ($join) use ($todayDate) {
                 $join->on('ulb_masters.id', '=', 'st_bookings.ulb_id')
-                    // ->where('st_bookings.payment_date', $todayDate)
+                    ->where('st_bookings.payment_date', $todayDate)
                     ->where('st_bookings.status', 1);
             })
             ->select(
@@ -1640,7 +1640,7 @@ class PenaltyRecordController extends Controller
         $rigTransaction = DB::table('ulb_masters')
             ->leftJoin('rig_trans', function ($join) use ($todayDate) {
                 $join->on('ulb_masters.id', '=', 'rig_trans.ulb_id')
-                    // ->where('rig_trans.tran_date', $todayDate)
+                    ->where('rig_trans.tran_date', $todayDate)
                     ->where('rig_trans.status', 1);
             })
             ->select(
