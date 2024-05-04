@@ -1623,7 +1623,7 @@ class PenaltyRecordController extends Controller
             })
             ->select(
                 'ulb_masters.id as ulb_id',
-                'ulb_masters.ulb_name',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
                 DB::raw('COALESCE(SUM(penalty_transactions.total_amount), 0) as daily_collection')
             )
             ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
@@ -1639,7 +1639,7 @@ class PenaltyRecordController extends Controller
             })
             ->select(
                 'ulb_masters.id as ulb_id',
-                'ulb_masters.ulb_name',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
                 DB::raw('COALESCE(SUM(rig_trans.amount), 0) as daily_collection')
             )
             ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
@@ -1655,7 +1655,7 @@ class PenaltyRecordController extends Controller
             })
             ->select(
                 'ulb_masters.id as ulb_id',
-                'ulb_masters.ulb_name',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
                 DB::raw('COALESCE(SUM(wt_bookings.payment_amount), 0) as daily_collection')
             )
             ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
@@ -1671,7 +1671,7 @@ class PenaltyRecordController extends Controller
             })
             ->select(
                 'ulb_masters.id as ulb_id',
-                'ulb_masters.ulb_name',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
                 DB::raw('COALESCE(SUM(st_bookings.payment_amount), 0) as daily_collection')
             )
             ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
