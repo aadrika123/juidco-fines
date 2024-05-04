@@ -192,7 +192,6 @@ class PaymentController extends Controller
                         ]
                     ));
                 }
-                
             } else
                 throw new Exception("Payment Cancelled");
             return responseMsgs(true, "Data Saved", $data, $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
@@ -221,18 +220,21 @@ class PaymentController extends Controller
         try {
             $apiId = "0703";
             $version = "01";
+            $user = authUser($req);
             $mPenaltyTransaction = new PenaltyTransaction();
             $userId =  $req->userId;
             $date = date('Y-m-d', strtotime($req->date));
 
             if (isset($userId)) {
                 $data = $mPenaltyTransaction->cashDtl($date)
+                    ->where('penalty_transactions.ulb_id', $user->ulb_id)
                     ->where('user_id', $userId)
                     ->get();
             }
 
             if (!isset($userId)) {
                 $data = $mPenaltyTransaction->cashDtl($date)
+                    ->where('penalty_transactions.ulb_id', $user->ulb_id)
                     ->get();
             }
 
