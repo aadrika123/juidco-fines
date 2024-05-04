@@ -18,10 +18,12 @@ use App\Models\PenaltyTransaction;
 use App\Models\Rig\RigActiveRegistration;
 use App\Models\Rig\RigTran;
 use App\Models\StBooking;
+use App\Models\StCancelledBooking;
 use App\Models\WfRoleusermap;
 use App\Models\WfWorkflow;
 use App\Models\WfWorkflowrolemap;
 use App\Models\WtBooking;
+use App\Models\WtCancellation;
 use App\Pipelines\FinePenalty\SearchByApplicationNo;
 use App\Pipelines\FinePenalty\SearchByChallan;
 use App\Pipelines\FinePenalty\SearchByMobile;
@@ -1427,12 +1429,16 @@ class PenaltyRecordController extends Controller
         $wtTransaction   = WtBooking::where('payment_date', $todayDate);
         $wtBooking       = WtBooking::where('booking_date', $todayDate);
         $wtTodayDelivery = WtBooking::where('delivery_date', $todayDate);
-        $wtDelivered      = WtBooking::where('delivery_date', $todayDate)->where('delivery_track_status', 2);
+        $wtDelivered     = WtBooking::where('delivery_date', $todayDate)->where('delivery_track_status', 2);
+        $wtCancelledTrip    = WtBooking::where('delivery_track_status', 1);
+        $wtCancelledBooking = WtCancellation::whereDate('cancel_date', $todayDate);
 
         $stTransaction     = StBooking::where('payment_date', $todayDate);
         $stBooking         = StBooking::where('booking_date', $todayDate);
         $stTodayDelivery   = StBooking::where('cleaning_date', $todayDate);
-        $stDelivered        = StBooking::where('cleaning_date', $todayDate)->where('delivery_track_status', 2);
+        $stDelivered       = StBooking::where('cleaning_date', $todayDate)->where('delivery_track_status', 2);
+        $stCancelledTrip    = StBooking::where('delivery_track_status', 1);
+        $stCancelledBooking = StCancelledBooking::where('cancel_date', $todayDate);
 
 
         $rigTransaction        = RigTran::where('tran_date', $todayDate);
@@ -1452,6 +1458,12 @@ class PenaltyRecordController extends Controller
 
             $wtTodayDelivery    = $wtTodayDelivery->where('ulb_id', $ulbId);
             $stTodayDelivery    = $stTodayDelivery->where('ulb_id', $ulbId);
+
+            $wtCancelledBooking    = $wtCancelledBooking->where('ulb_id', $ulbId);
+            $stCancelledBooking    = $stCancelledBooking->where('ulb_id', $ulbId);
+
+            $wtCancelledTrip    = $wtCancelledTrip->where('ulb_id', $ulbId);
+            $stCancelledTrip    = $stCancelledTrip->where('ulb_id', $ulbId);
 
             $penaltyChallan     =  $penaltyChallan->where('penalty_final_records.ulb_id', $ulbId);
 
@@ -1473,6 +1485,12 @@ class PenaltyRecordController extends Controller
         $wtTodayDelivery = $wtTodayDelivery->count();
         $stTodayDelivery = $stTodayDelivery->count();
 
+        $wtCancelledBooking = $wtCancelledBooking->count();
+        $stCancelledBooking = $stCancelledBooking->count();
+
+        $wtCancelledTrip    = $wtCancelledTrip->count();
+        $stCancelledTrip    = $stCancelledTrip->count();
+
         $totalChallanAmount    =  $penaltyChallan->sum('total_amount');
         $unpaidPenaltyAmount   =  $penaltyChallan->whereNull('payment_date')->sum('total_amount');
 
@@ -1489,6 +1507,9 @@ class PenaltyRecordController extends Controller
 
         $data['wt_today_delivery']  = $wtTodayDelivery;
         $data['st_today_delivery']  = $stTodayDelivery;
+
+        $data['wt_cancelled_delivery']  = $wtCancelledBooking+$wtCancelledTrip;
+        $data['st_cancelled_delivery']  = $stCancelledBooking+$stCancelledTrip;
 
         $data['wt_collection']      = $wtCollectionAmt;
         $data['wt_booking']          = $wtBooking;
