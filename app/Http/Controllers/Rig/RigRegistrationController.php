@@ -943,7 +943,9 @@ class RigRegistrationController extends Controller
             ['displayString' => 'Gender',                              'key' => 'gender',                             'value' => $sex],
             ['displayString' => 'Driver DOB',                          'key' => 'driverDob',                          'value' => $dob],
             ['displayString' => 'Diver Name',                          'key' => 'driverName',                          'value' => $applicationDetails->driver_name],
-            ['displayString' => 'Vehicle Name',                        'key' => 'vehicleName',                          'value' => $applicationDetails->vehicle_name],
+            ['displayString' => 'Vehicle Name',                        'key' => 'vehicleName',                         'value' => $applicationDetails->vehicle_name],
+            ['displayString' => 'Vehicle From',                        'key' => 'vehicleFrom',                         'value' => $applicationDetails->vehicle_from],
+            ['displayString' => 'Vehicle Number',                      'key' => 'vehicleNumber',                       'value' => $applicationDetails->vehicle_no],
 
         ]);
     }

@@ -127,7 +127,7 @@ class RigPaymentController extends Controller
                 throw new Exception("Payment Already Done");
             if (!$rigDetails)
                 throw new Exception("Rig Not Found");
-            $orderData = $api->order->create(array('amount' => $chargeDetails->amount * 1, 'currency' => 'INR',));
+            $orderData = $api->order->create(array('amount' => $chargeDetails->amount * 100, 'currency' => 'INR',));
 
             if ($req->authRequired == true)
                 $user = authUser($req);
