@@ -27,7 +27,7 @@ use App\Models\Rig\RigRejectedRegistration;
 use App\Models\Rig\RigTran;
 use App\Models\Rig\RigVehicleActiveDetail;
 use App\Models\Rig\WfActiveDocument as RigWfActiveDocument;
-use App\Models\Workflows\WorkflowTrack;
+use App\Models\Rig\WorkflowTrack;
 use Carbon\Carbon;
 
 use Illuminate\Support\Str;
