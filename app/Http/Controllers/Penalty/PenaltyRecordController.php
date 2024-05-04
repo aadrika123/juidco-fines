@@ -1424,13 +1424,15 @@ class PenaltyRecordController extends Controller
             ->join('penalty_final_records', 'penalty_final_records.id', 'penalty_challans.penalty_record_id')
             ->where('penalty_challans.status', 1);
 
-        $wtTransaction = WtBooking::where('payment_date', $todayDate);
-        $wtBooking     = WtBooking::where('booking_date', $todayDate);
-        $wtDelivery    = WtBooking::where('delivery_date', $todayDate)->where('delivery_track_status', 2);
+        $wtTransaction   = WtBooking::where('payment_date', $todayDate);
+        $wtBooking       = WtBooking::where('booking_date', $todayDate);
+        $wtTodayDelivery = WtBooking::where('delivery_date', $todayDate);
+        $wtDelivered      = WtBooking::where('delivery_date', $todayDate)->where('delivery_track_status', 2);
 
-        $stTransaction = StBooking::where('payment_date', $todayDate);
-        $stBooking     = StBooking::where('booking_date', $todayDate);
-        $stDelivery    = StBooking::where('cleaning_date', $todayDate)->where('delivery_track_status', 2);
+        $stTransaction     = StBooking::where('payment_date', $todayDate);
+        $stBooking         = StBooking::where('booking_date', $todayDate);
+        $stTodayDelivery   = StBooking::where('cleaning_date', $todayDate);
+        $stDelivered        = StBooking::where('cleaning_date', $todayDate)->where('delivery_track_status', 2);
 
 
         $rigTransaction        = RigTran::where('tran_date', $todayDate);
@@ -1445,8 +1447,11 @@ class PenaltyRecordController extends Controller
             $wtBooking          =  $wtBooking->where('ulb_id', $ulbId);
             $stBooking          =  $stBooking->where('ulb_id', $ulbId);
 
-            $wtDelivery         =  $wtDelivery->where('ulb_id', $ulbId);
-            $stDelivery         =  $stDelivery->where('ulb_id', $ulbId);
+            $wtDelivered         =  $wtDelivered->where('ulb_id', $ulbId);
+            $stDelivered         =  $stDelivered->where('ulb_id', $ulbId);
+
+            $wtTodayDelivery    = $wtTodayDelivery->where('ulb_id', $ulbId);
+            $stTodayDelivery    = $stTodayDelivery->where('ulb_id', $ulbId);
 
             $penaltyChallan     =  $penaltyChallan->where('penalty_final_records.ulb_id', $ulbId);
 
@@ -1462,8 +1467,11 @@ class PenaltyRecordController extends Controller
         $wtBooking          =  $wtBooking->count();
         $stBooking          =  $stBooking->count();
 
-        $wtDelivery         =  $wtDelivery->count();
-        $stDelivery         =  $stDelivery->count();
+        $wtDelivered         =  $wtDelivered->count();
+        $stDelivered         =  $stDelivered->count();
+
+        $wtTodayDelivery = $wtTodayDelivery->count();
+        $stTodayDelivery = $stTodayDelivery->count();
 
         $totalChallanAmount    =  $penaltyChallan->sum('total_amount');
         $unpaidPenaltyAmount   =  $penaltyChallan->whereNull('payment_date')->sum('total_amount');
@@ -1479,13 +1487,15 @@ class PenaltyRecordController extends Controller
         $data['unpaid_penalty_amount']  = $unpaidPenaltyAmount;
         $data['total_penalty_amount']  = $totalChallanAmount;
 
+        $data['wt_today_delivery']  = $wtTodayDelivery;
+        $data['st_today_delivery']  = $stTodayDelivery;
+
         $data['wt_collection']      = $wtCollectionAmt;
         $data['wt_booking']          = $wtBooking;
-        $data['wt_delivery']         = $wtDelivery;
+        $data['wt_delivered']         = $wtDelivered;
         $data['st_collection']      = $stCollectionAmt;
         $data['st_booking']          = $stBooking;
-        $data['st_trip_count']        = $stDelivery;
-
+        $data['st_trip_count']        = $stDelivered;
 
         $data['rig_collection']        = $rigCollection;
         $data['rig_new_reg_count']          = $rigRegistration;
