@@ -87,4 +87,35 @@ class RigApprovedRegistration extends Model
             ->where('rig_approved_registrations.application_id', $id)
             ->where('rig_approved_registrations.status', '<>', 0);
     }
+
+     /**
+     * | Get Approved Application by applicationId
+     */
+    public function getRigApprovedApplicationById($registrationId)
+    {
+        return RigApprovedRegistration::select(
+            DB::raw("REPLACE(rig_approved_registrations.application_type, '_', ' ') AS ref_application_type"),
+            'rig_approved_registrations.id as approve_id',
+            'rig_approve_active_details.id as ref_rig_id',
+            'rig_approve_applicants.id as ref_applicant_id',
+            'rig_approved_registrations.*',
+            'rig_approve_active_details.*',
+            'rig_approve_applicants.*',
+            'rig_approved_registrations.status as registrationStatus',
+            'rig_approve_active_details.status as Status',
+            'rig_approve_applicants.status as applicantsStatus',
+            'ulb_ward_masters.ward_name',
+            'ulb_masters.ulb_name',
+         
+            DB::raw("CASE 
+            WHEN rig_approve_active_details.sex = '1' THEN 'Male'
+            WHEN rig_approve_active_details.sex = '2' THEN 'Female'
+            END AS ref_gender"),
+        )
+            ->join('ulb_masters', 'ulb_masters.id', 'rig_approved_registrations.ulb_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_approved_registrations.ward_id')
+            ->join('rig_approve_applicants', 'rig_approve_applicants.application_id', 'rig_approved_registrations.application_id')
+            ->join('rig_approve_active_details', 'rig_approve_active_details.application_id', 'rig_approved_registrations.application_id')
+            ->where('rig_approved_registrations.id', $registrationId);
+    }
 }

@@ -247,7 +247,7 @@ class RigRegistrationController extends Controller
 
             $metaReqs = new Request(
                 [
-                
+
                     'citizenId'         => $citzenId ?? null,
                     'moduleId'          => $this->_rigModuleId,
                     'workflowId'        => $ulbWorkflowId->id,
@@ -1035,17 +1035,19 @@ class RigRegistrationController extends Controller
                     'charge_category',
                     'charge_category_name'
                 )
-                ->where('paid_status', 1)                                                                                   // Static
+
                 ->first();
             if (is_null($chargeDetails)) {
                 throw new Exception("Charges for respective application not found!");
             }
-            # Get Transaction details 
-            $tranDetails = $mRigTran->getTranByApplicationId($rejectedApplicationDetails->application_id)->first();
-            if (!$tranDetails) {
-                throw new Exception("Transaction details not found there is some error in data !");
+            # Get Transaction details
+            $tranDetails = null;
+            if ($chargeDetails->paid_status == 1) {
+                $tranDetails = $mRigTran->getTranByApplicationId($rejectedApplicationDetails->application_id)->first();
+                if (!$tranDetails) {
+                    throw new Exception("Transaction details not found there is some error in data !");
+                }
             }
-
             # return Details 
             $rejectedApplicationDetails['transactionDetails']    = $tranDetails;
             $chargeDetails['roundAmount']                       = round($chargeDetails['amount']);
@@ -1056,6 +1058,75 @@ class RigRegistrationController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
         }
     }
+    /**
+     * | Get Approved application details by application id
+     * | collective data with registration charges
+        | Serial No :
+        | Working
+     */
+    public function getApprovedApplicationDetails(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'registrationId' => 'required'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $user                       = authUser($req);
+            $viewRenewButton            = false;
+            $applicationId              = $req->registrationId;
+            $mRigApprovedRegistration   = new RigApprovedRegistration();
+            $mRigRegistrationCharge     = new RigRegistrationCharge();
+            $mPetTran                   = new RigTran();
+
+            $approveApplicationDetails = $mRigApprovedRegistration->getRigApprovedApplicationById($applicationId)
+                ->where('rig_approved_registrations.status', '<>', 0)                                                       // Static
+                ->first();
+            if (is_null($approveApplicationDetails)) {
+                throw new Exception("application Not found!");
+            }
+            $chargeDetails = $mRigRegistrationCharge->getChargesbyId($approveApplicationDetails->application_id)
+                ->select(
+                    'id AS chargeId',
+                    'amount',
+                    'registration_fee',
+                    'paid_status',
+                    'charge_category',
+                    'charge_category_name'
+                )
+                ->first();
+            if (is_null($chargeDetails)) {
+                throw new Exception("Charges for respective application not found!");
+            }
+            # Get Transaction details
+            $tranDetails = null;
+            if ($chargeDetails->paid_status == 1) {
+                $tranDetails = $mPetTran->getTranByApplicationId($approveApplicationDetails->application_id)->first();
+                if (!$tranDetails) {
+                    throw new Exception("Transaction details not found there is some error in data !");
+                }
+            }
+
+            # Check for jsk for renewal button
+            if ($user->user_type == 'JSK') {                                                                                // Static
+                $viewRenewButton = true;
+            }
+
+            # return Details 
+            $approveApplicationDetails['transactionDetails']    = $tranDetails;
+            $chargeDetails['roundAmount']                       = round($chargeDetails['amount']);
+            $approveApplicationDetails['charges']               = $chargeDetails;
+            $approveApplicationDetails['viewRenewalButton']     = $viewRenewButton;
+            return responseMsgs(true, "Listed application details!", remove_null($approveApplicationDetails), "", "01", ".ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
+        }
+    }
+
 
 
     /**
