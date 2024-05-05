@@ -641,4 +641,5 @@ class RigPaymentController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "055025", "1.0", responseTime(), "POST", $req->deviceId);
         }
     }
+
 }

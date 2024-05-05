@@ -55,6 +55,7 @@ Route::middleware([])->group(function () {
         Route::post('get-rejected-registration-list', 'getRejectedApplicationDetails');                         // Admin
         Route::post('get-approve-registration-list', 'getApprovedApplicationDetails');                          // Admin
         Route::post('application/searh-application', 'searchApplication');                                      // Admin
+        Route::post('application/approve-license-data', 'getLicnenseDetails');                                      // Admin
 
     });
 

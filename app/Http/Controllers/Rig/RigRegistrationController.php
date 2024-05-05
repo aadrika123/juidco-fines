@@ -1180,4 +1180,68 @@ class RigRegistrationController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
+
+    /**
+     * | get license data
+     */
+    public function getLicnenseDetails(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'registrationId' => 'required'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $user                       = authUser($req);
+            $viewRenewButton            = false;
+            $applicationId              = $req->registrationId;
+            $mRigApprovedRegistration   = new RigApprovedRegistration();
+            $mRigRegistrationCharge     = new RigRegistrationCharge();
+            $mRigTran                   = new RigTran();
+
+            $approveApplicationDetails = $mRigApprovedRegistration->getRigApprovedApplicationById($applicationId)
+                ->where('rig_approved_registrations.status', '<>', 0)                                                       // Static
+                ->first();
+            if (is_null($approveApplicationDetails)) {
+                throw new Exception("application Not found!");
+            }
+            $chargeDetails = $mRigRegistrationCharge->getChargesbyId($approveApplicationDetails->application_id)
+                ->select(
+                    'id AS chargeId',
+                    'amount',
+                    'registration_fee',
+                    'paid_status',
+                    'charge_category',
+                    'charge_category_name'
+                )
+                ->where('paid_status',1)
+                ->first();
+            if (is_null($chargeDetails)) {
+                throw new Exception("Charges for respective application not found!");
+            }
+            # Get Transaction details
+                $tranDetails = $mRigTran->getTranByApplicationId($approveApplicationDetails->application_id)->first();
+                if (!$tranDetails) {
+                    throw new Exception("Transaction details not found");
+                }
+
+            # Check for jsk for renewal button
+            if ($user->user_type == 'JSK') {                                                                                // Static
+                $viewRenewButton = true;
+            }
+
+            # return Details 
+            $approveApplicationDetails['transactionDetails']    = $tranDetails;
+            $chargeDetails['roundAmount']                       = round($chargeDetails['amount']);
+            $approveApplicationDetails['charges']               = $chargeDetails;
+            $approveApplicationDetails['viewRenewalButton']     = $viewRenewButton;
+            return responseMsgs(true, "Listed application details!", remove_null($approveApplicationDetails), "", "01", ".ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
+        }
+    }
 }
