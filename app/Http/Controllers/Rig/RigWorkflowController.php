@@ -21,7 +21,6 @@ use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WfWorkflowrolemap;
 use App\Models\Rig\WorkflowTrack;
-use App\Pipelines\Marriage\SearchByApplicationNo as MarriageSearchByApplicationNo;
 use App\Pipelines\rig\SearchByApplicationNo as rigSearchByApplicationNo;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
@@ -149,7 +148,7 @@ class RigWorkflowController extends Controller
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
-             $rigList = $this->getrigApplicatioList($workflowIds, $ulbId)
+            $rigList = $this->getrigApplicatioList($workflowIds, $ulbId)
                 ->whereIn('rig_active_registrations.current_role_id', $roleId)
                 // ->whereIn('rig_active_registrations.ward_id', $occupiedWards)
                 // ->where('rig_active_registrations.is_escalate', false)
@@ -693,7 +692,7 @@ class RigWorkflowController extends Controller
         try {
             # Variable Assignments
             $mWfDocument                = new WfActiveDocument();
-            $mRigHoard                  = new rigActiveRegistration();
+            $mRigRegistration           = new RigActiveRegistration();
             $mWfRoleusermap             = new WfRoleusermap();
             $wfDocId                    = $req->id;
             $applicationId              = $req->applicationId;
@@ -702,7 +701,7 @@ class RigWorkflowController extends Controller
 
 
             # validating application
-            $applicationDtl = $mRigHoard->getApplicationDtls($applicationId)
+            $applicationDtl = $mRigRegistration->getApplicationDtls($applicationId)
                 ->first();
             if (!$applicationDtl || collect($applicationDtl)->isEmpty())
                 throw new Exception("Application Details Not Found");
@@ -723,8 +722,8 @@ class RigWorkflowController extends Controller
 
             # validating if full documet is uploaded
             $ifFullDocVerified = $this->ifFullDocVerified($applicationId);          // (Current Object Derivative Function 0.1)
-            // if ($ifFullDocVerified == 1)
-            //     throw new Exception("Document Fully Verified");
+            if ($ifFullDocVerified == 1)
+                throw new Exception("Document Fully Verified");
 
             DB::beginTransaction();
             if ($req->docStatus == "Verified") {
@@ -748,9 +747,8 @@ class RigWorkflowController extends Controller
             else
                 $ifFullDocVerifiedV1 = 0;                                         // In Case of Rejection the Document Verification Status will always remain false
 
-            // dd($ifFullDocVerifiedV1);
             if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
-                $applicationDtl->doc_verify_status = 1;
+                $applicationDtl->doc_verify_status = TRUE;
                 $applicationDtl->save();
             }
             DB::commit();
@@ -772,7 +770,7 @@ class RigWorkflowController extends Controller
 
     public function ifFullDocVerified($applicationId)
     {
-        $mRigHoard                  = new rigActiveRegistration();
+        $mRigHoard                  = new RigActiveRegistration();
         $mWfActiveDocument          = new WfActiveDocument();
         $refapplication = $mRigHoard->getApplicationDtls($applicationId)
             ->firstOrFail();
@@ -810,7 +808,6 @@ class RigWorkflowController extends Controller
                 continue;
             }
             $explodeDocs = explode(',', $item);
-            $type = $explodeDocs[0] ?? "O";
             array_shift($explodeDocs);
             foreach ($explodeDocs as $explodeDoc) {
                 $changeStatus = 0;
@@ -819,19 +816,41 @@ class RigWorkflowController extends Controller
                     break;
                 }
             }
-            if ($changeStatus == 0 && $type == "R") {
+            if ($changeStatus == 0) {
                 $flag = 0;
                 break;
             }
-            if ($changeStatus == 0)
-                break;
         }
-
+    
         if ($flag == 0)
             return 0;
         else
             return 1;
+
     }
+
+//     $flag = 1;
+//     foreach ($docList['marriageDocs'] as $item) {
+//         $explodeDocs = explode(',', $item);
+//         array_shift($explodeDocs);
+//         foreach ($explodeDocs as $explodeDoc) {
+//             $changeStatus = 0;
+//             if (in_array($explodeDoc, $collectUploadDocList->toArray())) {
+//                 $changeStatus = 1;
+//                 break;
+//             }
+//         }
+//         if ($changeStatus == 0) {
+//             $flag = 0;
+//             break;
+//         }
+//     }
+
+//     if ($flag == 0)
+//         return 0;
+//     else
+//         return 1;
+// }
 
     #get doc which is required 
     public function getRigTypeDocList($refapps)
@@ -876,8 +895,8 @@ class RigWorkflowController extends Controller
             $mRigApprovedRegistration   = new RigApprovedRegistration();
 
             # Check params for role user 
-            $roleDetails = $this->getUserRollV2($userId, $user->ulb_id, $confWorkflowMasterId);
-            $this->checkParamForUser($user, $roleDetails);
+            // $roleDetails = $this->getUserRollV2($userId, $user->ulb_id, $confWorkflowMasterId);
+            // $this->checkParamForUser($user, $roleDetails);
 
             try {
                 $baseQuerry = $mRigApprovedRegistration->getAllApprovdApplicationDetails()
@@ -897,9 +916,9 @@ class RigWorkflowController extends Controller
                     ->where('rig_approved_registrations.status', '<>', 0)
                     ->where('rig_approve_applicants.status', '<>', 0)
                     ->where('rig_approve_active_details.status', '<>', 0)
-                    ->where('rig_approved_registrations.approve_user_id', $userId)
-                    ->where('rig_approved_registrations.finisher_role_id', $roleDetails->role_id)
-                    ->where('rig_approved_registrations.current_role_id', $roleDetails->role_id)
+                    // ->where('rig_approved_registrations.approve_user_id', $userId)
+                    // ->where('rig_approved_registrations.finisher_role_id', $roleDetails->role_id)
+                    // ->where('rig_approved_registrations.current_role_id', $roleDetails->role_id)
                     ->orderByDesc('rig_approved_registrations.id');
 
                 # Collect querry Exceptions 
@@ -989,8 +1008,8 @@ class RigWorkflowController extends Controller
             $mRigRejectedRegistration   = new RigRejectedRegistration();
 
             # Check params for role user 
-            $roleDetails = $this->getUserRollV2($userId, $user->ulb_id, $confWorkflowMasterId);
-            $this->checkParamForUser($user, $roleDetails);
+            // $roleDetails = $this->getUserRollV2($userId, $user->ulb_id, $confWorkflowMasterId);
+            // $this->checkParamForUser($user, $roleDetails);
 
             try {
                 $baseQuerry = $mRigRejectedRegistration->getAllRejectedApplicationDetails()
@@ -1003,16 +1022,16 @@ class RigWorkflowController extends Controller
                         "wf_roles.role_name",
                         "rig_rejected_registrations.status as registrationSatus",
                         DB::raw("CASE 
-                        WHEN rig_rejected_registrations.status = 1 THEN 'Approved'
+                        WHEN rig_rejected_registrations.status = 1 THEN 'Rejected'
                         WHEN rig_rejected_registrations.status = 2 THEN 'Under Renewal Process'
                         END as current_status")
                     )
                     ->where('rig_rejected_registrations.status', '<>', 0)
                     ->where('rig_rejected_applicants.status', '<>', 0)
                     ->where('rig_vehicle_rejected_details.status', '<>', 0)
-                    ->where('rig_rejected_registrations.rejected_user_id', $userId)
-                    ->where('rig_rejected_registrations.finisher_role_id', $roleDetails->role_id)
-                    ->where('rig_rejected_registrations.current_role_id', $roleDetails->role_id)
+                    // ->where('rig_rejected_registrations.rejected_user_id', $userId)
+                    // ->where('rig_rejected_registrations.finisher_role_id', $roleDetails->role_id)
+                    // ->where('rig_rejected_registrations.current_role_id', $roleDetails->role_id)
                     ->orderByDesc('rig_rejected_registrations.id');
 
                 # Collect querry Exceptions 
@@ -1055,7 +1074,7 @@ class RigWorkflowController extends Controller
         }
     }
 
-    
+
     // public function backToCitizen(Request $req)
     // {
 

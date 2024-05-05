@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 class RigActiveRegistration extends Model
 {
     use HasFactory;
+    protected $guarded = [];
 
     public function saveRegistration($req, $user)
     {
@@ -65,9 +66,8 @@ class RigActiveRegistration extends Model
      */
     public function getApplicationDtls($appId)
     {
-        return self::select('*')
-            ->where('id', $appId)
-            ->first();
+        return RigActiveRegistration::select('*')
+            ->where('id', $appId);
     }
 
     /**
