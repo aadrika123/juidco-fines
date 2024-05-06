@@ -908,7 +908,7 @@ class RigWorkflowController extends Controller
                         "rig_approved_registrations.application_apply_date",
                         "rig_approved_registrations.address",
                         "rig_approved_registrations.application_type",
-                        "rig_approved_registrations.payment_status",
+                        "rig_active_registrations.payment_status",
                         "rig_approved_registrations.status",
                         "rig_approved_registrations.registration_id",
                         "rig_approved_registrations.parked",
