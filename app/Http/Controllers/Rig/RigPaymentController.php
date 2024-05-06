@@ -495,8 +495,8 @@ class RigPaymentController extends Controller
 
         # Application details and Validation
         $applicationDetail = $mRigActiveRegistration->getRigApplicationById($applicationId)
-            ->where('rig_vehicle_active_details.status', 1)
-            ->where('rig_active_applicants.status', 1)
+            ->where('rig_vehicle_active_details.status', "<>", 0)
+            ->where('rig_active_applicants.status', "<>", 0)
             ->first();
         if (is_null($applicationDetail)) {
             throw new Exception("Application details not found for ID:$applicationId!");
@@ -641,5 +641,4 @@ class RigPaymentController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "055025", "1.0", responseTime(), "POST", $req->deviceId);
         }
     }
-
 }
