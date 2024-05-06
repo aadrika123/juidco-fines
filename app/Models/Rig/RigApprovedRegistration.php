@@ -73,7 +73,8 @@ class RigApprovedRegistration extends Model
         return DB::table('rig_approved_registrations')
             ->leftJoin('wf_roles', 'wf_roles.id', 'rig_approved_registrations.current_role_id')
             ->join('rig_approve_applicants', 'rig_approve_applicants.application_id', 'rig_approved_registrations.application_id')
-            ->join('rig_approve_active_details', 'rig_approve_active_details.application_id', 'rig_approved_registrations.application_id');
+            ->join('rig_approve_active_details', 'rig_approve_active_details.application_id', 'rig_approved_registrations.application_id')
+            ->join('rig_active_registrations','rig_active_registrations.id','rig_approved_registrations.application_id');
     }
 
      /**

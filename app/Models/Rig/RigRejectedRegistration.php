@@ -27,7 +27,8 @@ class RigRejectedRegistration extends Model
         return DB::table('rig_rejected_registrations')
             ->leftJoin('wf_roles', 'wf_roles.id', 'rig_rejected_registrations.current_role_id')
             ->join('rig_rejected_applicants', 'rig_rejected_applicants.application_id', 'rig_rejected_registrations.application_id')
-            ->join('rig_vehicle_rejected_details', 'rig_vehicle_rejected_details.application_id', 'rig_rejected_registrations.application_id');
+            ->join('rig_vehicle_rejected_details', 'rig_vehicle_rejected_details.application_id', 'rig_rejected_registrations.application_id')
+            ->join('rig_active_registrations','rig_active_registrations.id','rig_rejected_registrations.application_id');
     }
 
     /**
