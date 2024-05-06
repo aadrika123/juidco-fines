@@ -117,6 +117,6 @@ class RigApprovedRegistration extends Model
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_approved_registrations.ward_id')
             ->join('rig_approve_applicants', 'rig_approve_applicants.application_id', 'rig_approved_registrations.application_id')
             ->join('rig_approve_active_details', 'rig_approve_active_details.application_id', 'rig_approved_registrations.application_id')
-            ->where('rig_approved_registrations.id', $registrationId);
+            ->where('rig_approved_registrations.application_id', $registrationId);
     }
 }

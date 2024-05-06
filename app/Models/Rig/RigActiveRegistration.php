@@ -183,6 +183,11 @@ class RigActiveRegistration extends Model
             'rig_active_registrations.renewal',
             'rig_active_applicants.mobile_no',
             'rig_active_applicants.applicant_name',
+            DB::raw("CASE 
+            WHEN rig_active_registrations.status= '1' THEN 'Pending'
+            WHEN rig_active_registrations.status = '2' THEN 'Approve'
+            WHEN rig_active_registrations.status = '0' THEN 'Rejected'
+            END AS application_status"),
         )
             ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
             ->where('rig_active_registrations.' . $key, 'LIKE', '%' . $refNo . '%')
