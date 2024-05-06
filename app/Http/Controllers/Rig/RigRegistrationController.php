@@ -1244,4 +1244,29 @@ class RigRegistrationController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
         }
     }
+ /**
+  * |dashboard data
+  */
+    public function rigDashbordDtls(Request $request)
+    {
+        try {
+            $user = authUser($request);
+            $userId = $user->id;
+            $ulbId = $user->ulb_id;
+            $userType = $user->user_type;
+            $mRigActiveRegistration = new RigActiveRegistration();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+            $data['recentApplications'] = $mRigActiveRegistration->recentApplication($workflowIds, $roleId, $ulbId);
+            if ($userType == 'JSK') {
+                $data['recentApplications'] = $mRigActiveRegistration->recentApplicationJsk($userId, $ulbId);
+            }
+            $data['pendingApplicationCount']= $mRigActiveRegistration->pendingApplicationCount();
+            $data['approvedApplicationCount']= $mRigActiveRegistration->approvedApplicationCount();
+            return responseMsgs(true, "Recent Application", remove_null($data), "011901", "1.0", "", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011901", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+    }
 }
