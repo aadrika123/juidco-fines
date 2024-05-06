@@ -99,7 +99,21 @@ class RigApprovedRegistration extends Model
             'rig_approved_registrations.id as approve_id',
             'rig_approve_active_details.id as ref_rig_id',
             'rig_approve_applicants.id as ref_applicant_id',
-            'rig_approved_registrations.*',
+            'rig_active_registrations.id',
+            "rig_approved_registrations.application_no",
+            "rig_approved_registrations.application_apply_date",
+            "rig_approved_registrations.address",
+            "rig_approved_registrations.application_type",
+            "rig_active_registrations.payment_status",
+            "rig_approved_registrations.status",
+            "rig_approved_registrations.registration_id",
+            "rig_approved_registrations.parked",
+            "rig_approved_registrations.doc_upload_status",
+            "rig_approved_registrations.registration_id",
+            "rig_approved_registrations.doc_verify_status",
+            "rig_approved_registrations.approve_date",
+            "rig_approved_registrations.approve_end_date",
+            "rig_approved_registrations.doc_verify_status",
             'rig_approve_active_details.*',
             'rig_approve_applicants.*',
             'rig_approved_registrations.status as registrationStatus',
@@ -117,6 +131,7 @@ class RigApprovedRegistration extends Model
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_approved_registrations.ward_id')
             ->join('rig_approve_applicants', 'rig_approve_applicants.application_id', 'rig_approved_registrations.application_id')
             ->join('rig_approve_active_details', 'rig_approve_active_details.application_id', 'rig_approved_registrations.application_id')
+            ->join('rig_active_registrations','rig_active_registrations.id','rig_approved_registrations.application_id')
             ->where('rig_approved_registrations.application_id', $registrationId);
     }
 }

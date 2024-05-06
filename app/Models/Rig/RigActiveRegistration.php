@@ -269,7 +269,7 @@ class RigActiveRegistration extends Model
             ->leftjoin('wf_roles', 'wf_roles.id', 'rig_active_registrations.current_role_id')
             ->where('rig_active_registrations.ulb_id', $ulbId)
             ->where('rig_active_registrations.user_id', $userId)
-            ->where('rig_active_registrations.status', 1)
+            ->where('rig_active_registrations.status', "<>" , 0)
             ->orderBydesc('rig_active_registrations.id')
             ->take(10)
             ->get();
