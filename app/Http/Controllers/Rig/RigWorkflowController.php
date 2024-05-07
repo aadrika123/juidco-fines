@@ -69,7 +69,7 @@ class RigWorkflowController extends Controller
         $this->_occupancyType           = Config::get("rig.PROP_OCCUPANCY_TYPE");
         $this->_workflowMasterId        = Config::get("rig.WORKFLOW_MASTER_ID");
         $this->_rigParamId              = Config::get("rig.PARAM_ID");
-        $this->_rigModuleId             = Config::get('rig.rig_MODULE_ID');
+        $this->_rigModuleId             = Config::get('rig.RIG_MODULE_ID');
         $this->_userType                = Config::get("rig.REF_USER_TYPE");
         $this->_rigWfRoles              = Config::get("rig.ROLE_LABEL");
         $this->_docReqCatagory          = Config::get("rig.DOC_REQ_CATAGORY");
@@ -346,7 +346,7 @@ class RigWorkflowController extends Controller
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
 
             # Check params 
-            $this->checkParamForApproval($readRoleDtls, $application);
+            $this->checkParamForApproval($readRoleDtls, $application, $request);
 
             DB::beginTransaction();
             # Approval of grievance application 
@@ -380,7 +380,7 @@ class RigWorkflowController extends Controller
         | Serial No :
         | Working
      */
-    public function checkParamForApproval($readRoleDtls, $application)
+    public function checkParamForApproval($readRoleDtls, $application, $request)
     {
         if (!$readRoleDtls) {
             throw new Exception("Role details not found!");
@@ -388,11 +388,15 @@ class RigWorkflowController extends Controller
         if ($readRoleDtls->wf_role_id != $application->finisher_role_id) {
             throw new Exception("You are not the Finisher!");
         }
-        if ($application->doc_upload_status == false ) {
-            throw new Exception("Document Not Fully Uploaded ");
+        if ($request->status == 1) {
+            if ($application->doc_upload_status == false) {
+                throw new Exception("Document Not Fully Uploaded ");
+            }
         }
-        if ($application->doc_verify_status == false) {
-            throw new Exception("Document Not Fully Verified!");
+        if ($request->status == 1) {
+            if ($application->doc_verify_status == false) {
+                throw new Exception("Document Not Fully Verified!");
+            }
         }
     }
 
@@ -640,6 +644,7 @@ class RigWorkflowController extends Controller
             'refTableDotId'     => 'rig_active_registrations.id',                                   // Static
             'refTableIdValue'   => $applicationId,
             'user_id'           => authUser($request)->id,
+            'ulb_id'            =>  $refApplicationDetial->ulb_id
         ];
         $request->request->add($metaReqs);
         $rigTrack->saveTrack($request);
@@ -821,36 +826,35 @@ class RigWorkflowController extends Controller
                 break;
             }
         }
-    
+
         if ($flag == 0)
             return 0;
         else
             return 1;
-
     }
 
-//     $flag = 1;
-//     foreach ($docList['marriageDocs'] as $item) {
-//         $explodeDocs = explode(',', $item);
-//         array_shift($explodeDocs);
-//         foreach ($explodeDocs as $explodeDoc) {
-//             $changeStatus = 0;
-//             if (in_array($explodeDoc, $collectUploadDocList->toArray())) {
-//                 $changeStatus = 1;
-//                 break;
-//             }
-//         }
-//         if ($changeStatus == 0) {
-//             $flag = 0;
-//             break;
-//         }
-//     }
+    //     $flag = 1;
+    //     foreach ($docList['marriageDocs'] as $item) {
+    //         $explodeDocs = explode(',', $item);
+    //         array_shift($explodeDocs);
+    //         foreach ($explodeDocs as $explodeDoc) {
+    //             $changeStatus = 0;
+    //             if (in_array($explodeDoc, $collectUploadDocList->toArray())) {
+    //                 $changeStatus = 1;
+    //                 break;
+    //             }
+    //         }
+    //         if ($changeStatus == 0) {
+    //             $flag = 0;
+    //             break;
+    //         }
+    //     }
 
-//     if ($flag == 0)
-//         return 0;
-//     else
-//         return 1;
-// }
+    //     if ($flag == 0)
+    //         return 0;
+    //     else
+    //         return 1;
+    // }
 
     #get doc which is required 
     public function getRigTypeDocList($refapps)
