@@ -58,11 +58,10 @@ class WfActiveDocument extends Model
      */
     public function updateDocuments($req, $auth, $docId)
     {
-        $metaReqs =  WfActiveDocument::where('id', $req->docId)->first();
+        $metaReqs =  WfActiveDocument::where('id', $docId)->first();
         $metaReqs->module_id            = $req->moduleId;
         $metaReqs->uploaded_by          = $auth['id'];
         $metaReqs->uploaded_by_type     = $auth['user_type'];
-        $metaReqs->module_id            = $req->verify_status ?? 0;
         $metaReqs->unique_id            = $req->unique_id ?? null;
         $metaReqs->reference_no         = $req->reference_no ?? null;
 
@@ -184,7 +183,7 @@ class WfActiveDocument extends Model
             ->where('workflow_id', $workflowId)
             ->where('module_id', $moduleId)
             ->where('current_status', '1')
-            ->where('verify_status', 2)
+            ->where('status', 1)
             ->count();
     }
 
