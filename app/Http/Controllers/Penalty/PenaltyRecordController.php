@@ -1150,7 +1150,7 @@ class PenaltyRecordController extends Controller
 
             if ($userId)
                 $data = $data->where("approved_by", $userId)
-                    ->orwhere("penalty_final_records.user_id",$userId);
+                    ->orwhere("penalty_final_records.applied_by",$userId);
 
             $data = $data
                 ->paginate($perPage);
