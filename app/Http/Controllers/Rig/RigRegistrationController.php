@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Rig;
 
 use App\DocUpload;
+use App\Models\Rig\RefRequiredDocument;
 use App\Http\Controllers\Controller;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Traits\Workflow\Workflow;
@@ -247,7 +248,7 @@ class RigRegistrationController extends Controller
 
             $metaReqs = new Request(
                 [
-                
+
                     'citizenId'         => $citzenId ?? null,
                     'moduleId'          => $this->_rigModuleId,
                     'workflowId'        => $ulbWorkflowId->id,
@@ -938,19 +939,10 @@ class RigRegistrationController extends Controller
      */
     public function getrefRigDetails($applicationDetails)
     {
-        if ($applicationDetails->sex == 1) {
-            $sex = "Male";
-        } else {
-            $sex = "Female";
-        }
-        $dob = Carbon::createFromFormat('Y-m-d', $applicationDetails->dob)->format('d-m-Y');
-
+       
+        
         return new Collection([
-
-            ['displayString' => 'Gender',                              'key' => 'gender',                             'value' => $sex],
-            ['displayString' => 'Driver DOB',                          'key' => 'driverDob',                          'value' => $dob],
-            ['displayString' => 'Diver Name',                          'key' => 'driverName',                          'value' => $applicationDetails->driver_name],
-            ['displayString' => 'Vehicle Name',                        'key' => 'vehicleName',                         'value' => $applicationDetails->vehicle_name],
+    
             ['displayString' => 'Vehicle From',                        'key' => 'vehicleFrom',                         'value' => $applicationDetails->vehicle_from],
             ['displayString' => 'Vehicle Number',                      'key' => 'vehicleNumber',                       'value' => $applicationDetails->vehicle_no],
 
@@ -1035,17 +1027,19 @@ class RigRegistrationController extends Controller
                     'charge_category',
                     'charge_category_name'
                 )
-                ->where('paid_status', 1)                                                                                   // Static
+
                 ->first();
             if (is_null($chargeDetails)) {
                 throw new Exception("Charges for respective application not found!");
             }
-            # Get Transaction details 
-            $tranDetails = $mRigTran->getTranByApplicationId($rejectedApplicationDetails->application_id)->first();
-            if (!$tranDetails) {
-                throw new Exception("Transaction details not found there is some error in data !");
+            # Get Transaction details
+            $tranDetails = null;
+            if ($chargeDetails->paid_status == 1) {
+                $tranDetails = $mRigTran->getTranByApplicationId($rejectedApplicationDetails->application_id)->first();
+                if (!$tranDetails) {
+                    throw new Exception("Transaction details not found there is some error in data !");
+                }
             }
-
             # return Details 
             $rejectedApplicationDetails['transactionDetails']    = $tranDetails;
             $chargeDetails['roundAmount']                       = round($chargeDetails['amount']);
@@ -1056,6 +1050,75 @@ class RigRegistrationController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
         }
     }
+    /**
+     * | Get Approved application details by application id
+     * | collective data with registration charges
+        | Serial No :
+        | Working
+     */
+    public function getApprovedApplicationDetails(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'registrationId' => 'required'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $user                       = authUser($req);
+            $viewRenewButton            = false;
+            $applicationId              = $req->registrationId;
+            $mRigApprovedRegistration   = new RigApprovedRegistration();
+            $mRigRegistrationCharge     = new RigRegistrationCharge();
+            $mPetTran                   = new RigTran();
+
+            $approveApplicationDetails = $mRigApprovedRegistration->getRigApprovedApplicationById($applicationId)
+                ->where('rig_approved_registrations.status', '<>', 0)                                                       // Static
+                ->first();
+            if (is_null($approveApplicationDetails)) {
+                throw new Exception("application Not found!");
+            }
+            $chargeDetails = $mRigRegistrationCharge->getChargesbyId($approveApplicationDetails->application_id)
+                ->select(
+                    'id AS chargeId',
+                    'amount',
+                    'registration_fee',
+                    'paid_status',
+                    'charge_category',
+                    'charge_category_name'
+                )
+                ->first();
+            if (is_null($chargeDetails)) {
+                throw new Exception("Charges for respective application not found!");
+            }
+            # Get Transaction details
+            $tranDetails = null;
+            if ($chargeDetails->paid_status == 1) {
+                $tranDetails = $mPetTran->getTranByApplicationId($approveApplicationDetails->application_id)->first();
+                if (!$tranDetails) {
+                    throw new Exception("Transaction details not found there is some error in data !");
+                }
+            }
+
+            # Check for jsk for renewal button
+            if ($user->user_type == 'JSK') {                                                                                // Static
+                $viewRenewButton = true;
+            }
+
+            # return Details 
+            $approveApplicationDetails['transactionDetails']    = $tranDetails;
+            $chargeDetails['roundAmount']                       = round($chargeDetails['amount']);
+            $approveApplicationDetails['charges']               = $chargeDetails;
+            $approveApplicationDetails['viewRenewalButton']     = $viewRenewButton;
+            return responseMsgs(true, "Listed application details!", remove_null($approveApplicationDetails), "", "01", ".ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
+        }
+    }
+
 
 
     /**
@@ -1109,4 +1172,233 @@ class RigRegistrationController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
+
+    /**
+     * | get license data
+     */
+    public function getLicnenseDetails(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'registrationId' => 'required'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $user                       = authUser($req);
+            $viewRenewButton            = false;
+            $applicationId              = $req->registrationId;
+            $mRigApprovedRegistration   = new RigApprovedRegistration();
+            $mRigRegistrationCharge     = new RigRegistrationCharge();
+            $mRigTran                   = new RigTran();
+
+            $approveApplicationDetails = $mRigApprovedRegistration->getRigApprovedApplicationById($applicationId)
+                ->where('rig_approved_registrations.status', '<>', 0)                                                       // Static
+                ->first();
+            if (is_null($approveApplicationDetails)) {
+                throw new Exception("application Not found!");
+            }
+            $chargeDetails = $mRigRegistrationCharge->getChargesbyId($approveApplicationDetails->application_id)
+                ->select(
+                    'id AS chargeId',
+                    'amount',
+                    'registration_fee',
+                    'paid_status',
+                    'charge_category',
+                    'charge_category_name'
+                )
+                ->where('paid_status', 1)
+                ->first();
+            if (is_null($chargeDetails)) {
+                throw new Exception("Charges for respective application not found!");
+            }
+            # Get Transaction details
+            $tranDetails = $mRigTran->getTranByApplicationId($approveApplicationDetails->application_id)->first();
+            if (!$tranDetails) {
+                throw new Exception("Transaction details not found");
+            }
+
+            # Check for jsk for renewal button
+            if ($user->user_type == 'JSK') {                                                                                // Static
+                $viewRenewButton = true;
+            }
+
+            # return Details 
+            $approveApplicationDetails['transactionDetails']    = $tranDetails;
+            $chargeDetails['roundAmount']                       = round($chargeDetails['amount']);
+            $approveApplicationDetails['charges']               = $chargeDetails;
+            $approveApplicationDetails['viewRenewalButton']     = $viewRenewButton;
+            return responseMsgs(true, "Listed application details!", remove_null($approveApplicationDetails), "", "01", ".ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
+        }
+    }
+    /**
+     * |dashboard data
+     */
+    public function rigDashbordDtls(Request $request)
+    {
+        try {
+            $user = authUser($request);
+            $userId = $user->id;
+            $ulbId = $user->ulb_id;
+            $userType = $user->user_type;
+            $mRigActiveRegistration = new RigActiveRegistration();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+            $data['recentApplications'] = $mRigActiveRegistration->recentApplication($workflowIds, $roleId, $ulbId);
+            if ($userType == 'JSK') {
+                $data['recentApplications'] = $mRigActiveRegistration->recentApplicationJsk($userId, $ulbId);
+            }
+            $data['pendingApplicationCount'] = $mRigActiveRegistration->pendingApplicationCount();
+            $data['approvedApplicationCount'] = $mRigActiveRegistration->approvedApplicationCount();
+            return responseMsgs(true, "Recent Application", remove_null($data), "011901", "1.0", "", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011901", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Reuploaded rejected document
+     * | Function - 36
+     * | API - 33
+     */
+    public function reuploadDocuments(Request $req)
+    {
+        $validator = Validator::make($req->all(), [
+            'id' => 'required|digits_between:1,9223372036854775807',
+            'image' => 'required|mimes:png,jpeg,pdf,jpg'
+        ]);
+        if ($validator->fails()) {
+            return ['status' => false, 'message' => $validator->errors()];
+        }
+        try {
+            // Variable initialization
+            $mRigActiveRegistrations = new RigActiveRegistration();
+            $Image                   = $req->image;
+            $docId                   = $req->id;
+            DB::beginTransaction();
+            $appId = $this->reuploadDocument($req, $Image, $docId);
+            $this->checkFullUpload($appId);
+            DB::commit();
+            return responseMsgs(true, "Document Uploaded Successfully", "", "050133", 1.0, responseTime(), "POST", "", "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, "Document Not Uploaded", "", "050133", 1.0, "271ms", "POST", "", "");
+        }
+    }
+
+    public function reuploadDocument($req, $Image, $docId)
+    {
+        try {
+            #initiatialise variable 
+
+            $data = [];
+            $docUpload = new DocUpload;
+            $relativePath = Config::get('rig.RIG_RELATIVE_PATH.REGISTRATION');
+            $mWfActiveDocument = new WfActiveDocument();
+            $mRigActiveRegistration = new RigActiveRegistration();
+            $user = collect(authUser($req));
+
+
+            $file = $Image;
+            $req->merge([
+                'document' => $file
+            ]);
+            #_Doc Upload through a DMS
+            $imageName = $docUpload->upload($req);
+            $metaReqs = [
+                'moduleId' => Config::get('workflow-constants.ADVERTISMENT_MODULE') ?? 15,
+                'unique_id' => $imageName['data']['uniqueId'] ?? null,
+                'reference_no' => $imageName['data']['ReferenceNo'] ?? null,
+            ];
+
+            // Save document metadata in wfActiveDocuments
+            $activeId = $mWfActiveDocument->updateDocuments(new Request($metaReqs), $user, $docId);
+            return $activeId;
+
+            // return $data;
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | Cheque full upload document or no
+     */
+
+     public function checkFullUpload($applicationId)
+     {
+         $mWfActiveDocument = new WfActiveDocument();
+         $mRefRequirement = new RefRequiredDocument();
+         $moduleId =  $this->_rigModuleId;
+         $totalRequireDocs = $mRefRequirement->totalNoOfDocs($moduleId);
+         $appDetails = RigActiveRegistration::find($applicationId);
+         $totalUploadedDocs = $mWfActiveDocument->totalUploadedDocs($applicationId, $appDetails->workflow_id, $moduleId);
+         if ($totalRequireDocs == $totalUploadedDocs) {
+             $appDetails->doc_upload_status = true;
+             $appDetails->doc_verify_status = '0';
+             $appDetails->parked = false;
+             $appDetails->save();
+         } else {
+             $appDetails->doc_upload_status = '0';
+             $appDetails->doc_verify_status = '0';
+             $appDetails->save();
+         }
+     }
+
+    // public function reuploadDocument($req,)
+    // {
+    //     try {
+    // #initiatialise variable 
+
+    // $data = [];
+    // $docUpload = new DocUpload;
+    // $relativePath = Config::get('rig.RIG_RELATIVE_PATH.REGISTRATION');
+    // $mWfActiveDocument = new WfActiveDocument();
+    // $mRigActiveRegistration = new RigActiveRegistration();
+    // $user = collect(authUser($req));
+
+    // // $documentTypes = [
+    // //     'photo1'      => ' Fitness Image',
+    // //     'photo2'      => ' Tax Image',
+    // //     'photo3'      => ' License Image',
+    // // ];
+
+    // foreach ($mDocuments as $document) {
+    //     $file = $document['image'];
+    //     $req->merge([
+    //         'document' => $file
+    //     ]);
+    //     #_Doc Upload through a DMS
+    //     $imageName = $docUpload->upload($req);
+    //     $metaReqs = [
+    //         'moduleId' => Config::get('workflow-constants.ADVERTISMENT_MODULE') ?? 15,
+    //         'activeId' => $ApplicationId,
+    //         'workflowId' => $workflowId,
+    //         'ulbId' => $ulbId,
+    //         'relativePath' => $relativePath,
+    //         'document' => $imageName,
+    //         'doc_category' => $req->docCategory,
+    //         'docCode' => $document['docCode'],
+    //         'ownerDtlId' => $document['ownerDtlId'],
+    //         'unique_id' => $imageName['data']['uniqueId'] ?? null,
+    //         'reference_no' => $imageName['data']['ReferenceNo'] ?? null,
+    //     ];
+
+    //     // Save document metadata in wfActiveDocuments
+    //     $mWfActiveDocument->postDocuments(new Request($metaReqs), $user);
+    //     //update docupload  status 
+    //     $mRigActiveRegistration->updateUploadStatus($ApplicationId, true);
+    // }
+
+    //         return $data;
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
+    //     }
+    // }
 }

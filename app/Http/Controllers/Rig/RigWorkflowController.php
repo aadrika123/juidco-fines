@@ -21,7 +21,6 @@ use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WfWorkflowrolemap;
 use App\Models\Rig\WorkflowTrack;
-use App\Pipelines\Marriage\SearchByApplicationNo as MarriageSearchByApplicationNo;
 use App\Pipelines\rig\SearchByApplicationNo as rigSearchByApplicationNo;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
@@ -70,7 +69,7 @@ class RigWorkflowController extends Controller
         $this->_occupancyType           = Config::get("rig.PROP_OCCUPANCY_TYPE");
         $this->_workflowMasterId        = Config::get("rig.WORKFLOW_MASTER_ID");
         $this->_rigParamId              = Config::get("rig.PARAM_ID");
-        $this->_rigModuleId             = Config::get('rig.rig_MODULE_ID');
+        $this->_rigModuleId             = Config::get('rig.RIG_MODULE_ID');
         $this->_userType                = Config::get("rig.REF_USER_TYPE");
         $this->_rigWfRoles              = Config::get("rig.ROLE_LABEL");
         $this->_docReqCatagory          = Config::get("rig.DOC_REQ_CATAGORY");
@@ -149,7 +148,7 @@ class RigWorkflowController extends Controller
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
-             $rigList = $this->getrigApplicatioList($workflowIds, $ulbId)
+            $rigList = $this->getrigApplicatioList($workflowIds, $ulbId)
                 ->whereIn('rig_active_registrations.current_role_id', $roleId)
                 // ->whereIn('rig_active_registrations.ward_id', $occupiedWards)
                 // ->where('rig_active_registrations.is_escalate', false)
@@ -347,7 +346,7 @@ class RigWorkflowController extends Controller
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
 
             # Check params 
-            $this->checkParamForApproval($readRoleDtls, $application);
+            $this->checkParamForApproval($readRoleDtls, $application, $request);
 
             DB::beginTransaction();
             # Approval of grievance application 
@@ -381,7 +380,7 @@ class RigWorkflowController extends Controller
         | Serial No :
         | Working
      */
-    public function checkParamForApproval($readRoleDtls, $application)
+    public function checkParamForApproval($readRoleDtls, $application, $request)
     {
         if (!$readRoleDtls) {
             throw new Exception("Role details not found!");
@@ -389,11 +388,15 @@ class RigWorkflowController extends Controller
         if ($readRoleDtls->wf_role_id != $application->finisher_role_id) {
             throw new Exception("You are not the Finisher!");
         }
-        if ($application->doc_upload_status == false || $application->payment_status != 1) {
-            throw new Exception("Document Not Fully Uploaded or Payment in not Done!");
+        if ($request->status == 1) {
+            if ($application->doc_upload_status == false) {
+                throw new Exception("Document Not Fully Uploaded ");
+            }
         }
-        if ($application->doc_verify_status == false) {
-            throw new Exception("Document Not Fully Verified!");
+        if ($request->status == 1) {
+            if ($application->doc_verify_status == false) {
+                throw new Exception("Document Not Fully Verified!");
+            }
         }
     }
 
@@ -641,6 +644,7 @@ class RigWorkflowController extends Controller
             'refTableDotId'     => 'rig_active_registrations.id',                                   // Static
             'refTableIdValue'   => $applicationId,
             'user_id'           => authUser($request)->id,
+            'ulb_id'            =>  $refApplicationDetial->ulb_id
         ];
         $request->request->add($metaReqs);
         $rigTrack->saveTrack($request);
@@ -693,7 +697,7 @@ class RigWorkflowController extends Controller
         try {
             # Variable Assignments
             $mWfDocument                = new WfActiveDocument();
-            $mRigHoard                  = new rigActiveRegistration();
+            $mRigRegistration           = new RigActiveRegistration();
             $mWfRoleusermap             = new WfRoleusermap();
             $wfDocId                    = $req->id;
             $applicationId              = $req->applicationId;
@@ -702,7 +706,7 @@ class RigWorkflowController extends Controller
 
 
             # validating application
-            $applicationDtl = $mRigHoard->getApplicationDtls($applicationId)
+            $applicationDtl = $mRigRegistration->getApplicationDtls($applicationId)
                 ->first();
             if (!$applicationDtl || collect($applicationDtl)->isEmpty())
                 throw new Exception("Application Details Not Found");
@@ -723,8 +727,8 @@ class RigWorkflowController extends Controller
 
             # validating if full documet is uploaded
             $ifFullDocVerified = $this->ifFullDocVerified($applicationId);          // (Current Object Derivative Function 0.1)
-            // if ($ifFullDocVerified == 1)
-            //     throw new Exception("Document Fully Verified");
+            if ($ifFullDocVerified == 1)
+                throw new Exception("Document Fully Verified");
 
             DB::beginTransaction();
             if ($req->docStatus == "Verified") {
@@ -733,7 +737,7 @@ class RigWorkflowController extends Controller
             if ($req->docStatus == "Rejected") {
                 # For Rejection Doc Upload Status and Verify Status will disabled 
                 $status = 2;
-                $applicationDtl->doc_upload_status = 0;
+                // $applicationDtl->doc_upload_status = 0;
                 $applicationDtl->doc_verify_status = false;
                 $applicationDtl->save();
             }
@@ -748,9 +752,8 @@ class RigWorkflowController extends Controller
             else
                 $ifFullDocVerifiedV1 = 0;                                         // In Case of Rejection the Document Verification Status will always remain false
 
-            // dd($ifFullDocVerifiedV1);
             if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
-                $applicationDtl->doc_verify_status = 1;
+                $applicationDtl->doc_verify_status = TRUE;
                 $applicationDtl->save();
             }
             DB::commit();
@@ -772,7 +775,7 @@ class RigWorkflowController extends Controller
 
     public function ifFullDocVerified($applicationId)
     {
-        $mRigHoard                  = new rigActiveRegistration();
+        $mRigHoard                  = new RigActiveRegistration();
         $mWfActiveDocument          = new WfActiveDocument();
         $refapplication = $mRigHoard->getApplicationDtls($applicationId)
             ->firstOrFail();
@@ -810,7 +813,6 @@ class RigWorkflowController extends Controller
                 continue;
             }
             $explodeDocs = explode(',', $item);
-            $type = $explodeDocs[0] ?? "O";
             array_shift($explodeDocs);
             foreach ($explodeDocs as $explodeDoc) {
                 $changeStatus = 0;
@@ -819,12 +821,10 @@ class RigWorkflowController extends Controller
                     break;
                 }
             }
-            if ($changeStatus == 0 && $type == "R") {
+            if ($changeStatus == 0) {
                 $flag = 0;
                 break;
             }
-            if ($changeStatus == 0)
-                break;
         }
 
         if ($flag == 0)
@@ -832,6 +832,29 @@ class RigWorkflowController extends Controller
         else
             return 1;
     }
+
+    //     $flag = 1;
+    //     foreach ($docList['marriageDocs'] as $item) {
+    //         $explodeDocs = explode(',', $item);
+    //         array_shift($explodeDocs);
+    //         foreach ($explodeDocs as $explodeDoc) {
+    //             $changeStatus = 0;
+    //             if (in_array($explodeDoc, $collectUploadDocList->toArray())) {
+    //                 $changeStatus = 1;
+    //                 break;
+    //             }
+    //         }
+    //         if ($changeStatus == 0) {
+    //             $flag = 0;
+    //             break;
+    //         }
+    //     }
+
+    //     if ($flag == 0)
+    //         return 0;
+    //     else
+    //         return 1;
+    // }
 
     #get doc which is required 
     public function getRigTypeDocList($refapps)
@@ -876,15 +899,29 @@ class RigWorkflowController extends Controller
             $mRigApprovedRegistration   = new RigApprovedRegistration();
 
             # Check params for role user 
-            $roleDetails = $this->getUserRollV2($userId, $user->ulb_id, $confWorkflowMasterId);
-            $this->checkParamForUser($user, $roleDetails);
+            // $roleDetails = $this->getUserRollV2($userId, $user->ulb_id, $confWorkflowMasterId);
+            // $this->checkParamForUser($user, $roleDetails);
 
             try {
                 $baseQuerry = $mRigApprovedRegistration->getAllApprovdApplicationDetails()
                     ->select(
                         DB::raw("REPLACE(rig_approved_registrations.application_type, '_', ' ') AS ref_application_type"),
                         DB::raw("TO_CHAR(rig_approved_registrations.application_apply_date, 'DD-MM-YYYY') as ref_application_apply_date"),
-                        "rig_approved_registrations.*",
+                        "rig_active_registrations.id",
+                        "rig_approved_registrations.application_no",
+                        "rig_approved_registrations.application_apply_date",
+                        "rig_approved_registrations.address",
+                        "rig_approved_registrations.application_type",
+                        "rig_active_registrations.payment_status",
+                        "rig_approved_registrations.status",
+                        "rig_approved_registrations.registration_id",
+                        "rig_approved_registrations.parked",
+                        "rig_approved_registrations.doc_upload_status",
+                        "rig_approved_registrations.registration_id",
+                        "rig_approved_registrations.doc_verify_status",
+                        "rig_approved_registrations.approve_date",
+                        "rig_approved_registrations.approve_end_date",
+                        "rig_approved_registrations.doc_verify_status",
                         "rig_approve_applicants.applicant_name",
                         "rig_approve_applicants.mobile_no",
                         "wf_roles.role_name",
@@ -897,9 +934,9 @@ class RigWorkflowController extends Controller
                     ->where('rig_approved_registrations.status', '<>', 0)
                     ->where('rig_approve_applicants.status', '<>', 0)
                     ->where('rig_approve_active_details.status', '<>', 0)
-                    ->where('rig_approved_registrations.approve_user_id', $userId)
-                    ->where('rig_approved_registrations.finisher_role_id', $roleDetails->role_id)
-                    ->where('rig_approved_registrations.current_role_id', $roleDetails->role_id)
+                    // ->where('rig_approved_registrations.approve_user_id', $userId)
+                    // ->where('rig_approved_registrations.finisher_role_id', $roleDetails->role_id)
+                    // ->where('rig_approved_registrations.current_role_id', $roleDetails->role_id)
                     ->orderByDesc('rig_approved_registrations.id');
 
                 # Collect querry Exceptions 
@@ -989,30 +1026,39 @@ class RigWorkflowController extends Controller
             $mRigRejectedRegistration   = new RigRejectedRegistration();
 
             # Check params for role user 
-            $roleDetails = $this->getUserRollV2($userId, $user->ulb_id, $confWorkflowMasterId);
-            $this->checkParamForUser($user, $roleDetails);
+            // $roleDetails = $this->getUserRollV2($userId, $user->ulb_id, $confWorkflowMasterId);
+            // $this->checkParamForUser($user, $roleDetails);
 
             try {
                 $baseQuerry = $mRigRejectedRegistration->getAllRejectedApplicationDetails()
                     ->select(
                         DB::raw("REPLACE(rig_rejected_registrations.application_type, '_', ' ') AS ref_application_type"),
                         DB::raw("TO_CHAR(rig_rejected_registrations.application_apply_date, 'DD-MM-YYYY') as ref_application_apply_date"),
-                        "rig_rejected_registrations.*",
+                        "rig_active_registrations.id",
+                        "rig_rejected_registrations.application_no",
+                        "rig_rejected_registrations.application_apply_date",
+                        "rig_rejected_registrations.address",
+                        "rig_rejected_registrations.application_type",
+                        "rig_rejected_registrations.payment_status",
+                        "rig_rejected_registrations.status",
+                        "rig_rejected_registrations.doc_upload_status",
+                        "rig_rejected_registrations.doc_verify_status",
+                        "rig_rejected_registrations.rejected_date",
                         "rig_rejected_applicants.applicant_name",
                         "rig_rejected_applicants.mobile_no",
                         "wf_roles.role_name",
                         "rig_rejected_registrations.status as registrationSatus",
                         DB::raw("CASE 
-                        WHEN rig_rejected_registrations.status = 1 THEN 'Approved'
+                        WHEN rig_rejected_registrations.status = 1 THEN 'Rejected'
                         WHEN rig_rejected_registrations.status = 2 THEN 'Under Renewal Process'
                         END as current_status")
                     )
                     ->where('rig_rejected_registrations.status', '<>', 0)
                     ->where('rig_rejected_applicants.status', '<>', 0)
                     ->where('rig_vehicle_rejected_details.status', '<>', 0)
-                    ->where('rig_rejected_registrations.rejected_user_id', $userId)
-                    ->where('rig_rejected_registrations.finisher_role_id', $roleDetails->role_id)
-                    ->where('rig_rejected_registrations.current_role_id', $roleDetails->role_id)
+                    // ->where('rig_rejected_registrations.rejected_user_id', $userId)
+                    // ->where('rig_rejected_registrations.finisher_role_id', $roleDetails->role_id)
+                    // ->where('rig_rejected_registrations.current_role_id', $roleDetails->role_id)
                     ->orderByDesc('rig_rejected_registrations.id');
 
                 # Collect querry Exceptions 
@@ -1055,54 +1101,87 @@ class RigWorkflowController extends Controller
         }
     }
 
-    
-    // public function backToCitizen(Request $req)
-    // {
 
-    //     $validated = Validator::make(
-    //         $req->all(),
-    //         [
-    //             'applicationId' => "required",
-    //         ]
-    //     );
-    //     if ($validated->fails())
-    //         return validationError($validated);
-    //     try {
-    //         // Variable initialization
-    //         $redis = Redis::connection();
-    //         $mAgencyHoarding = RigActiveRegistration::find($req->applicationId);
-    //         if ($mAgencyHoarding->doc_verify_status == 1)
-    //             throw new Exception("All Documents Are varified, So Application is Not BTC !!!");
-    //         if ($mAgencyHoarding->doc_upload_status == 1)
-    //             throw new Exception("No Any Document Rejected, So Application is Not BTC !!!");
-    //         $workflowId = $mAgencyHoarding->workflow_id;
-    //         $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
-    //         if (!$backId) {
-    //             $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
-    //                 ->where('is_initiator', true)
-    //                 ->first();
-    //             $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
-    //         }
+    # back to citiizen or jsk 
+    public function backToCitizen(Request $req)
+    {
 
-    //         $mAgencyHoarding->current_role_id = $backId->wf_role_id;
-    //         $mAgencyHoarding->parked = 1;
-    //         $mAgencyHoarding->save();
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => "required",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            // Variable initialization
+            $mRigActiveRegistration = RigActiveRegistration::find($req->applicationId);
+            if ($mRigActiveRegistration->doc_verify_status == 1)
+                throw new Exception("All Documents Are varified, So Application is Not BTC !!!");
+            if ($mRigActiveRegistration->doc_upload_status == 1)
+                throw new Exception("No Any Document Rejected, So Application is Not BTC !!!");
+            $workflowId = $mRigActiveRegistration->workflow_id;
 
-    //         $metaReqs['moduleId'] = $this->_moduleId;
-    //         $metaReqs['workflowId'] = $mAgencyHoarding->workflow_id;
-    //         $metaReqs['refTableDotId'] = "agency_hoardings.id";
-    //         $metaReqs['refTableIdValue'] = $req->applicationId;
-    //         $metaReqs['verificationStatus'] = $req->verificationStatus;
-    //         $metaReqs['senderRoleId'] = $req->currentRoleId;
-    //         $req->request->add($metaReqs);
+            $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
+                ->where('is_initiator', true)
+                ->first();
 
-    //         $req->request->add($metaReqs);
-    //         $track = new WorkflowTrack();
-    //         $track->saveTrack($req);
 
-    //         return responseMsgs(true, "Successfully Done", "", "", '050131', '01', responseTime(), 'POST', '');
-    //     } catch (Exception $e) {
-    //         return responseMsgs(false, $e->getMessage(), "", "050131", "1.0", "", "POST", $req->deviceId ?? "");
-    //     }
-    // }
+
+            $mRigActiveRegistration->current_role_id = $backId->wf_role_id;
+            $mRigActiveRegistration->parked = 1;
+            $mRigActiveRegistration->save();
+
+            $metaReqs['moduleId'] =  $this->_rigModuleId;
+            $metaReqs['workflowId'] = $mRigActiveRegistration->workflow_id;
+            $metaReqs['refTableDotId'] = "rig_active_registrations.id";
+            $metaReqs['refTableIdValue'] = $req->applicationId;
+            $metaReqs['verificationStatus'] = $req->verificationStatus;
+            $metaReqs['senderRoleId'] = $req->currentRoleId;
+            $metaReqs['senderRoleId'] = $req->currentRoleId;
+            $metaReqs['ulbId'] = $mRigActiveRegistration->ulb_id;
+            $req->request->add($metaReqs);
+
+            $req->request->add($metaReqs);
+            $track = new WorkflowTrack();
+            $track->saveTrack($req);
+
+            return responseMsgs(true, "Successfully Done", "", "", '050131', '01', responseTime(), 'POST', '');
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "050131", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    #back to citizen or jsk application 
+
+    public function btJskInbox(Request $request)
+    {
+        try {
+
+            $user   = authUser($request);
+            $userId = $user->id;
+            $ulbId  = $user->ulb_id;
+            $pages  = $request->perPage ?? 10;
+            $mDeviceId = $request->deviceId ?? "";
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $msg = "Btc Inbox List Details!";
+
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $rigList = $this->getrigApplicatioList($workflowIds, $ulbId)
+                ->whereIn('rig_active_registrations.current_role_id', $roleId)
+                ->where('rig_active_registrations.parked', true)
+                // ->where('rig_active_registrations.is_escalate', false)
+                ->paginate($pages);
+
+            if (collect($rigList)->last() == 0 || !$rigList) {
+                $msg = "Data not found!";
+            }
+            return responseMsgs(true, $msg, remove_null($rigList), '', '02', '', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $mDeviceId);
+        }
+    }
 }

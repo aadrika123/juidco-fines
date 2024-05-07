@@ -29,23 +29,19 @@ class RigRegistrationReq extends FormRequest
             'address'               => 'required|',
             'applyThrough'          => 'nullable|int|in:1,2',
             'ownerCategory'         => 'required|in:1,2',
-            'driverBirthDate'       => 'required|date|date_format:Y-m-d',
             'ulbId'                 => 'required|int',
             'ward'                  => 'required|int',
-            'driverGender'          => 'required',
             'applicantName'         => "required|",
-            'driverName'            => "required|",
             'mobileNo'              => "required|digits:10|regex:/[0-9]{10}/",
-            'email'                 => "nullable|email",
-            'panNo'                 => "required|min:10|max:10|alpha_num|",
+            'email'                 => "required|email",
+            'panNo'                 => "nullable|min:10|max:10|alpha_num|",
             'telephone'             => "nullable|int|regex:/[0-9]{10}/",
             'vehicleComapny'        => "required",
-            'vehicleFrom'           => "required",
             'registrationNumber'    => "required",
             'documents'            => 'nullable|array',
             'documents.*.image'    => 'nullable|mimes:png,jpeg,pdf,jpg',
             'documents.*.docCode'  => 'nullable|string',
-            'documents.*.ownerDtlId' => 'nullable|integer'
+            'documents.*.ownerDtlId' => 'nullable|integer'  
         ];
 
         if (isset($this->applyThrough) && $this->applyThrough) {
@@ -63,6 +59,6 @@ class RigRegistrationReq extends FormRequest
             'status'    => false,
             'message'   => "Validation Error!",
             'error'     => $validator->errors()
-        ], 422));
+        ], 200 ));
     }
 }

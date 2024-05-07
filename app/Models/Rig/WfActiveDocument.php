@@ -54,6 +54,23 @@ class WfActiveDocument extends Model
 
 
     /**
+     * | Upload document funcation
+     */
+    public function updateDocuments($req, $auth, $docId)
+    {
+        $metaReqs =  WfActiveDocument::where('id', $docId)->first();
+        $metaReqs->module_id            = $req->moduleId;
+        $metaReqs->uploaded_by          = $auth['id'];
+        $metaReqs->uploaded_by_type     = $auth['user_type'];
+        $metaReqs->unique_id            = $req->unique_id ?? null;
+        $metaReqs->reference_no         = $req->reference_no ?? null;
+
+        $metaReqs->save();
+        return $metaReqs->active_id;
+    }
+
+
+    /**
      * | Post Workflow Document
      */
     public function postPetDocuments($req)
@@ -166,7 +183,7 @@ class WfActiveDocument extends Model
             ->where('workflow_id', $workflowId)
             ->where('module_id', $moduleId)
             ->where('current_status', '1')
-            ->where('verify_status', '!=', 2)
+            ->where('status', 1)
             ->count();
     }
 
@@ -394,4 +411,6 @@ class WfActiveDocument extends Model
         $document = WfActiveDocument::find($id);
         $document->update($req);
     }
+
+    
 }

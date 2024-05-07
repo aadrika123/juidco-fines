@@ -53,8 +53,12 @@ Route::middleware([])->group(function () {
 
         Route::post('get-renewal-history', 'getRenewalHistory');
         Route::post('get-rejected-registration-list', 'getRejectedApplicationDetails');                         // Admin
+        Route::post('get-approve-registration-list', 'getApprovedApplicationDetails');                          // Admin
         Route::post('application/searh-application', 'searchApplication');                                      // Admin
-        Route::post('rental/verified-cash-payment', 'verifiedCashPayment');                                     //   Verified Cash Payment 
+        Route::post('application/approve-license-data', 'getLicnenseDetails');                                      // Admin
+        Route::post('application/dashboard-details', 'rigDashbordDtls');                                      // Admin
+        Route::post('application/reupload-document', 'reuploadDocuments');                                      // Admin
+        
 
     });
 
@@ -71,7 +75,8 @@ Route::middleware([])->group(function () {
         Route::post('final-verify-reject', 'finalApprovalRejection');                                           // Workflow
         Route::post('list-approved-application', 'listfinisherApproveApplications');                            // Workflow
         Route::post('list-rejected-application', 'listfinisherRejectApplications');                             // Workflow
-        Route::post('back-to-citizen', 'backToCitizen');                                                   // Workflow
+        Route::post('back-to-jsk-list', 'btJskInbox');                                                        // Workflow
+        Route::post('back-to-citizen', 'backToCitizen');                                                        // Workflow
     });
 
     // payment operations 
@@ -80,6 +85,7 @@ Route::middleware([])->group(function () {
         Route::post('razorpay/initiate-payment', 'initiatePayment');                                        #_Initiate Online Payment ----------------- 0701   
         Route::post('razorpay/save-response', 'saveRazorpayResponse')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);   #_Save Response of Online Payment --------- 0702   
         Route::post("application/payment-receipt", "generatePaymentReceipt");                                   // Admin / Citizen 
-        Route::post('list-unverified-cash-payment', 'listUnverifiedCashPayment');                               // List of UnVerified Cash Payment                                                                   
+        Route::post('list-unverified-cash-payment', 'listUnverifiedCashPayment');                               // List of UnVerified Cash Payment 
+        Route::post('rental/verified-cash-payment', 'verifiedCashPayment');                                     //   Verified Cash Payment                                                                   
     });
 });

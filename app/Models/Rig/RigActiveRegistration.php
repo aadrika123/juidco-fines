@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 class RigActiveRegistration extends Model
 {
     use HasFactory;
+    protected $guarded = [];
 
     public function saveRegistration($req, $user)
     {
@@ -65,9 +66,8 @@ class RigActiveRegistration extends Model
      */
     public function getApplicationDtls($appId)
     {
-        return self::select('*')
-            ->where('id', $appId)
-            ->first();
+        return RigActiveRegistration::select('*')
+            ->where('id', $appId);
     }
 
     /**
@@ -183,11 +183,122 @@ class RigActiveRegistration extends Model
             'rig_active_registrations.renewal',
             'rig_active_applicants.mobile_no',
             'rig_active_applicants.applicant_name',
+            DB::raw("CASE 
+            WHEN rig_active_registrations.status= '1' THEN 'Pending'
+            WHEN rig_active_registrations.status = '2' THEN 'Approve'
+            WHEN rig_active_registrations.status = '0' THEN 'Rejected'
+            END AS application_status"),
         )
             ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
             ->where('rig_active_registrations.' . $key, 'LIKE', '%' . $refNo . '%')
-            ->where('rig_active_registrations.status', '<>',0)
+            // ->where('rig_active_registrations.status', '<>', 0)
             ->where('rig_active_registrations.ulb_id', authUser($req)->ulb_id)
             ->orderByDesc('rig_active_registrations.id');
+    }
+
+    public function recentApplication($workflowIds, $roleId, $ulbId)
+    {
+        $data =  RigActiveRegistration::select(
+            'rig_active_registrations.id as ref_application_id',
+            DB::raw("REPLACE(rig_active_registrations.application_type, '_', ' ') AS ref_application_type"),
+            'rig_vehicle_active_details.id as ref_rig_id',
+            'rig_active_applicants.id as ref_applicant_id',
+            'rig_active_registrations.*',
+            'rig_vehicle_active_details.*',
+            'rig_active_applicants.*',
+            'rig_active_registrations.status as registrationStatus',
+            'rig_vehicle_active_details.status as petStatus',
+            'rig_active_applicants.status as applicantsStatus',
+            'ulb_ward_masters.ward_name',
+            'ulb_masters.ulb_name',
+
+
+            DB::raw("CASE 
+            WHEN rig_vehicle_active_details.sex = '1' THEN 'Male'
+            WHEN rig_vehicle_active_details.sex = '2' THEN 'Female'
+            END AS ref_gender"),
+            'wf_roles.role_name AS roleName'
+        )
+            ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
+            ->join('rig_vehicle_active_details', 'rig_vehicle_active_details.application_id', 'rig_active_registrations.id')
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'rig_active_registrations.ulb_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_active_registrations.ward_id')
+            ->leftjoin('wf_roles', 'wf_roles.id', 'rig_active_registrations.current_role_id')
+            ->whereIn('workflow_id', $workflowIds)
+            ->where('rig_active_registrations.ulb_id', $ulbId)
+            ->whereIn('current_role_id', $roleId)
+            ->where('rig_active_registrations.status', 1)
+            ->orderBydesc('rig_active_registrations.id')
+            ->take(10)
+            ->get();
+        $application = collect($data)->map(function ($value) {
+            $value['applyDate'] = (Carbon::parse($value['applydate']))->format('d-m-Y');
+            return $value;
+        });
+        return $application;
+    }
+
+
+    public function recentApplicationJsk($userId, $ulbId)
+    {
+        $data =  RigActiveRegistration::select(
+            'rig_active_registrations.id as ref_application_id',
+            DB::raw("REPLACE(rig_active_registrations.application_type, '_', ' ') AS ref_application_type"),
+            'rig_vehicle_active_details.id as ref_rig_id',
+            'rig_active_applicants.id as ref_applicant_id',
+            'rig_active_registrations.*',
+            'rig_vehicle_active_details.*',
+            'rig_active_applicants.*',
+            'rig_active_registrations.status as registrationStatus',
+            'rig_vehicle_active_details.status as petStatus',
+            'rig_active_applicants.status as applicantsStatus',
+            'ulb_ward_masters.ward_name',
+            'ulb_masters.ulb_name',
+
+            DB::raw("CASE 
+            WHEN rig_vehicle_active_details.sex = '1' THEN 'Male'
+            WHEN rig_vehicle_active_details.sex = '2' THEN 'Female'
+            END AS ref_gender"),
+            'wf_roles.role_name AS roleName'
+        )
+            ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
+            ->join('rig_vehicle_active_details', 'rig_vehicle_active_details.application_id', 'rig_active_registrations.id')
+
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'rig_active_registrations.ulb_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_active_registrations.ward_id')
+            ->leftjoin('wf_roles', 'wf_roles.id', 'rig_active_registrations.current_role_id')
+            ->where('rig_active_registrations.ulb_id', $ulbId)
+            ->where('rig_active_registrations.user_id', $userId)
+            ->where('rig_active_registrations.status', "<>", 0)
+            ->orderBydesc('rig_active_registrations.id')
+            ->take(10)
+            ->get();
+        $application = collect($data)->map(function ($value) {
+            $value['applyDate'] = (Carbon::parse($value['applydate']))->format('d-m-Y');
+            return $value;
+        });
+        return $application;
+    }
+
+    public function pendingApplicationCount()
+    {
+        $data =  RigActiveRegistration::select(
+            DB::raw('count(rig_active_registrations.id) as total_pending_application')
+        )
+            ->where('rig_active_registrations.status', 1)
+            ->first();
+
+        return $data;
+    }
+
+    public function approvedApplicationCount()
+    {
+        $data =  RigApprovedRegistration::select(
+            DB::raw('count(rig_approved_registrations.id) as total_approved_application')
+        )
+            ->where('rig_approved_registrations.status', 1)
+            ->first();
+
+        return $data;
     }
 }

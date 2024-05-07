@@ -495,8 +495,8 @@ class RigPaymentController extends Controller
 
         # Application details and Validation
         $applicationDetail = $mRigActiveRegistration->getRigApplicationById($applicationId)
-            ->where('rig_vehicle_active_details.status', 1)
-            ->where('rig_active_applicants.status', 1)
+            ->where('rig_vehicle_active_details.status', "<>", 0)
+            ->where('rig_active_applicants.status', "<>", 0)
             ->first();
         if (is_null($applicationDetail)) {
             throw new Exception("Application details not found for ID:$applicationId!");
@@ -614,7 +614,7 @@ class RigPaymentController extends Controller
             $RigPayment = new RigTran();
             $data = $RigPayment->listUnverifiedCashPayment($req);
             $data = $data->whereBetween('rig_trans.tran_date', [$req->fromDate, $req->toDate])
-            ->get();
+                ->get();
 
             $list = $data;
             return responseMsgs(true, "List Uncleared Cash Payment", $list, "055024", "1.0", responseTime(), "POST", $req->deviceId);
@@ -624,23 +624,21 @@ class RigPaymentController extends Controller
     }
 
     /**
-     * | Verified Payment one or more than one
-     * | API - 25
-     * | Function - 25
+      | verified cash payments
      */
-    // public function verifiedCashPayment(Request $req)
-    // {
-    //     $validator = Validator::make($req->all(), [
-    //         'ids' => 'required|array',
-    //     ]);
-    //     if ($validator->fails()) {
-    //         return responseMsgs(false, $validator->errors()->first(), [], "055025", "1.0", responseTime(), "POST", $req->deviceId);
-    //     }
-    //     try {
-    //         MarShopPayment::whereIn('id', $req->ids)->update(['is_verified' => '1']);
-    //         return responseMsgs(true, "Payment Verified Successfully !!!",  '', "055025", "1.0", responseTime(), "POST", $req->deviceId);
-    //     } catch (Exception $e) {
-    //         return responseMsgs(false, $e->getMessage(), [], "055025", "1.0", responseTime(), "POST", $req->deviceId);
-    //     }
-    // }
+    public function verifiedCashPayment(Request $req)
+    {
+        $validator = Validator::make($req->all(), [
+            'id' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return responseMsgs(false, $validator->errors()->first(), [], "055025", "1.0", responseTime(), "POST", $req->deviceId);
+        }
+        try {
+            RigTran::where('id', $req->id)->update(['verify_status' => '1']);
+            return responseMsgs(true, "Payment Verified Successfully !!!",  '', "055025", "1.0", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "055025", "1.0", responseTime(), "POST", $req->deviceId);
+        }
+    }
 }
