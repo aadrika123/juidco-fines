@@ -36,7 +36,7 @@ class WorkflowTrack extends Model
         $track->receiver_role_id    = $request->receiverRoleId ?? null;
         $track->verification_status = $request->verificationStatus;
         $track->user_id             = $request['user_id'];
-        $track->ulb_id              = $request['ulb_id'];
+        $track->ulb_id              = $request['ulb_id'] ?? $request->ulbId;
         $track->save();
     }
 

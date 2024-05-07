@@ -737,7 +737,7 @@ class RigWorkflowController extends Controller
             if ($req->docStatus == "Rejected") {
                 # For Rejection Doc Upload Status and Verify Status will disabled 
                 $status = 2;
-                $applicationDtl->doc_upload_status = 0;
+                // $applicationDtl->doc_upload_status = 0;
                 $applicationDtl->doc_verify_status = false;
                 $applicationDtl->save();
             }
@@ -1102,53 +1102,86 @@ class RigWorkflowController extends Controller
     }
 
 
-    // public function backToCitizen(Request $req)
-    // {
+    # back to citiizen or jsk 
+    public function backToCitizen(Request $req)
+    {
 
-    //     $validated = Validator::make(
-    //         $req->all(),
-    //         [
-    //             'applicationId' => "required",
-    //         ]
-    //     );
-    //     if ($validated->fails())
-    //         return validationError($validated);
-    //     try {
-    //         // Variable initialization
-    //         $redis = Redis::connection();
-    //         $mAgencyHoarding = RigActiveRegistration::find($req->applicationId);
-    //         if ($mAgencyHoarding->doc_verify_status == 1)
-    //             throw new Exception("All Documents Are varified, So Application is Not BTC !!!");
-    //         if ($mAgencyHoarding->doc_upload_status == 1)
-    //             throw new Exception("No Any Document Rejected, So Application is Not BTC !!!");
-    //         $workflowId = $mAgencyHoarding->workflow_id;
-    //         $backId = json_decode(Redis::get('workflow_initiator_' . $workflowId));
-    //         if (!$backId) {
-    //             $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
-    //                 ->where('is_initiator', true)
-    //                 ->first();
-    //             $redis->set('workflow_initiator_' . $workflowId, json_encode($backId));
-    //         }
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => "required",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            // Variable initialization
+            $mRigActiveRegistration = RigActiveRegistration::find($req->applicationId);
+            if ($mRigActiveRegistration->doc_verify_status == 1)
+                throw new Exception("All Documents Are varified, So Application is Not BTC !!!");
+            if ($mRigActiveRegistration->doc_upload_status == 1)
+                throw new Exception("No Any Document Rejected, So Application is Not BTC !!!");
+            $workflowId = $mRigActiveRegistration->workflow_id;
 
-    //         $mAgencyHoarding->current_role_id = $backId->wf_role_id;
-    //         $mAgencyHoarding->parked = 1;
-    //         $mAgencyHoarding->save();
+            $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
+                ->where('is_initiator', true)
+                ->first();
 
-    //         $metaReqs['moduleId'] = $this->_moduleId;
-    //         $metaReqs['workflowId'] = $mAgencyHoarding->workflow_id;
-    //         $metaReqs['refTableDotId'] = "agency_hoardings.id";
-    //         $metaReqs['refTableIdValue'] = $req->applicationId;
-    //         $metaReqs['verificationStatus'] = $req->verificationStatus;
-    //         $metaReqs['senderRoleId'] = $req->currentRoleId;
-    //         $req->request->add($metaReqs);
 
-    //         $req->request->add($metaReqs);
-    //         $track = new WorkflowTrack();
-    //         $track->saveTrack($req);
 
-    //         return responseMsgs(true, "Successfully Done", "", "", '050131', '01', responseTime(), 'POST', '');
-    //     } catch (Exception $e) {
-    //         return responseMsgs(false, $e->getMessage(), "", "050131", "1.0", "", "POST", $req->deviceId ?? "");
-    //     }
-    // }
+            $mRigActiveRegistration->current_role_id = $backId->wf_role_id;
+            $mRigActiveRegistration->parked = 1;
+            $mRigActiveRegistration->save();
+
+            $metaReqs['moduleId'] =  $this->_rigModuleId;
+            $metaReqs['workflowId'] = $mRigActiveRegistration->workflow_id;
+            $metaReqs['refTableDotId'] = "rig_active_registrations.id";
+            $metaReqs['refTableIdValue'] = $req->applicationId;
+            $metaReqs['verificationStatus'] = $req->verificationStatus;
+            $metaReqs['senderRoleId'] = $req->currentRoleId;
+            $metaReqs['senderRoleId'] = $req->currentRoleId;
+            $metaReqs['ulbId'] = $mRigActiveRegistration->ulb_id;
+            $req->request->add($metaReqs);
+
+            $req->request->add($metaReqs);
+            $track = new WorkflowTrack();
+            $track->saveTrack($req);
+
+            return responseMsgs(true, "Successfully Done", "", "", '050131', '01', responseTime(), 'POST', '');
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "050131", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    #back to citizen or jsk application 
+
+    public function btJskInbox(Request $request)
+    {
+        try {
+
+            $user   = authUser($request);
+            $userId = $user->id;
+            $ulbId  = $user->ulb_id;
+            $pages  = $request->perPage ?? 10;
+            $mDeviceId = $request->deviceId ?? "";
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $msg = "Btc Inbox List Details!";
+
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $rigList = $this->getrigApplicatioList($workflowIds, $ulbId)
+                ->whereIn('rig_active_registrations.current_role_id', $roleId)
+                ->where('rig_active_registrations.parked', true)
+                // ->where('rig_active_registrations.is_escalate', false)
+                ->paginate($pages);
+
+            if (collect($rigList)->last() == 0 || !$rigList) {
+                $msg = "Data not found!";
+            }
+            return responseMsgs(true, $msg, remove_null($rigList), '', '02', '', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $mDeviceId);
+        }
+    }
 }

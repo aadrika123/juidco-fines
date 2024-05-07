@@ -188,8 +188,16 @@ class RigActiveRegistration extends Model
             WHEN rig_active_registrations.status = '2' THEN 'Approve'
             WHEN rig_active_registrations.status = '0' THEN 'Rejected'
             END AS application_status"),
+            DB::raw("CASE 
+            WHEN wf_active_documents.verify_status= '0' THEN 'Pending'
+            WHEN wf_active_documents.verify_status = '1' THEN 'Approve'
+            WHEN wf_active_documents.verify_status = '2' THEN 'Rejected'
+            END AS documentStatus"),
         )
             ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
+            ->leftjoin('wf_active_documents','wf_active_documents.active_id','rig_active_registrations.id')
+            ->where('wf_active_documents.workflow_id',200)
+            ->where('wf_active_documents.module_id',15)
             ->where('rig_active_registrations.' . $key, 'LIKE', '%' . $refNo . '%')
             ->where('rig_active_registrations.status', '<>',0)
             ->where('rig_active_registrations.ulb_id', authUser($req)->ulb_id)

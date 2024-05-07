@@ -57,6 +57,7 @@ Route::middleware([])->group(function () {
         Route::post('application/searh-application', 'searchApplication');                                      // Admin
         Route::post('application/approve-license-data', 'getLicnenseDetails');                                      // Admin
         Route::post('application/dashboard-details', 'rigDashbordDtls');                                      // Admin
+        Route::post('application/reupload-document', 'reuploadDocuments');                                      // Admin
         
 
     });
@@ -74,7 +75,7 @@ Route::middleware([])->group(function () {
         Route::post('final-verify-reject', 'finalApprovalRejection');                                           // Workflow
         Route::post('list-approved-application', 'listfinisherApproveApplications');                            // Workflow
         Route::post('list-rejected-application', 'listfinisherRejectApplications');                             // Workflow
-        Route::post('back-to-citizen', 'backToCitizen');                                                        // Workflow
+        Route::post('back-to-citizen-jsk', 'btJskInbox');                                                        // Workflow
     });
 
     // payment operations 
