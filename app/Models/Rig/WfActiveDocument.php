@@ -58,7 +58,7 @@ class WfActiveDocument extends Model
      */
     public function updateDocuments($req, $auth, $docId)
     {
-        $metaReqs =WfActiveDocument::where('id', $req->docId)->first();
+        $metaReqs =  WfActiveDocument::where('id', $req->docId)->first();
         $metaReqs->module_id            = $req->moduleId;
         $metaReqs->uploaded_by          = $auth['id'];
         $metaReqs->uploaded_by_type     = $auth['user_type'];
