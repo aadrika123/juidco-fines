@@ -76,6 +76,7 @@ Route::middleware([])->group(function () {
         Route::post('list-approved-application', 'listfinisherApproveApplications');                            // Workflow
         Route::post('list-rejected-application', 'listfinisherRejectApplications');                             // Workflow
         Route::post('back-to-jsk-list', 'btJskInbox');                                                        // Workflow
+        Route::post('back-to-citizen', 'backToCitizen');                                                        // Workflow
     });
 
     // payment operations 
