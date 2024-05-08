@@ -1149,7 +1149,8 @@ class PenaltyRecordController extends Controller
                 $data = $data->where("category_type_id", $req->challanCategory);
 
             if ($userId)
-                $data = $data->where("approved_by", $userId);
+                $data = $data->where("approved_by", $userId)
+                    ->orwhere("penalty_final_records.applied_by",$userId);
 
             $data = $data
                 ->paginate($perPage);
