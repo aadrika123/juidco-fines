@@ -65,6 +65,7 @@ class RigTran extends Model
         $mPetTran->tran_date    = $req['todayDate'];
         $mPetTran->tran_no      = $req['tranNo'];
         $mPetTran->payment_mode = $req['paymentMode'];
+        $mPetTran->tran_type    = $req['tranType'];
         $mPetTran->amount       = $req['amount'];
         $mPetTran->emp_dtl_id   = $req['empId'] ?? null;
         $mPetTran->ip_address   = $req['ip'] ?? null;

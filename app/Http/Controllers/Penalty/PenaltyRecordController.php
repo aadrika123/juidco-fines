@@ -1464,6 +1464,7 @@ class PenaltyRecordController extends Controller
 
 
         $rigTransaction        = RigTran::where('tran_date', $todayDate)->where('status', 1);
+        $refRigTRansaction     = RigTran::where('tran_date', $todayDate)->where('status', 1);
         $rigNewRegistration    = RigActiveRegistration::where('application_apply_date', $todayDate)->where('status', 1);
         $rigRenewal            = RigActiveRegistration::where('application_apply_date', $todayDate)->where('status', 1);
 
@@ -1490,6 +1491,7 @@ class PenaltyRecordController extends Controller
             $penaltyChallan     =  $penaltyChallan->where('penalty_final_records.ulb_id', $ulbId);
 
             $rigTransaction     =  $rigTransaction->where('ulb_id', $ulbId);
+            $refRigTRansaction    =  $refRigTRansaction->where('ulb_id', $ulbId);
             $rigNewRegistration =  $rigNewRegistration->where('ulb_id', $ulbId);
             $rigRenewal         =  $rigRenewal->where('ulb_id', $ulbId);
         }
@@ -1523,8 +1525,8 @@ class PenaltyRecordController extends Controller
         $rigRenewal           =   $rigRenewal->where('application_type', 'Renewal')->count();
 
         # Rig collection amount
-        $rigNewRegsitrationAmt  = $rigRegistration * 25000;
-        $rigRenewRegistration   = $rigRenewal * 20000;
+        $rigNewRegsitrationAmt  = $rigTransaction->where('tran_type','New_Apply')->sum('amount');
+        $rigRenewRegistration   = $refRigTRansaction->where('tran_type','Renewal')->sum('amount');
 
         $data['fines_collection']   = $penaltyCollectionAmt;
         $data['challan_count']      = $penaltyChallanCount;

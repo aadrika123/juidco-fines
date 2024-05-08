@@ -224,6 +224,7 @@ class RigPaymentController extends Controller
                     "amount"         => $chargeDetails->amount,
                     "verify_status"  => 1,
                     "ulb_id"         => $rigDetails->ulb_id,
+                    "tran_type"      => $rigDetails->application_type,
                     "ip_address"     => getClientIpAddress()
                 ];
 
