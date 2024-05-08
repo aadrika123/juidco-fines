@@ -301,4 +301,13 @@ class RigActiveRegistration extends Model
 
         return $data;
     }
+
+    public function updateRigApplication($req, $applicationDetails)
+    {
+        RigActiveRegistration::where('id', $applicationDetails->id)
+            ->update([
+
+                "address"                  => $req->address            ?? $applicationDetails->address
+            ]);
+    }
 }

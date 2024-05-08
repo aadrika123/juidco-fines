@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Rig;
 use App\DocUpload;
 use App\Models\Rig\RefRequiredDocument;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Rig\RigEditReq;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Traits\Workflow\Workflow;
 use Exception;
@@ -38,7 +39,10 @@ use App\Models\WfWorkflow;
 use App\Models\WfWorkflowrolemap;
 use App\Models\Rig\WfActiveDocument;
 use App\Models\Rig\CustomDetail;
+use App\Models\Rig\RigAudit;
+use App\Models\WfRoleusermap;
 use Illuminate\Support\Collection;
+use Termwind\Components\Raw;
 
 class RigRegistrationController extends Controller
 {
@@ -939,10 +943,10 @@ class RigRegistrationController extends Controller
      */
     public function getrefRigDetails($applicationDetails)
     {
-       
-        
+
+
         return new Collection([
-    
+
             ['displayString' => 'Vehicle From',                        'key' => 'vehicleFrom',                         'value' => $applicationDetails->vehicle_from],
             ['displayString' => 'Vehicle Number',                      'key' => 'vehicleNumber',                       'value' => $applicationDetails->vehicle_no],
 
@@ -1331,74 +1335,178 @@ class RigRegistrationController extends Controller
      * | Cheque full upload document or no
      */
 
-     public function checkFullUpload($applicationId)
-     {
-         $mWfActiveDocument = new WfActiveDocument();
-         $mRefRequirement = new RefRequiredDocument();
-         $moduleId =  $this->_rigModuleId;
-         $totalRequireDocs = $mRefRequirement->totalNoOfDocs($moduleId);
-         $appDetails = RigActiveRegistration::find($applicationId);
-         $totalUploadedDocs = $mWfActiveDocument->totalUploadedDocs($applicationId, $appDetails->workflow_id, $moduleId);
-         if ($totalRequireDocs == $totalUploadedDocs) {
-             $appDetails->doc_upload_status = true;
-             $appDetails->doc_verify_status = '0';
-             $appDetails->parked = false;
-             $appDetails->save();
-         } else {
-             $appDetails->doc_upload_status = '0';
-             $appDetails->doc_verify_status = '0';
-             $appDetails->save();
-         }
-     }
+    public function checkFullUpload($applicationId)
+    {
+        $mWfActiveDocument = new WfActiveDocument();
+        $mRefRequirement = new RefRequiredDocument();
+        $moduleId =  $this->_rigModuleId;
+        $totalRequireDocs = $mRefRequirement->totalNoOfDocs($moduleId);
+        $appDetails = RigActiveRegistration::find($applicationId);
+        $totalUploadedDocs = $mWfActiveDocument->totalUploadedDocs($applicationId, $appDetails->workflow_id, $moduleId);
+        if ($totalRequireDocs == $totalUploadedDocs) {
+            $appDetails->doc_upload_status = true;
+            $appDetails->doc_verify_status = '0';
+            $appDetails->parked = false;
+            $appDetails->save();
+        } else {
+            $appDetails->doc_upload_status = '0';
+            $appDetails->doc_verify_status = '0';
+            $appDetails->save();
+        }
+    }
+    /**
+     * | Edit the application Rig details
+        | Serial No :
+        | Working
+        | CAUTION
+     */
+    public function editRigDetails(RigEditReq $req)
+    {
+        try {
+            $applicationId          = $req->id;
+            $confTableName          = $this->_tableName;
+            $mRigActiveDetail       = new RigVehicleActiveDetail();
+            $mRigActiveRegistration = new RigActiveRegistration();
+            $mRIgActiveApllicants   = new RigActiveApplicant();
+            $mRigAudit              = new RigAudit();
+            $refRelatedDetails      = $this->checkParamForRigUdate($req);
+            $applicationDetails     = $refRelatedDetails['applicationDetails'];
 
-    // public function reuploadDocument($req,)
-    // {
-    //     try {
-    // #initiatialise variable 
+            DB::beginTransaction();
+            # operate with the data from above calling function 
+            $rigDetails           = $mRigActiveDetail->getrigDetailsByApplicationId($applicationId)->first();
+            $rigApplicantDtls     = $mRIgActiveApllicants->getRigActiveApplicants($applicationId)->first();
+            $oldRigDetails  = json_encode($rigDetails);
+            $oldApplication = json_encode($applicationDetails);
+            $oldApplicant   = json_encode($rigApplicantDtls);
 
-    // $data = [];
-    // $docUpload = new DocUpload;
-    // $relativePath = Config::get('rig.RIG_RELATIVE_PATH.REGISTRATION');
-    // $mWfActiveDocument = new WfActiveDocument();
-    // $mRigActiveRegistration = new RigActiveRegistration();
-    // $user = collect(authUser($req));
+            $mRigAudit->saveAuditData($oldRigDetails, $confTableName['1']);
+            $mRigAudit->saveAuditData($oldApplication, $confTableName['2']);
+            $mRigAudit->saveAuditData($oldApplicant, $confTableName['3']);
+            $mRigActiveDetail->updateRigDetails($req, $rigDetails);
+            $mRIgActiveApllicants->updateRigApplicantsDtls($req, $rigApplicantDtls);
+            $mRigActiveRegistration->updateRigApplication($req, $applicationDetails);
+            $updateReq = [
+                "occurrence_type_id" => $req->petFrom ?? $applicationDetails->occurrence_type_id
+            ];
+            $mRigActiveRegistration->saveApplicationStatus($applicationDetails->ref_application_id, $updateReq);
+            DB::commit();
+            return responseMsgs(true, "Rig Details Updated!", [], "", "01", ".ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
+        }
+    }
 
-    // // $documentTypes = [
-    // //     'photo1'      => ' Fitness Image',
-    // //     'photo2'      => ' Tax Image',
-    // //     'photo3'      => ' License Image',
-    // // ];
 
-    // foreach ($mDocuments as $document) {
-    //     $file = $document['image'];
-    //     $req->merge([
-    //         'document' => $file
-    //     ]);
-    //     #_Doc Upload through a DMS
-    //     $imageName = $docUpload->upload($req);
-    //     $metaReqs = [
-    //         'moduleId' => Config::get('workflow-constants.ADVERTISMENT_MODULE') ?? 15,
-    //         'activeId' => $ApplicationId,
-    //         'workflowId' => $workflowId,
-    //         'ulbId' => $ulbId,
-    //         'relativePath' => $relativePath,
-    //         'document' => $imageName,
-    //         'doc_category' => $req->docCategory,
-    //         'docCode' => $document['docCode'],
-    //         'ownerDtlId' => $document['ownerDtlId'],
-    //         'unique_id' => $imageName['data']['uniqueId'] ?? null,
-    //         'reference_no' => $imageName['data']['ReferenceNo'] ?? null,
-    //     ];
+    /**
+     * | Check Param for update the pet Application details 
+        | Serial No : 
+        | Working
+     */
+    public function checkParamForRigUdate($req)
+    {
+        $user                   = authUser($req);
+        $applicationId          = $req->id;
+        $confRoles              = $this->_rigWfRoles;
+        $mRigActiveRegistration = new RigActiveRegistration();
+        $mWfRoleusermap         = new WfRoleusermap();
+        $mRigTran               = new RigTran();
 
-    //     // Save document metadata in wfActiveDocuments
-    //     $mWfActiveDocument->postDocuments(new Request($metaReqs), $user);
-    //     //update docupload  status 
-    //     $mRigActiveRegistration->updateUploadStatus($ApplicationId, true);
-    // }
+        # Collecting application detials
+        $applicationdetails = $mRigActiveRegistration->getrigApplicationById($applicationId)->first();
+        if (!$applicationdetails) {
+            throw new Exception("Application details not found!");
+        }
+        if ($applicationdetails->renewal == 1) {
+            throw new Exception("application cannot be edited in case of renewal!");
+        }
 
-    //         return $data;
-    //     } catch (Exception $e) {
-    //         return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
-    //     }
-    // }
+        # Validation diff btw citizen and user
+        switch ($applicationdetails) {
+            case (is_null($applicationdetails->citizen_id) && !is_null($applicationdetails->user_id)):
+                $getRoleReq = new Request([                                                 // make request to get role id of the user
+                    'userId'        => $user->id,
+                    'workflowId'    => $applicationdetails->workflow_id
+                ]);
+                // $readRoleDtls = $mWfRoleusermap->getRoleByUserWfId($getRoleReq);
+                // if (!$readRoleDtls) {
+                //     throw new Exception("User Dont have any role!");
+                // }
+
+                # Check for jsk 
+                // $roleId = $readRoleDtls->wf_role_id;
+                // if ($roleId != $confRoles['JSK']) {
+                //     throw new Exception("You are not Permited to edit the application!");
+                // }
+                if ($user->id != $applicationdetails->user_id) {
+                    throw new Exception("You are not the right user who applied!");
+                }
+                if ($applicationdetails->payment_status == 1) {
+                    throw new Exception("Payment is done application cannot be updated!");
+                }
+                break;
+
+            case (is_null($applicationdetails->user_id)):
+                if ($user->id != $applicationdetails->citizen_id) {
+                    throw new Exception("You are not the right user who applied!");
+                }
+                if ($applicationdetails->payment_status == 1) {
+                    throw new Exception("Payment is done application cannot be updated!");
+                }
+                break;
+        }
+
+        # Checking the transaction details 
+        $transactionDetails = $mRigTran->getTranByApplicationId($applicationId)->first();
+        if ($transactionDetails) {
+            throw new Exception("Transaction data exist application cannot be updated!");
+        }
+        return [
+            "applicationDetails" => $applicationdetails,
+        ];
+    }
+
+    /**
+     *| collection Report
+     */
+    public function listCollection(Request $req)
+    {
+        $validator = Validator::make($req->all(), [
+            'fromDate' => 'nullable|date_format:Y-m-d',
+            'toDate' => 'nullable|date_format:Y-m-d|after_or_equal:fromDate',
+            'paymentMode'  => 'nullable'
+        ]);
+        if ($validator->fails()) {
+            return  $validator->errors();
+        }
+        // return $req->all();
+        try {
+            $paymentMode = null;
+            if (!isset($req->fromDate))
+                $fromDate = Carbon::now()->format('Y-m-d');                                                 // if date Is not pass then From Date take current Date
+            else
+                $fromDate = $req->fromDate;
+            if (!isset($req->toDate))
+                $toDate = Carbon::now()->format('Y-m-d');                                                  // if date Is not pass then to Date take current Date
+            else
+                $toDate = $req->toDate;
+
+            if ($req->paymentMode) {
+                $paymentMode = $req->paymentMode;
+            }
+            $mRigPayment = new RigTran();
+            $data = $mRigPayment->listCollections($fromDate, $toDate,);                              // Get Shop Payment collection between givrn two dates
+            if ($req->paymentMode != 0)
+                $data = $data->where('rig_trans.payment_mode', $req->paymentMode);
+            if ($req->auth['user_type'] == 'JSK' || $req->auth['user_type'] == 'TC')
+                $data = $data->where('rig_trans.emp_dtl_id', $req->auth['id']);
+            $perPage = $req->get('per_page', 10);
+            $list = $data->paginate($perPage);
+            $list['collectAmount'] = $data->sum('amount');
+            return responseMsgs(true, "Rig Collection List Fetch Succefully !!!", $list, "055017", "1.0", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "055017", "1.0", responseTime(), "POST", $req->deviceId);
+        }
+    }
 }

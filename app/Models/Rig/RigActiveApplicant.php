@@ -72,4 +72,25 @@ class RigActiveApplicant extends Model
             ->where('rig_active_registrations.ulb_id', authUser($req)->ulb_id)
             ->orderByDesc('rig_active_registrations.id');
     }
+
+    /**
+     * | Get Rig details by applicationId
+     */
+    public function getRigActiveApplicants($applicationId)
+    {
+        return RigActiveApplicant::where('application_id', $applicationId)
+            ->where('status', 1)
+            ->orderByDesc('id');
+    }
+
+    public function updateRigApplicantsDtls($req, $rigDetails)
+    {
+        RigActiveApplicant::where('id', $rigDetails->id)
+            ->update([
+
+                "mobile_no"                  => $req->mobileNo            ?? $rigDetails->mobile_no,
+                "email"                      => $req->email               ?? $rigDetails->email,
+                "applicant_name"             => $req->applicantName       ?? $rigDetails->applicant_name
+            ]);
+    }
 }

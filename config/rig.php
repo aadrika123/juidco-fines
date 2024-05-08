@@ -108,7 +108,8 @@ return [
 
     "TABLE_NAME" => [
         "1" => "rig_vehicle_active_details",
-        "2" => "rig_active_registrations"
+        "2" => "rig_active_registrations",
+        "3" => "rig_active_applicants"
     ],
 
     "REF_STATUS" => [

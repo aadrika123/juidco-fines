@@ -57,4 +57,17 @@ class RigVehicleActiveDetail extends Model
     //         ->where('status', 1)
     //         ->orderByDesc('id');
     // }
+
+    /**
+     * | Update the pet details according to id
+     */
+    public function updateRigDetails($req, $rigDetails)
+    {
+        RigVehicleActiveDetail::where('id', $rigDetails->id)
+            ->update([
+              
+                "vehicle_name"                  => $req->vehicleComapny            ?? $rigDetails->vehicle_name,
+                "vehicle_name"                  => $req->vehicleComapny            ?? $rigDetails->vehicle_name
+            ]);
+    }
 }

@@ -117,4 +117,15 @@ class RigTran extends Model
             ->where('verify_status', '=', '0')
             ->where('payment_mode', '=', 'CASH');
     }
+
+    public function listCollections($fromDate, $toDate,)
+    {
+        return RigTran::select(
+            'rig_trans.id',
+            'rig_trans.amount'
+        )
+            ->where('rig_trans.tran_date', '>=', $fromDate)
+            ->where('rig_trans.tran_date', '<=', $toDate)
+            ->where('rig_trans.status', 1);
+    }
 }

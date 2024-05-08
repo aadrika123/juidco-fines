@@ -62,6 +62,7 @@ class WfActiveDocument extends Model
         $metaReqs->module_id            = $req->moduleId;
         $metaReqs->uploaded_by          = $auth['id'];
         $metaReqs->uploaded_by_type     = $auth['user_type'];
+        $metaReqs->verify_status        = 0;
         $metaReqs->unique_id            = $req->unique_id ?? null;
         $metaReqs->reference_no         = $req->reference_no ?? null;
 
