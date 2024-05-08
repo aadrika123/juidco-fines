@@ -121,7 +121,8 @@ class RigTran extends Model
     public function listCollections($fromDate, $toDate,)
     {
         return RigTran::select(
-            'rig_trans.id',
+            'rig_trans.id as transactionId',
+            'rig_active_registrations.id',
             'rig_trans.amount',
             'rig_active_registrations.application_no',
             'rig_trans.tran_no',
