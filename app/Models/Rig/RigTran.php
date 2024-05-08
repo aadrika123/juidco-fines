@@ -122,8 +122,17 @@ class RigTran extends Model
     {
         return RigTran::select(
             'rig_trans.id',
-            'rig_trans.amount'
+            'rig_trans.amount',
+            'rig_active_registrations.application_no',
+            'rig_trans.tran_no',
+            'rig_trans.tran_date',
+            'rig_active_applicants.applicant_name as ownerName',
+            'rig_active_registrations.application_type',
+            'ulb_ward_masters.ward_name',
         )
+            ->join('rig_active_registrations', 'rig_active_registrations.id', 'rig_trans.related_id')
+            ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_trans.related_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_active_registrations.ward_id')
             ->where('rig_trans.tran_date', '>=', $fromDate)
             ->where('rig_trans.tran_date', '<=', $toDate)
             ->where('rig_trans.status', 1);

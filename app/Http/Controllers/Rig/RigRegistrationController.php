@@ -1482,6 +1482,8 @@ class RigRegistrationController extends Controller
         }
         // return $req->all();
         try {
+            $perPage = $req->perPage ? $req->perPage : 10;
+
             $paymentMode = null;
             if (!isset($req->fromDate))
                 $fromDate = Carbon::now()->format('Y-m-d');                                                 // if date Is not pass then From Date take current Date
@@ -1501,9 +1503,19 @@ class RigRegistrationController extends Controller
                 $data = $data->where('rig_trans.payment_mode', $req->paymentMode);
             if ($req->auth['user_type'] == 'JSK' || $req->auth['user_type'] == 'TC')
                 $data = $data->where('rig_trans.emp_dtl_id', $req->auth['id']);
-            $perPage = $req->get('per_page', 10);
-            $list = $data->paginate($perPage);
-            $list['collectAmount'] = $data->sum('amount');
+
+            $paginator = $data->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+                'collectAmount' =>$paginator->sum('amount')
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            // $perPage = $req->get('per_page', 10);
+            // $list = $data->paginate($perPage);
+            // $list['collectAmount'] = $data->sum('amount');
             return responseMsgs(true, "Rig Collection List Fetch Succefully !!!", $list, "055017", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "055017", "1.0", responseTime(), "POST", $req->deviceId);
