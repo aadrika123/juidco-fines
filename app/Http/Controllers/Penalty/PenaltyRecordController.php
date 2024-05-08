@@ -1465,8 +1465,8 @@ class PenaltyRecordController extends Controller
 
         $rigTransaction        = RigTran::where('tran_date', $todayDate)->where('status', 1);
         $refRigTRansaction     = RigTran::where('tran_date', $todayDate)->where('status', 1);
-        $rigNewRegistration    = RigActiveRegistration::where('application_apply_date', $todayDate)->where('status', 1);
-        $rigRenewal            = RigActiveRegistration::where('application_apply_date', $todayDate)->where('status', 1);
+        $rigNewRegistration    = RigActiveRegistration::where('application_apply_date', $todayDate)->where('status', '<>',0);
+        $rigRenewal            = RigActiveRegistration::where('application_apply_date', $todayDate)->where('status',"<>" ,0);
 
         if ($ulbId) {
             $penaltyTransaction =  $penaltyTransaction->where('ulb_id', $ulbId);
