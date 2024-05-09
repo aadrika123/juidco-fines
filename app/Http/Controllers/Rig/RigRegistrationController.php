@@ -694,7 +694,24 @@ class RigRegistrationController extends Controller
                     ->select(
                         DB::raw("REPLACE(rig_approved_registrations.application_type, '_', ' ') AS ref_application_type"),
                         DB::raw("TO_CHAR(rig_approved_registrations.application_apply_date, 'DD-MM-YYYY') as ref_application_apply_date"),
-                        "rig_approved_registrations.*",
+                        "rig_active_registrations.id",
+                        "rig_approved_registrations.application_no",
+                        "rig_approved_registrations.application_apply_date",
+                        "rig_approved_registrations.address",
+                        "rig_approved_registrations.application_type",
+                        "rig_active_registrations.payment_status",
+                        "rig_approved_registrations.status",
+                        "rig_approved_registrations.registration_id",
+                        "rig_approved_registrations.parked",
+                        "rig_approved_registrations.doc_upload_status",
+                        "rig_approved_registrations.registration_id",
+                        "rig_approved_registrations.doc_verify_status",
+                        "rig_approved_registrations.approve_date",
+                        "rig_approved_registrations.approve_end_date",
+                        "rig_approved_registrations.doc_verify_status",
+                        "rig_approve_applicants.applicant_name",
+                        "rig_approve_applicants.mobile_no",
+                        "rig_active_registrations.user_type",
                         "rig_approve_applicants.applicant_name",
                         "wf_roles.role_name",
                         "rig_approved_registrations.status as registrationSatus",
@@ -1519,6 +1536,47 @@ class RigRegistrationController extends Controller
             return responseMsgs(true, "Rig Collection List Fetch Succefully !!!", $list, "055017", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "055017", "1.0", responseTime(), "POST", $req->deviceId);
+        }
+    }
+    /**
+     * |---------------------------- Get Document Lists To Upload ----------------------------|
+     * | Doc Upload for the Workflow
+        | Serial No : 0
+        | Working
+     */
+    public function getDocToUpload(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $mRigActiveRegistration     = new RigActiveRegistration();
+            $petApplicationId           = $req->applicationId;
+
+            $refPetApplication = $mRigActiveRegistration->getRigApplicationById($petApplicationId)->first();                      // Get Pet Details
+            if (is_null($refPetApplication)) {
+                throw new Exception("Application Not Found for respective ($petApplicationId) id!");
+            }
+            // check if the respective is working on the front end
+            // $this->checkAutheriseUser($req);
+            $documentList = $this->getPetDocLists($refPetApplication);
+            $petTypeDocs['listDocs'] = collect($documentList)->map(function ($value) use ($refPetApplication) {
+                return $this->filterDocument($value, $refPetApplication)->first();
+            });
+            $totalDocLists = collect($petTypeDocs);
+            $totalDocLists['docUploadStatus']   = $refPetApplication->doc_upload_status;
+            $totalDocLists['docVerifyStatus']   = $refPetApplication->doc_verify_status;
+            $totalDocLists['ApplicationNo']     = $refPetApplication->application_no;
+            $totalDocLists['paymentStatus']     = $refPetApplication->payment_status;
+            return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
     }
 }

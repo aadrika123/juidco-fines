@@ -45,7 +45,7 @@ Route::middleware([])->group(function () {
         Route::post('application/get-details', 'getApplicationDetails');                                        // Citizen
         Route::post('application/delete', 'deleteRigApplication');   # ❗❗❗                                           // Citizen / Admin
         Route::post('registration/apply-renewal', 'applyRigRenewal');                                           // Admin / Citizen // pending
-        Route::post('application/get-uploaded-docs', 'getUploadDocuments');                                     // Admin/ Citizen
+
 
         Route::post('get-approve-registrations', 'getApproveRegistration');                                     // Citizen
         Route::post('get-rejected-registrations', 'getRejectedRegistration');
@@ -57,10 +57,14 @@ Route::middleware([])->group(function () {
         Route::post('application/searh-application', 'searchApplication');                                      // Admin
         Route::post('application/approve-license-data', 'getLicnenseDetails');                                      // Admin
         Route::post('application/dashboard-details', 'rigDashbordDtls');                                      // Admin
-        Route::post('application/reupload-document', 'reuploadDocuments');                                      // Admin
+
         Route::post('application/edit-rig-details', 'editRigDetails');                                      // Admin
         Route::post('application/collection-report', 'listCollection');                                      // Admin
-        
+
+        Route::post('application/get-doc-to-upload', 'getDocToUpload');                                         // Admin/ Citizen
+        Route::post('application/reupload-document', 'reuploadDocuments');                                      // Admin
+        Route::post('application/get-uploaded-docs', 'getUploadDocuments');                                     // Admin/ Citizen
+
 
     });
 
