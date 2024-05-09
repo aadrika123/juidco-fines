@@ -33,7 +33,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Pipeline\Pipeline;
 use App\Pipelines\rig\SearchByApplicationNo;
-use  App\Models\Rig\WfActiveDocument;
+use App\Models\Rig\WfActiveDocument;
+use Illuminate\Support\Collection;
 
 class RigWorkflowController extends Controller
 {
@@ -141,8 +142,10 @@ class RigWorkflowController extends Controller
             $userId = $user->id;
             $ulbId  = $user->ulb_id;
             $pages  = $request->perPage ?? 10;
+            $perPage = $request->perPage ? $request->perPage : 10;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $msg = "Inbox List Details!";
+
 
             // $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
@@ -152,22 +155,21 @@ class RigWorkflowController extends Controller
                 ->whereIn('rig_active_registrations.current_role_id', $roleId)
                 // ->whereIn('rig_active_registrations.ward_id', $occupiedWards)
                 // ->where('rig_active_registrations.is_escalate', false)
-                ->where('rig_active_registrations.parked', false)
-                ->paginate($pages);
+                ->where('rig_active_registrations.parked', false);
+            // ->paginate($pages);
 
             if (collect($rigList)->last() == 0 || !$rigList) {
                 $msg = "Data not found!";
             }
-            // $inbox = app(Pipeline::class)
-            //     ->send(
-            //         $rigList
-            //     )
-            //     ->through([
-            //         rigSearchByApplicationNo::class
-            //     ])
-            //     ->thenReturn()
-            // ->paginate($pages);
-            return responseMsgs(true, $msg, remove_null($rigList), '', '02', '', 'Post', '');
+
+            $paginator = $rigList->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            return responseMsgs(true, $msg, remove_null($list), '', '02', '', 'Post', '');
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
         }
@@ -190,7 +192,8 @@ class RigWorkflowController extends Controller
             'rig_active_registrations.current_role_id as role_id',
             'rig_active_registrations.application_apply_date',
             'rig_active_registrations.parked',
-            'rig_active_registrations.is_escalate'
+            'rig_active_registrations.is_escalate',
+            'rig_active_registrations.user_type'
         )
             ->join('ulb_ward_masters as u', 'u.id', '=', 'rig_active_registrations.ward_id')
             ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
@@ -893,7 +896,9 @@ class RigWorkflowController extends Controller
             $confWorkflowMasterId       = $this->_workflowMasterId;
             $key                        = $request->filterBy;
             $paramenter                 = $request->parameter;
-            $pages                      = $request->perPage ?? 10;
+            // $pages                      = $request->perPage ?? 10;
+            $pages = $request->perPage ? $request->perPage : 10;
+
             $refstring                  = Str::snake($key);
             $msg                        = "Approve application list!";
             $mRigApprovedRegistration   = new RigApprovedRegistration();
@@ -924,6 +929,7 @@ class RigWorkflowController extends Controller
                         "rig_approved_registrations.doc_verify_status",
                         "rig_approve_applicants.applicant_name",
                         "rig_approve_applicants.mobile_no",
+                        "rig_active_registrations.user_type",
                         "wf_roles.role_name",
                         "rig_approved_registrations.status as registrationSatus",
                         DB::raw("CASE 
@@ -968,12 +974,19 @@ class RigWorkflowController extends Controller
                 if (!$checkVal || $checkVal == 0) {
                     $msg = "Data Not found!";
                 }
+
                 return responseMsgs(true, $msg, remove_null($activeApplication), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
             }
-
+            $paginator = $baseQuerry->paginate($pages);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
             # Get the latest data for Finisher
-            $returnData = $baseQuerry->orderBy('rig_approved_registrations.approve_date')->paginate($pages);
-            return responseMsgs(true, $msg, remove_null($returnData), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+            // $returnData = $baseQuerry->orderBy('rig_approved_registrations.approve_date')->paginate($pages);
+            return responseMsgs(true, $msg, remove_null($list), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
@@ -1020,7 +1033,7 @@ class RigWorkflowController extends Controller
             $confWorkflowMasterId       = $this->_workflowMasterId;
             $key                        = $request->filterBy;
             $paramenter                 = $request->parameter;
-            $pages                      = $request->perPage ?? 10;
+            $pages = $request->perPage ? $request->perPage : 10;
             $refstring                  = Str::snake($key);
             $msg                        = "Rejected application list!";
             $mRigRejectedRegistration   = new RigRejectedRegistration();
@@ -1046,6 +1059,7 @@ class RigWorkflowController extends Controller
                         "rig_rejected_registrations.rejected_date",
                         "rig_rejected_applicants.applicant_name",
                         "rig_rejected_applicants.mobile_no",
+                        'rig_active_registrations.user_type',
                         "wf_roles.role_name",
                         "rig_rejected_registrations.status as registrationSatus",
                         DB::raw("CASE 
@@ -1093,9 +1107,17 @@ class RigWorkflowController extends Controller
                 return responseMsgs(true, $msg, remove_null($activeApplication), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
             }
 
+            $paginator = $baseQuerry->paginate($pages);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+
             # Get the latest data for Finisher
             $returnData = $baseQuerry->orderBy('rig_rejected_registrations.rejected_date')->paginate($pages);
-            return responseMsgs(true, $msg, remove_null($returnData), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(true, $msg, remove_null($list), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
@@ -1162,9 +1184,9 @@ class RigWorkflowController extends Controller
             $user   = authUser($request);
             $userId = $user->id;
             $ulbId  = $user->ulb_id;
-            $pages  = $request->perPage ?? 10;
             $mDeviceId = $request->deviceId ?? "";
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $perPage = $request->perPage ? $request->perPage : 10;
             $msg = "Btc Inbox List Details!";
 
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
@@ -1172,14 +1194,22 @@ class RigWorkflowController extends Controller
 
             $rigList = $this->getrigApplicatioList($workflowIds, $ulbId)
                 ->whereIn('rig_active_registrations.current_role_id', $roleId)
-                ->where('rig_active_registrations.parked', true)
-                // ->where('rig_active_registrations.is_escalate', false)
-                ->paginate($pages);
+                ->where('rig_active_registrations.parked', true);
+            // ->where('rig_active_registrations.is_escalate', false)
+            // ->paginate($pages);
 
             if (collect($rigList)->last() == 0 || !$rigList) {
                 $msg = "Data not found!";
             }
-            return responseMsgs(true, $msg, remove_null($rigList), '', '02', '', 'Post', '');
+
+            $paginator = $rigList->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            return responseMsgs(true, $msg, remove_null($list), '', '02', '', 'Post', '');
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $mDeviceId);
         }

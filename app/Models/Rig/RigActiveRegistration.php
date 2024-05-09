@@ -183,6 +183,7 @@ class RigActiveRegistration extends Model
             'rig_active_registrations.renewal',
             'rig_active_applicants.mobile_no',
             'rig_active_applicants.applicant_name',
+            'rig_active_registrations.user_type',
             DB::raw("CASE 
             WHEN rig_active_registrations.status= '1' THEN 'Pending'
             WHEN rig_active_registrations.status = '2' THEN 'Approve'
@@ -211,8 +212,6 @@ class RigActiveRegistration extends Model
             'rig_active_applicants.status as applicantsStatus',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
-
-
             DB::raw("CASE 
             WHEN rig_vehicle_active_details.sex = '1' THEN 'Male'
             WHEN rig_vehicle_active_details.sex = '2' THEN 'Female'

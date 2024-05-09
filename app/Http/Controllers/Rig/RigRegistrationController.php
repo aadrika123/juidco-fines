@@ -947,7 +947,7 @@ class RigRegistrationController extends Controller
 
         return new Collection([
 
-            ['displayString' => 'Vehicle From',                        'key' => 'vehicleFrom',                         'value' => $applicationDetails->vehicle_from],
+            ['displayString' => 'Vin Number',                          'key' => 'vinNumber',                         'value' => $applicationDetails->vehicle_name],
             ['displayString' => 'Vehicle Number',                      'key' => 'vehicleNumber',                       'value' => $applicationDetails->vehicle_no],
 
         ]);
@@ -1510,7 +1510,7 @@ class RigRegistrationController extends Controller
                 "last_page" => $paginator->lastPage(),
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
-                'collectAmount' =>$paginator->sum('amount')
+                'collectAmount' => $paginator->sum('amount')
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             // $perPage = $req->get('per_page', 10);
