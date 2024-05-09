@@ -560,7 +560,12 @@ class RigRegistrationController extends Controller
             //     $value->doc_path = !empty(trim($value->refDocUpload)) ? $path : null;
             //     return $value;
             // });
-            $data = $refDocUpload->getDocUrl($documents);
+            $data = $refDocUpload->getDocUrl($documents)->toArray();
+            foreach ($data as $key => $value) {
+                if ($value['doc_code'] == "FITNESS") {
+                    $data[$key]['doc_code'] = "POLLUTION";
+                }
+            }
             return responseMsgs(true, "Uploaded Documents", remove_null($data), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
