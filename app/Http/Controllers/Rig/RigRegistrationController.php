@@ -1314,11 +1314,10 @@ class RigRegistrationController extends Controller
     {
         $validator = Validator::make($req->all(), [
             'id' => 'required|digits_between:1,9223372036854775807',
-            'image' => 'required|mimes:png,jpeg,pdf,jpg'
+            'image' => 'required|mimes:png,jpeg,pdf,jpg|max:2048'
         ]);
-        if ($validator->fails()) {
-            return ['status' => false, 'message' => $validator->errors()];
-        }
+        if ($validator->fails())
+            return validationError($validator);
         try {
             // Variable initialization
             $mRigActiveRegistrations = new RigActiveRegistration();

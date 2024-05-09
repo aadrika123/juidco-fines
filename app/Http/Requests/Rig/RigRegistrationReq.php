@@ -39,9 +39,9 @@ class RigRegistrationReq extends FormRequest
             'vehicleComapny'        => "required",
             'registrationNumber'    => "required",
             'documents'            => 'nullable|array',
-            'documents.*.image'    => 'nullable|mimes:png,jpeg,pdf,jpg',
+            'documents.*.image'    => 'nullable|mimes:png,jpeg,pdf,jpg|max:2048',
             'documents.*.docCode'  => 'nullable|string',
-            'documents.*.ownerDtlId' => 'nullable|integer'  
+            'documents.*.ownerDtlId' => 'nullable|integer'
         ];
 
         if (isset($this->applyThrough) && $this->applyThrough) {
@@ -59,6 +59,6 @@ class RigRegistrationReq extends FormRequest
             'status'    => false,
             'message'   => "Validation Error!",
             'error'     => $validator->errors()
-        ], 200 ));
+        ], 200));
     }
 }
