@@ -125,8 +125,8 @@ class RigActiveRegistration extends Model
             ->join('ulb_masters', 'ulb_masters.id', '=', 'rig_active_registrations.ulb_id')
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_active_registrations.ward_id')
             ->leftjoin('wf_roles', 'wf_roles.id', 'rig_active_registrations.current_role_id')
-            ->where('rig_active_registrations.id', $applicationId)
-            ->where('rig_active_registrations.status', '<>', 0);
+            ->where('rig_active_registrations.id', $applicationId);
+        // ->where('rig_active_registrations.status', '<>', 0);
     }
 
     /**
