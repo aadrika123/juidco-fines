@@ -125,8 +125,8 @@ class RigActiveRegistration extends Model
             ->join('ulb_masters', 'ulb_masters.id', '=', 'rig_active_registrations.ulb_id')
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_active_registrations.ward_id')
             ->leftjoin('wf_roles', 'wf_roles.id', 'rig_active_registrations.current_role_id')
-            ->where('rig_active_registrations.id', $applicationId)
-            ->where('rig_active_registrations.status', '<>', 0);
+            ->where('rig_active_registrations.id', $applicationId);
+        // ->where('rig_active_registrations.status', '<>', 0);
     }
 
     /**
@@ -183,6 +183,7 @@ class RigActiveRegistration extends Model
             'rig_active_registrations.renewal',
             'rig_active_applicants.mobile_no',
             'rig_active_applicants.applicant_name',
+            'rig_active_registrations.user_type',
             DB::raw("CASE 
             WHEN rig_active_registrations.status= '1' THEN 'Pending'
             WHEN rig_active_registrations.status = '2' THEN 'Approve'
@@ -191,7 +192,7 @@ class RigActiveRegistration extends Model
         )
             ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
             ->where('rig_active_registrations.' . $key, 'LIKE', '%' . $refNo . '%')
-            // ->where('rig_active_registrations.status', '<>', 0)
+            ->where('rig_active_registrations.user_type', 'JSK')
             ->where('rig_active_registrations.ulb_id', authUser($req)->ulb_id)
             ->orderByDesc('rig_active_registrations.id');
     }
@@ -211,8 +212,6 @@ class RigActiveRegistration extends Model
             'rig_active_applicants.status as applicantsStatus',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
-
-
             DB::raw("CASE 
             WHEN rig_vehicle_active_details.sex = '1' THEN 'Male'
             WHEN rig_vehicle_active_details.sex = '2' THEN 'Female'
@@ -228,6 +227,7 @@ class RigActiveRegistration extends Model
             ->where('rig_active_registrations.ulb_id', $ulbId)
             ->whereIn('current_role_id', $roleId)
             ->where('rig_active_registrations.status', 1)
+            ->where('rig_active_registrations.parked', false)
             ->orderBydesc('rig_active_registrations.id')
             ->take(10)
             ->get();
@@ -309,5 +309,31 @@ class RigActiveRegistration extends Model
 
                 "address"                  => $req->address            ?? $applicationDetails->address
             ]);
+    }
+
+    /**
+     * | Get Renewal Application details by applicationId
+     */
+    public function getRigRenewalApplicationById($registrationId)
+    {
+        return RigActiveRegistration::select(
+            DB::raw("REPLACE(rig_active_registrations.application_type, '_', ' ') AS ref_application_type"),
+            'rig_active_registrations.id as rejected_id',
+            'rig_vehicle_active_details.id as ref_pet_id',
+            'rig_active_applicants.id as ref_applicant_id',
+            'rig_active_registrations.*',
+            'rig_vehicle_active_details.*',
+            'rig_active_applicants.*',
+            'rig_active_registrations.status as registrationStatus',
+            'rig_vehicle_active_details.status as petStatus',
+            'rig_active_applicants.status as applicantsStatus',
+            'ulb_ward_masters.ward_name',
+            'ulb_masters.ulb_name',
+        )
+            ->join('ulb_masters', 'ulb_masters.id', 'rig_active_registrations.ulb_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_active_registrations.ward_id')
+            ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
+            ->join('rig_vehicle_active_details', 'rig_vehicle_active_details.application_id', 'rig_active_registrations.id')
+            ->where('rig_active_registrations.id', $registrationId);
     }
 }

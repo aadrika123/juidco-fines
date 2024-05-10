@@ -560,7 +560,12 @@ class RigRegistrationController extends Controller
             //     $value->doc_path = !empty(trim($value->refDocUpload)) ? $path : null;
             //     return $value;
             // });
-            $data = $refDocUpload->getDocUrl($documents);
+            $data = $refDocUpload->getDocUrl($documents)->toArray();
+            foreach ($data as $key => $value) {
+                if ($value['doc_code'] == "FITNESS") {
+                    $data[$key]['doc_code'] = "POLLUTION";
+                }
+            }
             return responseMsgs(true, "Uploaded Documents", remove_null($data), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
@@ -592,7 +597,7 @@ class RigRegistrationController extends Controller
             # Check the Registered Application existence
             $refApprovedDetails = $mRigApprovedRegistration->getApplictionByRegId($request->registrationId)->first();
             if (!$refApprovedDetails) {
-                throw new Exception("Application Detial Not found!");
+                throw new Exception("Application Detail Not found!");
             }
 
             # Check Params for renewal of Application
@@ -665,12 +670,12 @@ class RigRegistrationController extends Controller
         }
 
         # Check the lecence year difference 
-        // $approveDate = Carbon::parse($refApprovedDetails->approve_date);
-        // $approveDate = $approveDate->copy()->addDays(7);
-        // $yearDifferernce = $approveDate->diffInYears($now);
-        // if ($yearDifferernce <= 0) {
-        //     throw new Exception("Application has an active licence please apply Larter!");
-        // }
+        $approveDate = Carbon::parse($refApprovedDetails->approve_date);
+        $approveDate = $approveDate->copy()->addDays(7);
+        $yearDifferernce = $approveDate->diffInYears($now);
+        if ($yearDifferernce <= 1) {
+            throw new Exception("Application has an active licence please apply Larter!");
+        }
     }
 
     /**
@@ -694,7 +699,24 @@ class RigRegistrationController extends Controller
                     ->select(
                         DB::raw("REPLACE(rig_approved_registrations.application_type, '_', ' ') AS ref_application_type"),
                         DB::raw("TO_CHAR(rig_approved_registrations.application_apply_date, 'DD-MM-YYYY') as ref_application_apply_date"),
-                        "rig_approved_registrations.*",
+                        "rig_active_registrations.id",
+                        "rig_approved_registrations.application_no",
+                        "rig_approved_registrations.application_apply_date",
+                        "rig_approved_registrations.address",
+                        "rig_approved_registrations.application_type",
+                        "rig_active_registrations.payment_status",
+                        "rig_approved_registrations.status",
+                        "rig_approved_registrations.registration_id",
+                        "rig_approved_registrations.parked",
+                        "rig_approved_registrations.doc_upload_status",
+                        "rig_approved_registrations.registration_id",
+                        "rig_approved_registrations.doc_verify_status",
+                        "rig_approved_registrations.approve_date",
+                        "rig_approved_registrations.approve_end_date",
+                        "rig_approved_registrations.doc_verify_status",
+                        "rig_approve_applicants.applicant_name",
+                        "rig_approve_applicants.mobile_no",
+                        "rig_active_registrations.user_type",
                         "rig_approve_applicants.applicant_name",
                         "wf_roles.role_name",
                         "rig_approved_registrations.status as registrationSatus",
@@ -737,7 +759,24 @@ class RigRegistrationController extends Controller
                     ->select(
                         DB::raw("REPLACE(rig_rejected_registrations.application_type, '_', ' ') AS ref_application_type"),
                         DB::raw("TO_CHAR(rig_rejected_registrations.application_apply_date, 'DD-MM-YYYY') as ref_application_apply_date"),
-                        "rig_rejected_registrations.*",
+                        "rig_active_registrations.id",
+                        "rig_approved_registrations.application_no",
+                        "rig_approved_registrations.application_apply_date",
+                        "rig_approved_registrations.address",
+                        "rig_approved_registrations.application_type",
+                        "rig_active_registrations.payment_status",
+                        "rig_approved_registrations.status",
+                        "rig_approved_registrations.registration_id",
+                        "rig_approved_registrations.parked",
+                        "rig_approved_registrations.doc_upload_status",
+                        "rig_approved_registrations.registration_id",
+                        "rig_approved_registrations.doc_verify_status",
+                        "rig_approved_registrations.approve_date",
+                        "rig_approved_registrations.approve_end_date",
+                        "rig_approved_registrations.doc_verify_status",
+                        "rig_approve_applicants.applicant_name",
+                        "rig_approve_applicants.mobile_no",
+                        "rig_active_registrations.user_type",
                         "rig_rejected_applicants.applicant_name",
                         "wf_roles.role_name",
                         "rig_rejected_registrations.status as registrationSatus",
@@ -947,7 +986,7 @@ class RigRegistrationController extends Controller
 
         return new Collection([
 
-            ['displayString' => 'Vehicle From',                        'key' => 'vehicleFrom',                         'value' => $applicationDetails->vehicle_from],
+            ['displayString' => 'Vin Number',                          'key' => 'vinNumber',                         'value' => $applicationDetails->vehicle_name],
             ['displayString' => 'Vehicle Number',                      'key' => 'vehicleNumber',                       'value' => $applicationDetails->vehicle_no],
 
         ]);
@@ -1275,11 +1314,10 @@ class RigRegistrationController extends Controller
     {
         $validator = Validator::make($req->all(), [
             'id' => 'required|digits_between:1,9223372036854775807',
-            'image' => 'required|mimes:png,jpeg,pdf,jpg'
+            'image' => 'required|mimes:png,jpeg,pdf,jpg|max:2048'
         ]);
-        if ($validator->fails()) {
-            return ['status' => false, 'message' => $validator->errors()];
-        }
+        if ($validator->fails())
+            return validationError($validator);
         try {
             // Variable initialization
             $mRigActiveRegistrations = new RigActiveRegistration();
@@ -1510,7 +1548,7 @@ class RigRegistrationController extends Controller
                 "last_page" => $paginator->lastPage(),
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
-                'collectAmount' =>$paginator->sum('amount')
+                'collectAmount' => $paginator->sum('amount')
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             // $perPage = $req->get('per_page', 10);
@@ -1519,6 +1557,92 @@ class RigRegistrationController extends Controller
             return responseMsgs(true, "Rig Collection List Fetch Succefully !!!", $list, "055017", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "055017", "1.0", responseTime(), "POST", $req->deviceId);
+        }
+    }
+    /**
+     * |---------------------------- Get Document Lists To Upload ----------------------------|
+     * | Doc Upload for the Workflow
+        | Serial No : 0
+        | Working
+     */
+    public function getDocToUpload(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $mRigActiveRegistration     = new RigActiveRegistration();
+            $petApplicationId           = $req->applicationId;
+
+            $refPetApplication = $mRigActiveRegistration->getRigApplicationById($petApplicationId)->first();                      // Get Pet Details
+            if (is_null($refPetApplication)) {
+                throw new Exception("Application Not Found for respective ($petApplicationId) id!");
+            }
+            // check if the respective is working on the front end
+            // $this->checkAutheriseUser($req);
+            $documentList = $this->getPetDocLists($refPetApplication);
+            $petTypeDocs['listDocs'] = collect($documentList)->map(function ($value) use ($refPetApplication) {
+                return $this->filterDocument($value, $refPetApplication)->first();
+            });
+            $totalDocLists = collect($petTypeDocs);
+            $totalDocLists['docUploadStatus']   = $refPetApplication->doc_upload_status;
+            $totalDocLists['docVerifyStatus']   = $refPetApplication->doc_verify_status;
+            $totalDocLists['ApplicationNo']     = $refPetApplication->application_no;
+            $totalDocLists['paymentStatus']     = $refPetApplication->payment_status;
+            return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+        }
+    }
+
+    /**
+     * | get the renewal application details according to registration Id
+        | Serial No :
+        | Under Con
+     */
+    public function getRenewalApplicationDetails(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'registrationId' => 'required'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $viewRenewButton            = false;
+            $applicationId              = $req->registrationId;
+            $mRigRenewalRegistration    = new RigActiveRegistration();
+            $mRigTran                   = new RigTran();
+
+            # Application detial 
+            $renewalApplicationDetails = $mRigRenewalRegistration->getRigRenewalApplicationById($applicationId)
+                ->where('rig_active_registrations.status', '<>', 0)                                                       // Static
+                ->where('rig_active_registrations.renewal', 1)                                                       // Static
+                ->first();
+            if (is_null($renewalApplicationDetails)) {
+                throw new Exception("application Not found!");
+            }
+            # Get Transaction details 
+            $tranDetails = $mRigTran->getTranByApplicationId($renewalApplicationDetails->id)->first();
+            if (!$tranDetails) {
+                throw new Exception("Transaction details not found there is some error in data !");
+            }
+
+            # Return Details 
+            $renewalApplicationDetails['transactionDetails']    = $tranDetails;
+            $renewalApplicationDetails['viewRenewalButton']     = $viewRenewButton;
+            return responseMsgs(true, "Listed application details!", remove_null($renewalApplicationDetails), "", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01",  responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
 }
