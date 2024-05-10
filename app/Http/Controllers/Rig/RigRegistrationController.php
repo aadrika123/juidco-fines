@@ -597,7 +597,7 @@ class RigRegistrationController extends Controller
             # Check the Registered Application existence
             $refApprovedDetails = $mRigApprovedRegistration->getApplictionByRegId($request->registrationId)->first();
             if (!$refApprovedDetails) {
-                throw new Exception("Application Detial Not found!");
+                throw new Exception("Application Detail Not found!");
             }
 
             # Check Params for renewal of Application
@@ -670,12 +670,12 @@ class RigRegistrationController extends Controller
         }
 
         # Check the lecence year difference 
-        // $approveDate = Carbon::parse($refApprovedDetails->approve_date);
-        // $approveDate = $approveDate->copy()->addDays(7);
-        // $yearDifferernce = $approveDate->diffInYears($now);
-        // if ($yearDifferernce <= 0) {
-        //     throw new Exception("Application has an active licence please apply Larter!");
-        // }
+        $approveDate = Carbon::parse($refApprovedDetails->approve_date);
+        $approveDate = $approveDate->copy()->addDays(7);
+        $yearDifferernce = $approveDate->diffInYears($now);
+        if ($yearDifferernce <= 1) {
+            throw new Exception("Application has an active licence please apply Larter!");
+        }
     }
 
     /**
@@ -1598,6 +1598,51 @@ class RigRegistrationController extends Controller
             return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+        }
+    }
+
+    /**
+     * | get the renewal application details according to registration Id
+        | Serial No :
+        | Under Con
+     */
+    public function getRenewalApplicationDetails(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'registrationId' => 'required'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $viewRenewButton            = false;
+            $applicationId              = $req->registrationId;
+            $mRigRenewalRegistration    = new RigActiveRegistration();
+            $mRigTran                   = new RigTran();
+
+            # Application detial 
+            $renewalApplicationDetails = $mRigRenewalRegistration->getRigRenewalApplicationById($applicationId)
+                ->where('rig_active_registrations.status', '<>', 0)                                                       // Static
+                ->where('rig_active_registrations.renewal', 1)                                                       // Static
+                ->first();
+            if (is_null($renewalApplicationDetails)) {
+                throw new Exception("application Not found!");
+            }
+            # Get Transaction details 
+            $tranDetails = $mRigTran->getTranByApplicationId($renewalApplicationDetails->id)->first();
+            if (!$tranDetails) {
+                throw new Exception("Transaction details not found there is some error in data !");
+            }
+
+            # Return Details 
+            $renewalApplicationDetails['transactionDetails']    = $tranDetails;
+            $renewalApplicationDetails['viewRenewalButton']     = $viewRenewButton;
+            return responseMsgs(true, "Listed application details!", remove_null($renewalApplicationDetails), "", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01",  responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
 }

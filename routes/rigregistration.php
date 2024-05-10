@@ -21,9 +21,11 @@ use Illuminate\Support\Facades\Route;
  * | ----------------------------------------------------------------------------------
  * | Rig Registration Module Routes |
  * |-----------------------------------------------------------------------------------
- * | Created On- 29-04-2024
- * | Created For- The Routes defined for the Rig Registration System Module
- * | Created By- Arshad Hussain
+ * | Created On  - 29/04/2024
+ * | Created For - The Routes defined for the Rig Registration System Module
+ * | Created By  - Arshad Hussain
+ * | status      - Close by Developer
+ * | close Date  - 09/05/2024
  */
 
 Route::post('/rig-connection', function () {
@@ -43,7 +45,7 @@ Route::middleware([])->group(function () {
         Route::post('application/apply-rig-registration', 'applyRigRegistration');                              // Citizen
         Route::post('application/get-registration-list', 'getApplicationList');                                 // Citizen
         Route::post('application/get-details', 'getApplicationDetails');                                        // Citizen
-        Route::post('application/delete', 'deleteRigApplication');   # ❗❗❗                                           // Citizen / Admin
+        Route::post('application/delete', 'deleteRigApplication');   # ❗❗❗                                      // Citizen / Admin
         Route::post('registration/apply-renewal', 'applyRigRenewal');                                           // Admin / Citizen // pending
 
 
@@ -64,8 +66,7 @@ Route::middleware([])->group(function () {
         Route::post('application/get-doc-to-upload', 'getDocToUpload');                                         // Admin/ Citizen
         Route::post('application/reupload-document', 'reuploadDocuments');                                      // Admin
         Route::post('application/get-uploaded-docs', 'getUploadDocuments');                                     // Admin/ Citizen
-
-
+        Route::post('get-renewal-registration-details', 'getRenewalApplicationDetails');
     });
 
     /**

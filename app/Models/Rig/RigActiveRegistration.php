@@ -310,4 +310,30 @@ class RigActiveRegistration extends Model
                 "address"                  => $req->address            ?? $applicationDetails->address
             ]);
     }
+
+    /**
+     * | Get Renewal Application details by applicationId
+     */
+    public function getRigRenewalApplicationById($registrationId)
+    {
+        return RigActiveRegistration::select(
+            DB::raw("REPLACE(rig_active_registrations.application_type, '_', ' ') AS ref_application_type"),
+            'rig_active_registrations.id as rejected_id',
+            'rig_vehicle_active_details.id as ref_pet_id',
+            'rig_active_applicants.id as ref_applicant_id',
+            'rig_active_registrations.*',
+            'rig_vehicle_active_details.*',
+            'rig_active_applicants.*',
+            'rig_active_registrations.status as registrationStatus',
+            'rig_vehicle_active_details.status as petStatus',
+            'rig_active_applicants.status as applicantsStatus',
+            'ulb_ward_masters.ward_name',
+            'ulb_masters.ulb_name',
+        )
+            ->join('ulb_masters', 'ulb_masters.id', 'rig_active_registrations.ulb_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_active_registrations.ward_id')
+            ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
+            ->join('rig_vehicle_active_details', 'rig_vehicle_active_details.application_id', 'rig_active_registrations.id')
+            ->where('rig_active_registrations.id', $registrationId);
+    }
 }

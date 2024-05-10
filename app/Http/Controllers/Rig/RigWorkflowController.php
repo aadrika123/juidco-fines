@@ -419,7 +419,7 @@ class RigWorkflowController extends Controller
         $mRigApprovedRegistration   = new RigApprovedRegistration();
         $mRigActiveApplicant        = new RigActiveApplicant();
         $mRigActiveDetail           = new RigVehicleActiveDetail();
-        $lastLicenceDate            = $now->copy()->addYear()->subDay();
+        $lastLicenceDate            = $now->copy()->addYears(2)->subDay();
         $key                        = "REG-";                                           // Static
         $registrationId             = $this->getUniqueId($key);
 
