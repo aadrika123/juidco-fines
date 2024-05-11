@@ -1150,7 +1150,7 @@ class PenaltyRecordController extends Controller
 
             if ($userId)
                 $data = $data->where("approved_by", $userId)
-                    ->orwhere("penalty_final_records.applied_by",$userId);
+                    ->orwhere("penalty_final_records.applied_by", $userId);
 
             $data = $data
                 ->paginate($perPage);
@@ -1465,8 +1465,8 @@ class PenaltyRecordController extends Controller
 
         $rigTransaction        = RigTran::where('tran_date', $todayDate)->where('status', 1);
         $refRigTRansaction     = RigTran::where('tran_date', $todayDate)->where('status', 1);
-        $rigNewRegistration    = RigActiveRegistration::where('application_apply_date', $todayDate)->where('status', '<>',0);
-        $rigRenewal            = RigActiveRegistration::where('application_apply_date', $todayDate)->where('status',"<>" ,0);
+        $rigNewRegistration    = RigActiveRegistration::where('application_apply_date', $todayDate)->where('status', '<>', 0);
+        $rigRenewal            = RigActiveRegistration::where('application_apply_date', $todayDate)->where('status', "<>", 0);
 
         if ($ulbId) {
             $penaltyTransaction =  $penaltyTransaction->where('ulb_id', $ulbId);
@@ -1525,8 +1525,8 @@ class PenaltyRecordController extends Controller
         $rigRenewal           =   $rigRenewal->where('application_type', 'Renewal')->count();
 
         # Rig collection amount
-        $rigNewRegsitrationAmt  = $rigTransaction->where('tran_type','New_Apply')->sum('amount');
-        $rigRenewRegistration   = $refRigTRansaction->where('tran_type','Renewal')->sum('amount');
+        $rigNewRegsitrationAmt  = $rigTransaction->where('tran_type', 'New_Apply')->sum('amount');
+        $rigRenewRegistration   = $refRigTRansaction->where('tran_type', 'Renewal')->sum('amount');
 
         $data['fines_collection']   = $penaltyCollectionAmt;
         $data['challan_count']      = $penaltyChallanCount;
@@ -1629,7 +1629,7 @@ class PenaltyRecordController extends Controller
                 DB::raw('COALESCE(SUM(st_bookings.payment_amount), 0) as total_amount')
             )
             ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
-            ->orderByDesc('total_amount');        
+            ->orderByDesc('total_amount');
 
         // $rigTransaction = RigTran::select(
         //     'ulb_id',
