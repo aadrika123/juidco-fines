@@ -1155,7 +1155,16 @@ class PenaltyRecordController extends Controller
             $data = $data
                 ->paginate($perPage);
 
-            return responseMsgs(true, "", $data,  $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
+            $totalAmount = PenaltyTransaction::select('penalty_transactions.total_amount')
+                ->join('penalty_final_records', 'penalty_final_records.id', 'penalty_transactions.application_id')
+                ->whereBetween('tran_date', [$req->fromDate, $req->uptoDate])
+                ->where("penalty_final_records.applied_by", $userId)
+                ->get();
+            $totalAmount = collect($totalAmount)->sum('total_amount');
+            $newData['data'] =  $data->items();
+            $newData['total_amount'] =  $totalAmount;
+
+            return responseMsgs(true, "", $newData,  $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "",  $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         }
