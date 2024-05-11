@@ -17,23 +17,28 @@ class UlbMaster extends Model
      */
     public function getUlbDetails($ulbId): array
     {
-        $docBaseUrl = Config::get('marriage.DOC_URL');
+        $docBaseUrl = Config::get('constants.DOC_URL');
         $ulb = DB::table('ulb_masters as u')
-            ->select('u.*', 'd.district_name', 's.name as state_name')
-            ->join('district_masters as d', 'd.district_code', '=', 'u.district_code')
-            ->join('m_states as s', 's.id', '=', 'u.state_id')
+            ->select(
+                'u.*',
+                // 'd.district_name',
+                // 's.name as state_name'
+            )
+            // ->join('district_masters as d', 'd.district_code', '=', 'u.district_code')
+            // ->join('m_states as s', 's.id', '=', 'u.state_id')
             ->where('u.id', $ulbId)
             ->first();
         if (collect($ulb)->isEmpty())
             throw new Exception("Ulb Not Found");
         return [
             "ulb_name" => $ulb->ulb_name,
-            "district" => $ulb->district_name,
-            "state" => $ulb->state_name,
+            "ulb_hindi_name" => $ulb->hindi_name,
+            // "district" => $ulb->district_name,
+            // "state" => $ulb->state_name,
             "address" => $ulb->address,
+            "hindi_address" => $ulb->hindi_address,
             "mobile_no" => $ulb->mobile_no,
             "mobile_no_2" => $ulb->toll_free_no,
-            "website" => $ulb->current_website,
             "email" => $ulb->email,
             "state_logo" => $docBaseUrl . "/" . "custom/jhk-govt-logo.png",
             "ulb_logo" => $docBaseUrl . "/" . $ulb->logo,
