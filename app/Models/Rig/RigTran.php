@@ -111,11 +111,14 @@ class RigTran extends Model
                 'rig_trans.amount',
                 't1.application_no',
                 'rig_active_applicants.applicant_name',
-                'rig_active_applicants.mobile_no'
+                'rig_active_applicants.mobile_no',
+                DB::raw("CASE 
+                WHEN rig_trans.verify_status = '0' THEN 'Not Verified'
+                WHEN rig_trans.verify_status = '1' THEN 'Verified'
+                END AS cashVerifiedStatus"),
             )
             ->join('rig_active_registrations as t1', 'rig_trans.related_id', '=', 't1.id')
             ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_trans.related_id')
-            ->where('verify_status', '=', '0')
             ->where('payment_mode', '=', 'CASH');
     }
 
