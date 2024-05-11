@@ -93,6 +93,6 @@ Route::middleware([])->group(function () {
         Route::post('razorpay/save-response', 'saveRazorpayResponse')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);   #_Save Response of Online Payment --------- 0702   
         Route::post("application/payment-receipt", "generatePaymentReceipt");                                   // Admin / Citizen 
         Route::post('list-unverified-cash-payment', 'listUnverifiedCashPayment');                               // List of UnVerified Cash Payment 
-        Route::post('rental/verified-cash-payment', 'verifiedCashPayment');                                     //   Verified Cash Payment                                                                   
+        Route::post('verified-cash-payment', 'verifiedCashPayment');                                     //   Verified Cash Payment                                                                   
     });
 });

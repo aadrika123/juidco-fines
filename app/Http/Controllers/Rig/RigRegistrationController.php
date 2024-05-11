@@ -265,6 +265,7 @@ class RigRegistrationController extends Controller
                     'auth'              => $req->auth
                 ]
             );
+            
             $mWorkflowTrack->saveTrack($metaReqs);
 
             DB::commit();
