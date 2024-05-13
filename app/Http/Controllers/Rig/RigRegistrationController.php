@@ -1159,17 +1159,21 @@ class RigRegistrationController extends Controller
                     throw new Exception("Transaction details not found there is some error in data !");
                 }
             }
+            $approveEndDate = Carbon::parse($approveApplicationDetails->approve_end_date)->subMonth(); // Subtract one month
+            $currentDate = Carbon::now();
+            $flag = $currentDate->gte($approveEndDate); // Check if current date is equal or greater
+            $approveApplicationDetails->isRenewal = $flag; 
 
             # Check for jsk for renewal button
-            if ($user->user_type == 'JSK') {                                                                                // Static
-                $viewRenewButton = true;
-            }
+            // if ($user->user_type == 'JSK') {                                                                                // Static
+            //     $viewRenewButton = true;
+            // }
 
             # return Details 
             $approveApplicationDetails['transactionDetails']    = $tranDetails;
             $chargeDetails['roundAmount']                       = round($chargeDetails['amount']);
             $approveApplicationDetails['charges']               = $chargeDetails;
-            $approveApplicationDetails['viewRenewalButton']     = $viewRenewButton;
+            // $approveApplicationDetails['viewRenewalButton']     = $viewRenewButton;
             return responseMsgs(true, "Listed application details!", remove_null($approveApplicationDetails), "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
