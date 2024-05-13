@@ -40,6 +40,7 @@ class RigRegistrationReq extends FormRequest
             'registrationNumber'    => "required",
             'documents'            => 'nullable|array',
             'documents.*.image'    => 'nullable|mimes:png,jpeg,pdf,jpg|max:2048',
+            
             'documents.*.docCode'  => 'nullable|string',
             'documents.*.ownerDtlId' => 'nullable|integer'
         ];
