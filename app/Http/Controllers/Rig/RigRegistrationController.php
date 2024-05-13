@@ -265,7 +265,7 @@ class RigRegistrationController extends Controller
                     'auth'              => $req->auth
                 ]
             );
-            
+
             $mWorkflowTrack->saveTrack($metaReqs);
 
             DB::commit();
@@ -516,6 +516,12 @@ class RigRegistrationController extends Controller
                 }
                 $applicationDetails['transactionDetails'] = $tranDetails;
             }
+            $approveEndDate = $applicationDetails->approve_end_date;
+            $approveEndDate = Carbon::parse($approveEndDate)->subMonth(); // Subtract one month
+            $currentDate = Carbon::now();
+            $flag = $currentDate->gte($approveEndDate); // Check if current date is equal or greater
+            $applicationDetails->isRenewal = $flag; // Add the flag to the result object
+
             $chargeDetails['roundAmount'] = round($chargeDetails['amount']);
             $applicationDetails['charges'] = $chargeDetails;
             return responseMsgs(true, "Listed application details!", remove_null($applicationDetails), "", "01", ".ms", "POST", $req->deviceId);
@@ -671,12 +677,12 @@ class RigRegistrationController extends Controller
         }
 
         # Check the lecence year difference 
-        $approveDate = Carbon::parse($refApprovedDetails->approve_date);
-        $approveDate = $approveDate->copy()->addDays(7);
-        $yearDifferernce = $approveDate->diffInYears($now);
-        if ($yearDifferernce <= 1) {
-            throw new Exception("Application has an active licence please apply Larter!");
-        }
+        // $approveDate = Carbon::parse($refApprovedDetails->approve_date);
+        // $approveDate = $approveDate->copy()->addDays(7);
+        // $yearDifferernce = $approveDate->diffInYears($now);
+        // if ($yearDifferernce <= 1) {
+        //     throw new Exception("Application has an active licence please apply Larter!");
+        // }
     }
 
     /**
@@ -691,9 +697,9 @@ class RigRegistrationController extends Controller
             $confUserType               = $this->_userType;
             $mRigApprovedRegistration   = new RigApprovedRegistration();
 
-            if ($user->user_type != $confUserType['1']) {                                       // If not a citizen
-                throw new Exception("You are not an autherised Citizen!");
-            }
+            // if ($user->user_type != $confUserType['1']) {                                       // If not a citizen
+            //     throw new Exception("You are not an autherised Citizen!");
+            // }
             # Collect querry Exceptions 
             try {
                 $refApproveDetails = $mRigApprovedRegistration->getAllApprovdApplicationDetails()
@@ -730,6 +736,13 @@ class RigRegistrationController extends Controller
                     ->where('rig_approved_registrations.citizen_id', $user->id)
                     ->orderByDesc('rig_approved_registrations.id')
                     ->get();
+
+                foreach ($refApproveDetails as $detail) {
+                    $approveEndDate = Carbon::parse($detail->approve_end_date)->subMonth(); // Subtract one month
+                    $currentDate = Carbon::now();
+                    $flag = $currentDate->gte($approveEndDate); // Check if current date is equal or greater
+                    $detail->isRenewal = $flag; // Add the flag to each result object
+                }
             } catch (QueryException $qurry) {
                 return responseMsgs(false, "An error occurred during the query!", $qurry->getMessage(), "", "01", ".ms", "POST", $req->deviceId);
             }

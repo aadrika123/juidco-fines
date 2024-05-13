@@ -114,6 +114,7 @@ class RigActiveRegistration extends Model
             'rig_active_applicants.status as applicantsStatus',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
+            'rig_approved_registrations.approve_end_date',
             DB::raw("CASE 
             WHEN rig_vehicle_active_details.sex = '1' THEN 'Male'
             WHEN rig_vehicle_active_details.sex = '2' THEN 'Female'
@@ -125,6 +126,11 @@ class RigActiveRegistration extends Model
             ->join('ulb_masters', 'ulb_masters.id', '=', 'rig_active_registrations.ulb_id')
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_active_registrations.ward_id')
             ->leftjoin('wf_roles', 'wf_roles.id', 'rig_active_registrations.current_role_id')
+            ->leftJoin('rig_approved_registrations', function ($join) {
+                $join->on('rig_approved_registrations.application_id', '=', 'rig_active_registrations.id')
+                    ->where('rig_approved_registrations.status', 1);
+            })
+
             ->where('rig_active_registrations.id', $applicationId);
         // ->where('rig_active_registrations.status', '<>', 0);
     }

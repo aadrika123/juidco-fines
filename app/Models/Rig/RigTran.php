@@ -142,4 +142,16 @@ class RigTran extends Model
             ->where('rig_trans.tran_date', '<=', $toDate)
             ->where('rig_trans.status', 1);
     }
+
+    /**
+     * | Details for Cash Verification
+     */
+    public function cashDtl($date)
+    {
+        return RigTran::select('rig_trans.*', 'users.user_name', 'users.id as user_id', 'mobile')
+            ->join('users', 'users.id', 'rig_trans.emp_dtl_id')
+            ->where('rig_trans.status', 1)
+            ->where('verify_status', 0)
+            ->where('tran_date', $date);
+    }
 }

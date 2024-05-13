@@ -15,6 +15,7 @@ use App\Http\Requests\rig\RigRegistrationReq;
 use App\IdGenerator\IdGeneration;
 use App\MicroServices\DocumentUpload;
 use App\Models\IdGenerationParam;
+use App\Models\PenaltyDailycollectiondetail;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropFloor;
@@ -24,6 +25,8 @@ use App\Models\Rig\RigActiveApplicant;
 use App\Models\Rig\RigActiveRegistration;
 use App\Models\Rig\RigApprovedRegistration;
 use App\Models\Rig\RigChequeDtl;
+use App\Models\Rig\RigDailycollection;
+use App\Models\Rig\RigDailycollectiondetail;
 use App\Models\Rig\RigRazorPayRequest;
 use App\Models\Rig\RigRazorPayResponse;
 use App\Models\Rig\RigRegistrationCharge;
@@ -640,6 +643,157 @@ class RigPaymentController extends Controller
             return responseMsgs(true, "Payment Verified Successfully !!!",  '', "055025", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "055025", "1.0", responseTime(), "POST", $req->deviceId);
+        }
+    }
+
+    #=================================================================================================================================
+    #==============================================           CASH VERIFICATION          =============================================
+    #=================================================================================================================================
+
+    /**
+     * | Unverified Cash Verification List
+     */
+    public function listCashVerification(Request $req)
+    {
+        $validator = Validator::make($req->all(), [
+            'date' => 'required|date',
+            'userId' => 'nullable|int'
+        ]);
+        if ($validator->fails())
+            return validationError($validator);
+        try {
+            $apiId = "0703";
+            $version = "01";
+            $user = authUser($req);
+            $mRigTransaction = new RigTran();
+            $userId =  $req->userId;
+            $date = date('Y-m-d', strtotime($req->date));
+
+            if (isset($userId)) {
+                $data = $mRigTransaction->cashDtl($date)
+                    ->where('rig_trans.ulb_id', $user->ulb_id)
+                    ->where('emp_dtl_id', $userId)
+                    ->get();
+            }
+
+            if (!isset($userId)) {
+                $data = $mRigTransaction->cashDtl($date)
+                    ->where('rig_trans.ulb_id', $user->ulb_id)
+                    ->get();
+            }
+
+            $collection = collect($data->groupBy("emp_dtl_id")->values());
+
+            $data = $collection->map(function ($val) use ($date) {
+                $total =  $val->sum('amount');
+                return [
+                    "id" => $val[0]['id'],
+                    "user_id" => $val[0]['emp_dtl_id'],
+                    "officer_name" => $val[0]['user_name'],
+                    "mobile" => $val[0]['mobile'],
+                    "amount" => $total,
+                    "date" => Carbon::parse($date)->format('d-m-Y'),
+                ];
+            });
+
+            return responseMsgs(true, "Cash Verification List", $data, $apiId, $version, responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", $apiId, $version, responseTime(), "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | Tc Collection Dtl
+     */
+    public function cashVerificationDtl(Request $req)
+    {
+        $validator = Validator::make($req->all(), [
+            "date" => "required|date",
+            "userId" => "required|int",
+        ]);
+        if ($validator->fails())
+            return validationError($validator);
+        try {
+            $apiId = "0704";
+            $version = "01";
+            $mRigTransaction = new RigTran();
+            $userId =  $req->userId;
+            $date = date('Y-m-d', strtotime($req->date));
+            $details = $mRigTransaction->cashDtl($date, $userId)
+                ->where('emp_dtl_id', $userId)
+                ->get();
+                return $details;
+
+            if (collect($details)->isEmpty())
+                throw new Exception("No Application Found for this id");
+
+            $data['tranDtl'] = collect($details)->values();
+            $data['Cash'] = collect($details)->where('payment_mode', 'CASH')->sum('amount');
+            $data['totalAmount'] =  $details->sum('amount');
+            $data['numberOfTransaction'] =  $details->count();
+            $data['date'] = Carbon::parse($date)->format('d-m-Y');
+            $data['tcId'] = $userId;
+
+            return responseMsgs(true, "Cash Verification Details", remove_null($data), $apiId, $version, responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", $apiId, $version, responseTime(), "POST", $req->deviceId);
+        }
+    }
+
+    public function verifyCash(Request $req)
+    {
+        $validator = Validator::make($req->all(), [
+            "date"          => "required|date",
+            "tcId"          => "required|int",
+            "id"            => "required|array",
+        ]);
+        if ($validator->fails())
+            return validationError($validator);
+        try {
+            $apiId = "0705";
+            $version = "01";
+            $user = authUser($req);
+            $userId = $user->id;
+            $ulbId = $user->ulb_id;
+            $mRigTransaction           = new RigTran();
+            $mRigDailycollection       = new RigDailycollection();
+            $mRigDailycollectiondetail = new RigDailycollectiondetail();
+            $receiptIdParam                = Config::get('constants.ID_GENERATION_PARAMS.CASH_VERIFICATION_ID');
+            DB::beginTransaction();
+            $idGeneration  = new IdGeneration($receiptIdParam, $user->ulb_id, 000, 0);
+            $receiptNo = $idGeneration->generate();
+
+            $totalAmount = $mRigTransaction->whereIn('id', $req->id)->sum('amount');
+
+            $mReqs = [
+                "receipt_no"     => $receiptNo,
+                "user_id"        => $userId,
+                "tran_date"      => Carbon::parse($req->date)->format('Y-m-d'),
+                "deposit_date"   => Carbon::now(),
+                "deposit_amount" => $totalAmount,
+                "tc_id"          => $req->tcId,
+            ];
+
+            $collectionDtl =  $mRigDailycollection->store($mReqs);
+            //Update collection details table
+
+            foreach ($req->id as $id) {
+                $collectionDtlsReqs = [
+                    "collection_id"  => $collectionDtl->id,
+                    "transaction_id" => $id,
+                ];
+                $mRigDailycollectiondetail->store($collectionDtlsReqs);
+            }
+
+            //Update transaction table
+            $mRigTransaction->whereIn('id', $req->id)
+                ->update(['verify_status' => 1]);
+
+            DB::commit();
+            return responseMsgs(true, "Cash Verified", ["receipt_no" => $receiptNo], $apiId, $version, responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", $apiId, $version, responseTime(), "POST", $req->deviceId);
         }
     }
 }

@@ -52,7 +52,7 @@ class RigApprovedRegistration extends Model
         )
             ->join('rig_approve_applicants', 'rig_approve_applicants.application_id', 'rig_approved_registrations.application_id')
             ->join('rig_approve_active_details', 'rig_approve_active_details.application_id', 'rig_approved_registrations.application_id')
-            ->where('rig_approved_registrations.id', $id)
+            ->where('rig_approved_registrations.application_id', $id)
             ->where('rig_approved_registrations.status', 1);
     }
 
