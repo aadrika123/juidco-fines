@@ -1203,7 +1203,7 @@ class PenaltyRecordController extends Controller
             $ulbId = $user->ulb_id;
             $finalRecord = $mPenaltyFinalRecord->recordDetail()
                 ->selectRaw('total_amount')
-                ->selectRaw('user_name')
+                ->selectRaw('users.name as user_name')
                 ->join('penalty_challans', 'penalty_challans.penalty_record_id', 'penalty_final_records.id')
                 ->join('users', 'users.id', 'penalty_final_records.approved_by')
                 ->where('penalty_final_records.ulb_id', $ulbId)
@@ -1214,7 +1214,7 @@ class PenaltyRecordController extends Controller
 
             $appliedRecord = $mPenaltyRecord->recordDetail()
                 ->selectRaw('penalty_applied_records.amount')
-                ->selectRaw('user_name')
+                ->selectRaw('users.name as user_name')
                 ->join('penalty_final_records', 'penalty_final_records.applied_record_id', 'penalty_applied_records.id')
                 ->join('penalty_challans', 'penalty_challans.penalty_record_id', 'penalty_final_records.id')
                 ->join('users', 'users.id', 'penalty_applied_records.user_id')
