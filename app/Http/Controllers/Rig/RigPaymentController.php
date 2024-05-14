@@ -295,8 +295,8 @@ class RigPaymentController extends Controller
                 "vehicleNo"     => $applicationDetails->vehicle_no,
                 "vehicleFrom"     => $applicationDetails->vehicle_from,
                 "vehicleName"     => $applicationDetails->vehicle_name,
-                "ulbName"        => $transactionDetails->ulb_name,
-                "ulbEmail"       => $transactionDetails->email
+                "ulb_address"        => $transactionDetails->ulb_name,
+                "ulb_email"       => $transactionDetails->email
 
             ];
             return responseMsgs(true, 'payment Receipt!', $returnData, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
