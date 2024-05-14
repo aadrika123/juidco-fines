@@ -1178,7 +1178,8 @@ class PenaltyRecordController extends Controller
 
             $totalAmount = collect($totalAmount)->sum('total_amount');
             $newData['data'] =  $data->items();
-            $newData['totalCount'] =  $data->total();
+            // $newData['totalCount'] =  $data->total();
+            $newData['total'] =  $data->total();
             $newData['total_amount'] =  $totalAmount;
 
             return responseMsgs(true, "", $newData,  $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
