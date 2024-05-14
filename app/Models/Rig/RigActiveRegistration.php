@@ -198,7 +198,6 @@ class RigActiveRegistration extends Model
         )
             ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
             ->where('rig_active_registrations.' . $key, 'LIKE', '%' . $refNo . '%')
-            ->where('rig_active_registrations.user_type', 'JSK')
             ->where('rig_active_registrations.ulb_id', authUser($req)->ulb_id)
             ->orderByDesc('rig_active_registrations.id');
     }
