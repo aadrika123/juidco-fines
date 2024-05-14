@@ -1129,6 +1129,7 @@ class RigRegistrationController extends Controller
             return validationError($validated);
 
         try {
+            $canTakePayment             = false;
             $user                       = authUser($req);
             $viewRenewButton            = false;
             $applicationId              = $req->registrationId;
@@ -1169,15 +1170,16 @@ class RigRegistrationController extends Controller
             $approveApplicationDetails->isRenewal = $flag;
 
             # Check for jsk for renewal button
-            // if ($user->user_type == 'JSK') {                                                                                // Static
-            //     $viewRenewButton = true;
-            // }
+            if ($user->user_type == 'JSK') {                                                                                // Static
+                $canTakePayment = true;
+            }
 
             # return Details 
             $approveApplicationDetails['transactionDetails']    = $tranDetails;
             $chargeDetails['roundAmount']                       = round($chargeDetails['amount']);
             $approveApplicationDetails['charges']               = $chargeDetails;
-            // $approveApplicationDetails['viewRenewalButton']     = $viewRenewButton;
+            // "canTakePayment" => $canTakePayment
+            $approveApplicationDetails['canTakePayment']     = $canTakePayment;
             return responseMsgs(true, "Listed application details!", remove_null($approveApplicationDetails), "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
