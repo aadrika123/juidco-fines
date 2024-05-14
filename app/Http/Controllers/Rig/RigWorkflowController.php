@@ -519,7 +519,7 @@ class RigWorkflowController extends Controller
 
         # get approve application detials 
         $approveApplicantDetail = $mRigApproveApplicant->getApproveApplicant($approveDataExist->application_id)->first();
-        $approverigDetail = $mRigApproveDetail->getrigDetailsById($approveDataExist->application_id)->first();
+        $approverigDetail = $mRigApproveDetail->getRigDetailsById($approveDataExist->application_id)->first();
 
         # Saving the data in the approved application table
         $approvedrigRegistration = $refApplicationDetial->replicate();
@@ -539,7 +539,7 @@ class RigWorkflowController extends Controller
 
         # Save the rig detials 
         $approvedrigDetails = $refrigDetails->replicate();
-        $approvedrigDetails->setTable('rig_approve_details');                                       // Static
+        $approvedrigDetails->setTable('rig_approve_active_details');                                       // Static
         $approvedrigDetails->created_at = $now;
         $approvedrigDetails->save();
 
@@ -584,6 +584,7 @@ class RigWorkflowController extends Controller
             'refTableDotId'     => 'rig_active_registrations.id',                                   // Static
             'refTableIdValue'   => $applicationDetails->ref_application_id,
             'user_id'           => authUser($request)->id,
+            'ulbId'             => $applicationDetails->ulb_id
         ];
         $request->request->add($metaReqs);
         $rigTrack->saveTrack($request);
