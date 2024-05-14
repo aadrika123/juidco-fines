@@ -1070,7 +1070,7 @@ class PenaltyRecordController extends Controller
                 'penalty_challans.challan_date',
                 'penalty_final_records.challan_type',
                 'penalty_final_records.payment_status',
-                'user_name',
+                'users.name as user_name',
                 'category_type as challan_category',
             )
                 ->join('violations', 'violations.id', 'penalty_final_records.violation_id')
