@@ -1162,23 +1162,36 @@ class PenaltyRecordController extends Controller
             $data = $data
                 ->paginate($perPage);
 
-            $totalAmount = PenaltyTransaction::select('penalty_transactions.total_amount')
-                ->join('penalty_final_records', 'penalty_final_records.id', 'penalty_transactions.application_id')
-                ->where('penalty_transactions.status', 1)
-                ->whereBetween('tran_date', [$req->fromDate, $req->uptoDate])
-                ->where(function ($query) use ($userId) {
-                    $query->where("approved_by", $userId)
-                        ->orWhere(function ($query) use ($userId) {
-                            $query->where("penalty_final_records.applied_by", $userId);
-                        });
-                })
-                ->get();
+            if ($req->type == 'mobile')
+                $totalAmount = PenaltyTransaction::select('penalty_transactions.total_amount')
+                    ->join('penalty_final_records', 'penalty_final_records.id', 'penalty_transactions.application_id')
+                    ->where('penalty_transactions.status', 1)
+                    ->whereBetween('tran_date', [$req->fromDate, $req->uptoDate])
+                    ->where(function ($query) use ($userId) {
+                        $query->where("approved_by", $userId)
+                            ->orWhere(function ($query) use ($userId) {
+                                $query->where("penalty_final_records.applied_by", $userId);
+                            });
+                    })
+                    ->get();
+            else
+                $totalAmount = PenaltyTransaction::select('penalty_transactions.total_amount')
+                    ->join('penalty_final_records', 'penalty_final_records.id', 'penalty_transactions.application_id')
+                    ->where('penalty_transactions.status', 1)
+                    ->whereBetween('tran_date', [$req->fromDate, $req->uptoDate])
+                    ->where('penalty_transactions.ulb_id', $ulbId)
+                    // ->where(function ($query) use ($userId) {
+                    //     $query->where("approved_by", $userId)
+                    //         ->orWhere(function ($query) use ($userId) {
+                    //             $query->where("penalty_final_records.applied_by", $userId);
+                    //         });
+                    // })
+                    ->get();
 
-                
+
 
             $totalAmount = collect($totalAmount)->sum('total_amount');
             $newData['data'] =  $data->items();
-            // $newData['totalCount'] =  $data->total();
             $newData['total'] =  $data->total();
             $newData['total_amount'] =  $totalAmount;
 
