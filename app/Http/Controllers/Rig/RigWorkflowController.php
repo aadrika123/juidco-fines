@@ -936,7 +936,11 @@ class RigWorkflowController extends Controller
                         DB::raw("CASE 
                         WHEN rig_approved_registrations.status = 1 THEN 'Approved'
                         WHEN rig_approved_registrations.status = 2 THEN 'Under Renewal Process'
-                        END as current_status")
+                        END as current_status"),
+                        DB::raw("CASE 
+                        WHEN rig_active_registrations.payment_status = 1 THEN 'Paid'
+                        WHEN rig_active_registrations.payment_status = 0 THEN 'Unpaid'
+                        END as paymentStatus")
                     )
                     ->where('rig_approved_registrations.status', '<>', 0)
                     ->where('rig_approve_applicants.status', '<>', 0)
