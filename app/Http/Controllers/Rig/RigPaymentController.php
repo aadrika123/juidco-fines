@@ -295,6 +295,8 @@ class RigPaymentController extends Controller
                 "vehicleNo"     => $applicationDetails->vehicle_no,
                 "vehicleFrom"     => $applicationDetails->vehicle_from,
                 "vehicleName"     => $applicationDetails->vehicle_name,
+                "ulbName"        => $transactionDetails->ulb_name,
+                "ulbEmail"       => $transactionDetails->email
 
             ];
             return responseMsgs(true, 'payment Receipt!', $returnData, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
@@ -722,7 +724,7 @@ class RigPaymentController extends Controller
             $details = $mRigTransaction->cashDtl($date, $userId)
                 ->where('emp_dtl_id', $userId)
                 ->get();
-                return $details;
+            return $details;
 
             if (collect($details)->isEmpty())
                 throw new Exception("No Application Found for this id");
