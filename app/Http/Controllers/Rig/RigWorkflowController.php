@@ -892,6 +892,7 @@ class RigWorkflowController extends Controller
             return validationError($validated);
 
         try {
+            $canTakePayment             = false;
             $user                       = authUser($request);
             $userId                     = $user->id;
             $confWorkflowMasterId       = $this->_workflowMasterId;
@@ -982,12 +983,17 @@ class RigWorkflowController extends Controller
 
                 return responseMsgs(true, $msg, remove_null($activeApplication), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
             }
+            # Check for jsk for renewal button
+            if ($user->user_type == 'JSK') {                                                                                // Static
+                $canTakePayment = true;
+            }
             $paginator = $baseQuerry->paginate($pages);
             $list = [
                 "current_page" => $paginator->currentPage(),
                 "last_page" => $paginator->lastPage(),
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
+                "canTakePayment" => $canTakePayment
             ];
             # Get the latest data for Finisher
             // $returnData = $baseQuerry->orderBy('rig_approved_registrations.approve_date')->paginate($pages);
