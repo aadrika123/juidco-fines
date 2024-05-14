@@ -726,6 +726,8 @@ class RigRegistrationController extends Controller
                         "rig_active_registrations.user_type",
                         "rig_approve_applicants.applicant_name",
                         "wf_roles.role_name",
+                        "rig_trans.tran_no as transactionNo",
+                        "rig_approved_registrations.workflow_id",
                         "rig_approved_registrations.status as registrationSatus",
                         DB::raw("CASE 
                         WHEN rig_approved_registrations.status = 1 THEN 'Approved'
@@ -1162,7 +1164,7 @@ class RigRegistrationController extends Controller
             $approveEndDate = Carbon::parse($approveApplicationDetails->approve_end_date)->subMonth(); // Subtract one month
             $currentDate = Carbon::now();
             $flag = $currentDate->gte($approveEndDate); // Check if current date is equal or greater
-            $approveApplicationDetails->isRenewal = $flag; 
+            $approveApplicationDetails->isRenewal = $flag;
 
             # Check for jsk for renewal button
             // if ($user->user_type == 'JSK') {                                                                                // Static

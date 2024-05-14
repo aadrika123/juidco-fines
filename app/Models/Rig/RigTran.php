@@ -45,9 +45,12 @@ class RigTran extends Model
         return RigTran::select(
             'rig_trans.id AS refTransId',
             'rig_trans.*',
+            'ulb_masters.ulb_name',
+            'ulb_masters.email'
         )
             ->where('rig_trans.tran_no', $tranNo)
             ->where('rig_trans.status', 1)
+            ->join('ulb_masters','ulb_masters.id','rig_trans.ulb_id')
             ->orderByDesc('rig_trans.id');
     }
 
