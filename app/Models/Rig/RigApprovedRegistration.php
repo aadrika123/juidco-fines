@@ -74,7 +74,11 @@ class RigApprovedRegistration extends Model
             ->leftJoin('wf_roles', 'wf_roles.id', 'rig_approved_registrations.current_role_id')
             ->join('rig_approve_applicants', 'rig_approve_applicants.application_id', 'rig_approved_registrations.application_id')
             ->join('rig_approve_active_details', 'rig_approve_active_details.application_id', 'rig_approved_registrations.application_id')
-            ->join('rig_active_registrations','rig_active_registrations.id','rig_approved_registrations.application_id');
+            ->join('rig_active_registrations','rig_active_registrations.id','rig_approved_registrations.application_id')
+            ->leftJoin('rig_trans', function ($join) {
+                $join->on('rig_trans.related_id', '=', 'rig_active_registrations.id')
+                    ->where('rig_trans.status', 1);
+            });
     }
 
      /**
