@@ -1070,7 +1070,7 @@ class PenaltyRecordController extends Controller
                 'penalty_challans.challan_date',
                 'penalty_final_records.challan_type',
                 'penalty_final_records.payment_status',
-                'user_name',
+                'users.name as user_name',
                 'category_type as challan_category',
             )
                 ->join('violations', 'violations.id', 'penalty_final_records.violation_id')
@@ -1173,8 +1173,13 @@ class PenaltyRecordController extends Controller
                         });
                 })
                 ->get();
+
+                
+
             $totalAmount = collect($totalAmount)->sum('total_amount');
             $newData['data'] =  $data->items();
+            // $newData['totalCount'] =  $data->total();
+            $newData['total'] =  $data->total();
             $newData['total_amount'] =  $totalAmount;
 
             return responseMsgs(true, "", $newData,  $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
@@ -1203,7 +1208,7 @@ class PenaltyRecordController extends Controller
             $ulbId = $user->ulb_id;
             $finalRecord = $mPenaltyFinalRecord->recordDetail()
                 ->selectRaw('total_amount')
-                ->selectRaw('user_name')
+                ->selectRaw('users.name as user_name')
                 ->join('penalty_challans', 'penalty_challans.penalty_record_id', 'penalty_final_records.id')
                 ->join('users', 'users.id', 'penalty_final_records.approved_by')
                 ->where('penalty_final_records.ulb_id', $ulbId)
@@ -1214,7 +1219,7 @@ class PenaltyRecordController extends Controller
 
             $appliedRecord = $mPenaltyRecord->recordDetail()
                 ->selectRaw('penalty_applied_records.amount')
-                ->selectRaw('user_name')
+                ->selectRaw('users.name as user_name')
                 ->join('penalty_final_records', 'penalty_final_records.applied_record_id', 'penalty_applied_records.id')
                 ->join('penalty_challans', 'penalty_challans.penalty_record_id', 'penalty_final_records.id')
                 ->join('users', 'users.id', 'penalty_applied_records.user_id')
