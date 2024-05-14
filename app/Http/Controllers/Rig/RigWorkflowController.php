@@ -492,7 +492,7 @@ class RigWorkflowController extends Controller
     public function finalApprovalRenewal($request, $applicationDetails)
     {
         $now                        = Carbon::now();
-        $status                     = 0;                                        // Static
+        $status                     = 2;                                        // Static
         $applicationId              = $request->applicationId;
         $rigTrack                   = new WorkflowTrack();
         $mRigActiveRegistration     = new RigActiveRegistration();

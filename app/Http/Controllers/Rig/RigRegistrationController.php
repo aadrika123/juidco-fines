@@ -624,7 +624,9 @@ class RigRegistrationController extends Controller
                 "isRenewal"         => $renewal,                                    // Static
                 "auth"              => $request->auth,
                 "documents"         => $request->documents,
-                "driverBirthDate"   => $refApprovedDetails->dob
+                "driverBirthDate"   => $refApprovedDetails->dob,
+                "registrationNumber" => $refApprovedDetails->vehicle_no,
+                "vehicleComapny"    => $refApprovedDetails->vehicle_name,
 
             ];
             $rigRegistrationReq = new RigRegistrationReq($newReq);
