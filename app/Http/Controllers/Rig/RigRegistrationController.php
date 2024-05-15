@@ -490,6 +490,9 @@ class RigRegistrationController extends Controller
             $mRigActiveRegistration = new RigActiveRegistration();
             $mRigRegistrationCharge = new RigRegistrationCharge();
             $mRigTran               = new RigTran();
+            $approvedRegistration   = RigApprovedRegistration::where('application_id', $applicationId)
+            ->where('status', '<>' ,0)
+            ->first();
 
             $applicationDetails = $mRigActiveRegistration->getrigApplicationById($applicationId)->first();
             if (is_null($applicationDetails)) {
@@ -516,14 +519,22 @@ class RigRegistrationController extends Controller
                 }
                 $applicationDetails['transactionDetails'] = $tranDetails;
             }
-            $approveEndDate = $applicationDetails->approve_end_date;
-            $approveEndDate = Carbon::parse($approveEndDate)->subMonth(); // Subtract one month
-            $currentDate = Carbon::now();
-            $flag = $currentDate->gte($approveEndDate); // Check if current date is equal or greater
-            $applicationDetails->isRenewal = $flag; // Add the flag to the result object
+           
+
+            if ($approvedRegistration) {
+                $approveEndDate = Carbon::parse($applicationDetails->approve_end_date)->subMonth();
+                $currentDate = Carbon::now();
+                $flag = $currentDate->gte($approveEndDate);
+                $applicationDetails->isRenewal = $flag;
+            } else {
+                $applicationDetails->isRenewal = false;
+            }
 
             $chargeDetails['roundAmount'] = round($chargeDetails['amount']);
-            $applicationDetails['charges'] = $chargeDetails;
+            $applicationDetails['charges'] = $chargeDetails; // Add the flag to the result object
+
+            // $chargeDetails['roundAmount'] = round($chargeDetails['amount']);
+            // $applicationDetails['charges'] = $chargeDetails;
             return responseMsgs(true, "Listed application details!", remove_null($applicationDetails), "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
