@@ -513,8 +513,8 @@ class RigWorkflowController extends Controller
         $approveDataExist = $mRigApprovedRegistration->getApproveAppByRegId($applicationDetails->registration_id)
             ->where('status', 2)                                                // Static
             ->first();
-        if (!$approveDataExist) {
-            throw new Exception("renewal application details dont exist, table ERROR!");
+        if ($approveDataExist) {
+            throw new Exception("Application is Already Approve");
         }
 
         # get approve application detials 
