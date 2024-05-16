@@ -15,6 +15,9 @@ use App\Models\PenaltyDocument;
 use App\Models\PenaltyFinalRecord;
 use App\Models\PenaltyRecord;
 use App\Models\PenaltyTransaction;
+use App\Models\PetActiveRegistration;
+use App\Models\PetApprovedRegistration;
+use App\Models\PetTran;
 use App\Models\Rig\RigActiveRegistration;
 use App\Models\Rig\RigTran;
 use App\Models\StBooking;
@@ -1508,6 +1511,11 @@ class PenaltyRecordController extends Controller
         $rigNewRegistration    = RigActiveRegistration::where('application_apply_date', $todayDate)->where('status', '<>', 0);
         $rigRenewal            = RigActiveRegistration::where('application_apply_date', $todayDate)->where('status', "<>", 0);
 
+        $petNewRegistration     = PetActiveRegistration::where('application_apply_date', $todayDate)->where('renewal', 0)->where('status', 1);
+        $petRenewalLicense      = PetActiveRegistration::where('application_apply_date', $todayDate)->where('renewal', 1)->where('status', 1);
+        $petApprovedLicense     = PetApprovedRegistration::where('approve_date',$todayDate)->where('status', 1);
+        $petCollectionAmt       = PetTran::where('tran_date',$todayDate)->where('status', 1);
+
         if ($ulbId) {
             $penaltyTransaction =  $penaltyTransaction->where('ulb_id', $ulbId);
             $wtTransaction      =  $wtTransaction->where('ulb_id', $ulbId);
@@ -1534,6 +1542,11 @@ class PenaltyRecordController extends Controller
             $refRigTRansaction    =  $refRigTRansaction->where('ulb_id', $ulbId);
             $rigNewRegistration =  $rigNewRegistration->where('ulb_id', $ulbId);
             $rigRenewal         =  $rigRenewal->where('ulb_id', $ulbId);
+
+            $petNewRegistration     = $petNewRegistration->where('ulb_id', $ulbId);
+            $petRenewalLicense      = $petRenewalLicense->where('ulb_id', $ulbId);
+            $petApprovedLicense     = $petApprovedLicense->where('ulb_id', $ulbId);
+            $petCollectionAmt       = $petCollectionAmt->where('ulb_id', $ulbId);
         }
 
         $penaltyChallanCount  =  $penaltyChallan->count();
@@ -1568,6 +1581,12 @@ class PenaltyRecordController extends Controller
         $rigNewRegsitrationAmt  = $rigTransaction->where('tran_type', 'New_Apply')->sum('amount');
         $rigRenewRegistration   = $refRigTRansaction->where('tran_type', 'Renewal')->sum('amount');
 
+        # Pet
+        $petNewRegistration     = $petNewRegistration->count();
+        $petRenewalLicense      = $petRenewalLicense->count();
+        $petApprovedLicense     = $petApprovedLicense->count();
+        $petCollectionAmt       = $petCollectionAmt->sum('amount');
+
         $data['fines_collection']   = $penaltyCollectionAmt;
         $data['challan_count']      = $penaltyChallanCount;
         $data['unpaid_penalty_amount']  = $unpaidPenaltyAmount;
@@ -1591,7 +1610,13 @@ class PenaltyRecordController extends Controller
         $data['rig_renewal_count']  = $rigRenewal;
         $data['rig_new_reg_amt']    = $rigNewRegsitrationAmt;
         $data['rig_renew_reg_amt']  = $rigRenewRegistration;
-        $data['total_collection']   = $penaltyCollectionAmt + $wtCollectionAmt + $stCollectionAmt + $rigCollection;
+
+        $data['pet_new_registration']      = $petNewRegistration;
+        $data['pet_renewal_license']       = $petRenewalLicense;
+        $data['pet_approved_license']      = $petApprovedLicense;
+        $data['pet_collection_amt']        = $petCollectionAmt;
+
+        $data['total_collection']   = $penaltyCollectionAmt + $wtCollectionAmt + $stCollectionAmt + $rigCollection + $petCollectionAmt;
 
         return responseMsgs(true, "Mini Dashboard Data", $data, "0625", "01", responseTime(), $req->getMethod(), $req->deviceId);
     }
