@@ -1149,11 +1149,21 @@ class RigWorkflowController extends Controller
             return validationError($validated);
         try {
             // Variable initialization
+            $mWfActiveDocument = new WfActiveDocument();
             $mRigActiveRegistration = RigActiveRegistration::find($req->applicationId);
             if ($mRigActiveRegistration->doc_verify_status == 1)
                 throw new Exception("All Documents Are varified, So Application is Not BTC !!!");
-            // if ($mRigActiveRegistration->doc_upload_status == 1)
-            //     throw new Exception("No Any Document Rejected, So Application is Not BTC !!!");
+            $getDocReqs = [
+                'activeId' => $mRigActiveRegistration->id,
+                'workflowId' => $mRigActiveRegistration->workflow_id,
+                'moduleId' => $this->_rigModuleId
+            ];
+            $getRejectedDocument = $mWfActiveDocument->readRejectedDocuments($getDocReqs);
+            if (collect($getRejectedDocument)->isEmpty()) {
+                throw new Exception("Document Not Rejected You Can't back to citizen this application");
+            }
+            if ($mRigActiveRegistration->doc_upload_status == 1)
+                throw new Exception("No Any Document Rejected, So Application is Not BTC !!!");
             $workflowId = $mRigActiveRegistration->workflow_id;
 
             $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
