@@ -21,7 +21,7 @@ use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WfWorkflowrolemap;
 use App\Models\Rig\WorkflowTrack;
-use App\Pipelines\rig\SearchByApplicationNo as rigSearchByApplicationNo;
+// use App\Pipelines\Rig\SearchByApplicationNo as rigSearchByApplicationNo;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
 use Exception;
@@ -32,7 +32,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Pipeline\Pipeline;
-use App\Pipelines\rig\SearchByApplicationNo;
+use App\Pipelines\Rig\SearchByApplicationNo;
+use App\Pipelines\Rig\SearchByMobileNo;
 use App\Models\Rig\WfActiveDocument;
 use Illuminate\Support\Collection;
 
@@ -151,16 +152,26 @@ class RigWorkflowController extends Controller
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
-            $rigList = $this->getrigApplicatioList($workflowIds, $ulbId)
+            $rigListdtl = $this->getrigApplicatioList($workflowIds, $ulbId)
                 ->whereIn('rig_active_registrations.current_role_id', $roleId)
                 // ->whereIn('rig_active_registrations.ward_id', $occupiedWards)
                 // ->where('rig_active_registrations.is_escalate', false)
                 ->where('rig_active_registrations.parked', false);
             // ->paginate($pages);
 
-            if (collect($rigList)->last() == 0 || !$rigList) {
+            if (collect($rigListdtl)->last() == 0 || !$rigListdtl) {
                 $msg = "Data not found!";
             }
+
+            $rigList = app(Pipeline::class)
+                ->send(
+                    $rigListdtl
+                )
+                ->through([
+                    SearchByApplicationNo::class,
+                    SearchByMobileNo::class,
+                ])
+                ->thenReturn();
 
             $paginator = $rigList->paginate($perPage);
             $list = [
@@ -1235,4 +1246,6 @@ class RigWorkflowController extends Controller
             return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $mDeviceId);
         }
     }
+
+    
 }
