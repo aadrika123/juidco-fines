@@ -1513,8 +1513,8 @@ class PenaltyRecordController extends Controller
 
         $petNewRegistration     = PetActiveRegistration::where('application_apply_date', $todayDate)->where('renewal', 0)->where('status', 1);
         $petRenewalLicense      = PetActiveRegistration::where('application_apply_date', $todayDate)->where('renewal', 1)->where('status', 1);
-        $petApprovedLicense     = PetApprovedRegistration::where('approve_date',$todayDate)->where('status', 1);
-        $petCollectionAmt       = PetTran::where('tran_date',$todayDate)->where('status', 1);
+        $petApprovedLicense     = PetApprovedRegistration::where('approve_date', $todayDate)->where('status', 1);
+        $petCollectionAmt       = PetTran::where('tran_date', $todayDate)->where('status', 1);
 
         if ($ulbId) {
             $penaltyTransaction =  $penaltyTransaction->where('ulb_id', $ulbId);
@@ -1719,9 +1719,25 @@ class PenaltyRecordController extends Controller
             ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
             ->orderByDesc('total_amount');
 
+        # Pet
+        $petTransaction = DB::connection('pgsql_advertisements')->table('ulb_masters')
+            ->leftJoin('pet_trans', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'pet_trans.ulb_id')
+                    ->where('pet_trans.tran_date', $todayDate)
+                    ->where('pet_trans.status', 1);
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+                DB::raw('COALESCE(SUM(pet_trans.amount), 0) as total_amount')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('total_amount')
+            ->get();
+
         $waterSepticCollection = $wtTransaction->union($stTransaction)->get();
         $finesRigCollection = $penaltyTransaction->union($rigTransaction)->get();
-        $combinedCollection = $waterSepticCollection->concat($finesRigCollection);
+        $combinedCollection = $waterSepticCollection->concat($finesRigCollection)->concat($petTransaction);
 
         // return  $combinedCollection;
 
@@ -1818,11 +1834,30 @@ class PenaltyRecordController extends Controller
             ->take(5)
             ->get();
 
-        $data['fines'] = $finestopULBCollection;
-        $data['water_tanker'] = $waterTankertopULBCollection;
-        $data['septic_tanker'] = $septicTankertopULBCollection;
-        $data['septic_tanker'] = $septicTankertopULBCollection;
-        $data['rig_machine'] = $rigMachinetopULBCollection;
+        # Pet
+        $petTransaction = DB::connection('pgsql_advertisements')->table('ulb_masters')
+            ->leftJoin('pet_trans', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'pet_trans.ulb_id')
+                    ->where('pet_trans.tran_date', $todayDate)
+                    ->where('pet_trans.status', 1);
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+                DB::raw('COALESCE(SUM(pet_trans.amount), 0) as daily_collection')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('daily_collection')
+            ->take(5)
+            ->get();
+
+        $data['fines']            = $finestopULBCollection;
+        $data['water_tanker']     = $waterTankertopULBCollection;
+        $data['septic_tanker']    = $septicTankertopULBCollection;
+        $data['septic_tanker']    = $septicTankertopULBCollection;
+        $data['rig_machine']      = $rigMachinetopULBCollection;
+        $data['rig_machine']      = $rigMachinetopULBCollection;
+        $data['pet_registration'] = $petTransaction;
 
         return responseMsgs(true, "Today Top ULB Collection", $data, "0627", "01", responseTime(), $req->getMethod(), $req->deviceId);
     }
