@@ -67,6 +67,7 @@ Route::middleware([])->group(function () {
         Route::post('application/reupload-document', 'reuploadDocuments');                                      // Admin
         Route::post('application/get-uploaded-docs', 'getUploadDocuments');                                     // Admin/ Citizen
         Route::post('get-renewal-registration-details', 'getRenewalApplicationDetails');
+        Route::post('btc-list-application', 'btcListJsk');                                                     // Workflow
     });
 
     /**
@@ -84,6 +85,7 @@ Route::middleware([])->group(function () {
         Route::post('list-rejected-application', 'listfinisherRejectApplications');                             // Workflow
         Route::post('back-to-jsk-list', 'btJskInbox');                                                          // Workflow
         Route::post('back-to-citizen', 'backToCitizen');                                                        // Workflow
+       
     });
 
     // payment operations 

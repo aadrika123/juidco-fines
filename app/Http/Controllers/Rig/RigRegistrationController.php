@@ -1680,4 +1680,91 @@ class RigRegistrationController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "", "01",  responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+ 
+    /**
+     * | btv list of application
+     */
+    public function btcListJsk(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'filterBy'  => 'nullable|in:mobileNo,applicantName,applicationNo,holdingNo,safNo',              // Static
+                'parameter' => 'nullable',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $canTakePayment             = false;
+            $user                       = authUser($request);
+            $userId                     = $user->id;
+            $confWorkflowMasterId       = $this->_workflowMasterId;
+            $key                        = $request->filterBy;
+            $paramenter                 = $request->parameter;
+            // $pages                      = $request->perPage ?? 10;
+            $perPage = $request->perPage ? $request->perPage : 10;
+
+            $refstring                  = Str::snake($key);
+            $msg                        = "Approve application list!";
+            $mRigActiveRegistration    = new RigActiveRegistration();
+
+            # Check params for role user 
+            // $roleDetails = $this->getUserRollV2($userId, $user->ulb_id, $confWorkflowMasterId);
+            // $this->checkParamForUser($user, $roleDetails);
+
+            try {
+                $baseQuerry = $mRigActiveRegistration->getAllApplicationDetail();
+
+                # Collect querry Exceptions 
+            } catch (QueryException $qurry) {
+                return responseMsgs(false, "An error occurred during the query!", $qurry->getMessage(), "", "01", ".ms", "POST", $request->deviceId);
+            }
+
+            if ($request->filterBy && $request->parameter) {
+                $msg = "rig approved appliction details according to $key!";
+                # Distrubtion of search category  ❗❗ Static
+                switch ($key) {
+                    case ("mobileNo"):
+                        $activeApplication = $baseQuerry->where('rig_active_applicants.' . $refstring, 'LIKE', '%' . $paramenter . '%')
+                            ->paginate($perPage);
+                        break;
+                    case ("applicationNo"):
+                        $activeApplication = $baseQuerry->where('rig_active_registrations.' . $refstring, 'ILIKE', '%' . $paramenter . '%')
+                            ->paginate($perPage);
+                        break;
+                    case ("applicantName"):
+                        $activeApplication = $baseQuerry->where('rig_active_applicants.' . $refstring, 'ILIKE', '%' . $paramenter . '%')
+                            ->paginate($perPage);
+                        break;
+                    default:
+                        throw new Exception("Data provided in filterBy is not valid!");
+                }
+                # Check if data not exist
+                $checkVal = collect($activeApplication)->last();
+                if (!$checkVal || $checkVal == 0) {
+                    $msg = "Data Not found!";
+                }
+
+                return responseMsgs(true, $msg, remove_null($activeApplication), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+            }
+            # Check for jsk for renewal button
+            // if ($user->user_type == 'JSK') {                                                                                // Static
+            //     $canTakePayment = true;
+            // }
+            $paginator = $baseQuerry->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            # Get the latest data for Finisher
+            // $returnData = $baseQuerry->orderBy('rig_approved_registrations.approve_date')->paginate($pages);
+            return responseMsgs(true, $msg, $list, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
 }
