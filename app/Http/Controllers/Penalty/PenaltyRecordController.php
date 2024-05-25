@@ -976,7 +976,7 @@ class PenaltyRecordController extends Controller
                 }
             }
 
-            return responseMsgs(true, "You have successfully generated challan against" . $finalRecord->full_name ?? "Violator", $data,  $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "You have successfully generated challan against " . $finalRecord->full_name ?? "Violator", $data,  $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "",  $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
