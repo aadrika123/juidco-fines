@@ -1173,8 +1173,8 @@ class RigWorkflowController extends Controller
             if (collect($getRejectedDocument)->isEmpty()) {
                 throw new Exception("Document Not Rejected So You Can't Do  back to citizen for this application");
             }
-            if ($mRigActiveRegistration->doc_upload_status == 1)
-                throw new Exception("No Any Document Rejected, So Application is Not BTC !!!");
+            // if ($mRigActiveRegistration->doc_upload_status == 1)
+            //     throw new Exception("No Any Document Rejected, So Application is Not BTC !!!");
             $workflowId = $mRigActiveRegistration->workflow_id;
 
             $backId = WfWorkflowrolemap::where('workflow_id', $workflowId)
