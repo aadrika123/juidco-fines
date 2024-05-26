@@ -206,7 +206,7 @@ class RigWorkflowController extends Controller
             'rig_active_registrations.is_escalate',
             'rig_active_registrations.user_type'
         )
-            ->join('ulb_ward_masters as u', 'u.id', '=', 'rig_active_registrations.ward_id')
+            ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'rig_active_registrations.ward_id')
             ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
             ->join('rig_vehicle_active_details', 'rig_vehicle_active_details.application_id', 'rig_active_registrations.id')
             ->where('rig_active_registrations.status', 1)
