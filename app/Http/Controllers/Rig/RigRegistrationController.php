@@ -229,7 +229,7 @@ class RigRegistrationController extends Controller
                 $req->merge($refData);
             }
             # Save active details 
-            $applicationDetails = $mRigActiveRegistration->saveRegistration($req, $user);
+            $applicationDetails = $mRigActiveRegistration->saveRegistration($req, $user,$ulbId);
             $mRigActiveApplicant->saveApplicants($req, $applicationDetails['id']);
             $mRigActiveDetail->saverigDetails($req, $applicationDetails['id']);
 
