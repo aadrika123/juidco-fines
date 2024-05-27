@@ -158,7 +158,7 @@ class RigRegistrationController extends Controller
             $mMRigFee                   = new MRigFee();
             $mDocuments                 = $req->documents;
             $user                       = authUser($req);
-            $ulbId                      = $req->ulbId ?? 2;                                                 // Static / remove
+            $ulbId                      = $user->ulb_id;                                                 // Static / remove
             $workflowMasterId           = $this->_workflowMasterId;
             $rigParamId                 = $this->_rigParamId;
             $feeId                      = $this->_fee;

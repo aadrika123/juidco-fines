@@ -29,7 +29,7 @@ class RigRegistrationReq extends FormRequest
             'address'               => 'required|',
             'applyThrough'          => 'nullable|int|in:1,2',
             'ownerCategory'         => 'nullable|in:1,2',
-            'ulbId'                 => 'required|int',
+            'ulbId'                 => 'nullable|int',
             'ward'                  => 'nullable|int',
             'applicantName'         => "required|",
             'mobileNo'              => "required|digits:10|regex:/[0-9]{10}/",
