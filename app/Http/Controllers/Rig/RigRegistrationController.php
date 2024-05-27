@@ -229,7 +229,7 @@ class RigRegistrationController extends Controller
                 $req->merge($refData);
             }
             # Save active details 
-            $applicationDetails = $mRigActiveRegistration->saveRegistration($req, $user,$ulbId);
+            $applicationDetails = $mRigActiveRegistration->saveRegistration($req, $user, $ulbId);
             $mRigActiveApplicant->saveApplicants($req, $applicationDetails['id']);
             $mRigActiveDetail->saverigDetails($req, $applicationDetails['id']);
 
@@ -275,7 +275,23 @@ class RigRegistrationController extends Controller
                 "id"            => $applicationDetails['id'],
                 "applicationNo" => $applicationDetails['applicationNo'],
             ];
-            return responseMsgs(true, "rig Registration application submitted!", $returnData, "", "01", ".ms", "POST", $req->deviceId);
+            #_Whatsaap Message
+            if (strlen($req->mobileNo) == 10) {
+
+                $whatsapp2 = (Whatsapp_Send(
+                    $req->mobileNo,
+                    "juidco_rig_initiate",
+                    [
+                        "content_type" => "text",
+                        [
+                            $req->applicantName ?? "",
+                            $rigApplicationNo,
+                            $req->registrationNumber,
+                        ]
+                    ]
+                ));
+            }
+            return responseMsgs(true, " Rig Registration Application Submitted!", $returnData, "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
@@ -492,8 +508,8 @@ class RigRegistrationController extends Controller
             $mRigRegistrationCharge = new RigRegistrationCharge();
             $mRigTran               = new RigTran();
             $approvedRegistration   = RigApprovedRegistration::where('application_id', $applicationId)
-            ->where('status', '<>' ,0)
-            ->first();
+                ->where('status', '<>', 0)
+                ->first();
 
             $applicationDetails = $mRigActiveRegistration->getrigApplicationById($applicationId)->first();
             if (is_null($applicationDetails)) {
@@ -520,7 +536,7 @@ class RigRegistrationController extends Controller
                 }
                 $applicationDetails['transactionDetails'] = $tranDetails;
             }
-           
+
 
             if ($approvedRegistration) {
                 $approveEndDate = Carbon::parse($applicationDetails->approve_end_date)->subMonth();
@@ -1335,10 +1351,10 @@ class RigRegistrationController extends Controller
             if ($userType == 'JSK') {
                 $data['recentApplications'] = $mRigActiveRegistration->recentApplicationJsk($userId, $ulbId);
             }
-            
+
             $data['pendingApplicationCount']  = $mRigActiveRegistration->pendingApplicationCount();
             $data['approvedApplicationCount'] = $mRigActiveRegistration->approvedApplicationCount();
-            $data['UlbName']                  = $ulbDetails['ulb_name']; 
+            $data['UlbName']                  = $ulbDetails['ulb_name'];
             return responseMsgs(true, "Recent Application", remove_null($data), "011901", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011901", "1.0", "", "POST", $request->deviceId ?? "");
@@ -1685,7 +1701,7 @@ class RigRegistrationController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "", "01",  responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
- 
+
     /**
      * | btv list of application
      */
