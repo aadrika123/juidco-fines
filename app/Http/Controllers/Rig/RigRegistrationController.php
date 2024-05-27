@@ -920,7 +920,7 @@ class RigRegistrationController extends Controller
             $ownerList = $this->getOwnerDetails($ownerDetail);
             $ownerView = [
                 'headerTitle' => 'Owner Details',
-                'tableHead' => ["#", "Owner Name", "Mobile No", "Email", "Pan"],
+                'tableHead' => ["#", "Owner Name", "Mobile No", "Email", ],
                 'tableData' => $ownerList
             ];
             $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerView]);
@@ -984,7 +984,7 @@ class RigRegistrationController extends Controller
         }
         $applyDate = Carbon::createFromFormat('Y-m-d', $applicationDetails->application_apply_date)->format('d-m-Y');
         return new Collection([
-            ['displayString' => 'Ward No',              'key' => 'WardNo',                  'value' => $applicationDetails->ward_name],
+            // ['displayString' => 'Ward No',              'key' => 'WardNo',                  'value' => $applicationDetails->ward_name],
             ['displayString' => 'Type of Connection',   'key' => 'TypeOfConnection',        'value' => $applicationType],
             ['displayString' => 'Apply From',           'key' => 'ApplyFrom',               'value' => $applicationDetails->apply_mode],
             ['displayString' => 'Apply Date',           'key' => 'ApplyDate',               'value' => $applyDate]
@@ -1051,7 +1051,7 @@ class RigRegistrationController extends Controller
     {
         $applyDate = Carbon::createFromFormat('Y-m-d', $applicationDetails->application_apply_date)->format('d-m-Y');
         return new Collection([
-            ['displayString' => 'Ward No.',             'key' => 'WardNo.',             'value' => $applicationDetails->ward_name],
+            // ['displayString' => 'Ward No.',             'key' => 'WardNo.',             'value' => $applicationDetails->ward_name],
             ['displayString' => 'Application No.',      'key' => 'ApplicationNo.',      'value' => $applicationDetails->application_no],
             ['displayString' => 'Owner Name',           'key' => 'OwnerName',           'value' => $applicationDetails->applicant_name],
             ['displayString' => 'Connection Type',      'key' => 'ConnectionType',      'value' => $applicationDetails->application_type],
@@ -1073,7 +1073,7 @@ class RigRegistrationController extends Controller
                 $value['applicant_name'],
                 $value['mobile_no'],
                 $value['email'],
-                $value['pan_no']
+                // $value['pan_no']
             ];
         });
     }
