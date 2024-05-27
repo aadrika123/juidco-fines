@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Requests\Rig\RigRegistrationReq;
 use App\IdGenerator\IdGeneration;
 use App\MicroServices\DocumentUpload;
+use App\Models\Master\UlbMaster;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropFloor;
@@ -1326,14 +1327,18 @@ class RigRegistrationController extends Controller
             $userType = $user->user_type;
             $mRigActiveRegistration = new RigActiveRegistration();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $mUlbMaster          = new UlbMaster();
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+            $ulbDetails = $mUlbMaster->getUlbDetails($ulbId);
             $data['recentApplications'] = $mRigActiveRegistration->recentApplication($workflowIds, $roleId, $ulbId);
             if ($userType == 'JSK') {
                 $data['recentApplications'] = $mRigActiveRegistration->recentApplicationJsk($userId, $ulbId);
             }
-            $data['pendingApplicationCount'] = $mRigActiveRegistration->pendingApplicationCount();
+            
+            $data['pendingApplicationCount']  = $mRigActiveRegistration->pendingApplicationCount();
             $data['approvedApplicationCount'] = $mRigActiveRegistration->approvedApplicationCount();
+            $data['UlbName']                  = $ulbDetails['ulb_name']; 
             return responseMsgs(true, "Recent Application", remove_null($data), "011901", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011901", "1.0", "", "POST", $request->deviceId ?? "");
