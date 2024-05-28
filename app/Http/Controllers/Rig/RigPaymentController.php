@@ -198,18 +198,18 @@ class RigPaymentController extends Controller
             $mRazorpayResponse   = new RigRazorPayResponse();
             $mRigTransaction     = new RigTran();
             $todayDate           = Carbon::now();
-            $rigDetails          = RigActiveRegistration::find($req->applicationId);
-            $chargeDetails       = RigRegistrationCharge::where('application_id', $req->applicationId)->where('status', 1)->first();
+            $rigDetails          = RigActiveRegistration::find($req->id);
+            $chargeDetails       = RigRegistrationCharge::where('application_id', $req->id)->where('status', 1)->first();
             $section             = 0;
-            $payStatus          = 1;
+            $payStatus           = 1;
 
             $receiptIdParam    = Config::get('rig.ID_GENERATION_PARAMS.RECEIPT');
 
             if ($req->authRequired == true)
                 $user      = authUser($req);
 
-            $idGeneration  = new IdGeneration($receiptIdParam, $rigDetails->ulb_id, $section, 0);
-            $transactionNo = $idGeneration->generateId();
+            // $idGeneration  = new IdGeneration($receiptIdParam, $rigDetails->ulb_id, $section, 0);
+            $transactionNo = $req->transactionNo;
 
             $paymentData = $mRazorpayReq->getPaymentRecord($req);
 
@@ -221,7 +221,7 @@ class RigPaymentController extends Controller
                     "order_id"        => $req->orderId,
                     "merchant_id"     => $req->mid,
                     "payment_id"      => $req->paymentId,
-                    "related_id"      => $req->applicationId,
+                    "related_id"      => $req->id,
                     "amount"          => $req->amount,
                     "ulb_id"          => $rigDetails->ulb_id,
                     "ip_address"      => getClientIpAddress(),
@@ -234,36 +234,34 @@ class RigPaymentController extends Controller
                 $data = $mRazorpayResponse->store($mReqs);
             }
             DB::beginTransaction();
-            if ($req->status == "AUTHORIZED") {                           // Success Response code(AUTHORIZED)
-                $paymentData->payment_status = 1;
-                $paymentData->save();
+            $paymentData->payment_status = 1;
+            $paymentData->save();
 
-                # calling function for the modules
-                $reqs = [
-                    "related_id"     => $req->applicationId,
-                    "tran_no"        => $transactionNo,
-                    "tran_date"      => Carbon::now(),
-                    "emp_dtl_id"     => $user->id ?? 0,
-                    "payment_mode"   => strtoupper('ONLINE'),
-                    "amount"         => $chargeDetails->amount,
-                    "penalty_amount" => $chargeDetails->penalty_amount,
-                    "amount"         => $chargeDetails->amount,
-                    "verify_status"  => 1,
-                    "ulb_id"         => $rigDetails->ulb_id,
-                    "tran_type"      => $rigDetails->application_type,
-                    "ip_address"     => getClientIpAddress()
-                ];
+            # calling function for the modules
+            $reqs = [
+                "related_id"     => $req->id,
+                "tran_no"        => $transactionNo,
+                "tran_date"      => Carbon::now(),
+                "emp_dtl_id"     => $user->id ?? 0,
+                "payment_mode"   => strtoupper('ONLINE'),
+                "amount"         => $chargeDetails->amount,
+                "penalty_amount" => $chargeDetails->penalty_amount,
+                "amount"         => $chargeDetails->amount,
+                "verify_status"  => 1,
+                "ulb_id"         => $rigDetails->ulb_id,
+                "tran_type"      => $rigDetails->application_type,
+                "ip_address"     => getClientIpAddress()
+            ];
 
-                $tranDtl = $mRigTransaction->store($reqs);
-                $rigDetails->payment_status = 1;
-                $rigDetails->save();
+            $tranDtl = $mRigTransaction->store($reqs);
+            $rigDetails->payment_status = 1;
+            $rigDetails->save();
 
-                $chargeDetails->paid_status = 1;
-                $chargeDetails->save();
-                DB::commit();
-                $data->tran_no = $tranDtl->tran_no;
-            } else
-                throw new Exception("Payment Cancelled");
+            $chargeDetails->paid_status = 1;
+            $chargeDetails->save();
+            DB::commit();
+            $data->tran_no = $tranDtl->tran_no;
+
             return responseMsgs(true, "Data Saved", $data, $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();

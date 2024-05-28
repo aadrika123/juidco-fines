@@ -25,7 +25,7 @@ class RigRazorPayRequest extends Model
     public function getPaymentRecord($req)
     {
         return RigRazorPayRequest::where('order_id', $req->orderId)
-            ->where('related_id', $req->applicationId)
+            ->where('related_id', $req->id)
             ->where('payment_status', 0)
             ->first();
     }
