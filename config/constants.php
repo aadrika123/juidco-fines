@@ -3,6 +3,7 @@
 return [
     "DOC_URL"         => env('DOC_URL'),
     "DMS_URL"         => env('DMS_URL'),
+    "PAYMENT_URL"     => env('PAYMENT_URL'),
     "RAZORPAY_KEY"    => env('RAZORPAY_KEY'),
     "RAZORPAY_SECRET" => env('RAZORPAY_SECRET'),
 

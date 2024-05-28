@@ -125,6 +125,8 @@ class RigPaymentController extends Controller
             $version = "01";
             $keyId        = Config::get('constants.RAZORPAY_KEY');
             $secret       = Config::get('constants.RAZORPAY_SECRET');
+            $paymentUrl   = Config::get('constants.PAYMENT_URL');
+            $rigModuleId  = 15;                                     #static Change it
             $mRazorpayReq = new RigRazorPayRequest();
             $api          = new Api($keyId, $secret);
 
@@ -139,13 +141,32 @@ class RigPaymentController extends Controller
                 throw new Exception("Payment Already Done");
             if (!$rigDetails)
                 throw new Exception("Rig Not Found");
-            $orderData = $api->order->create(array('amount' => $chargeDetails->amount * 100, 'currency' => 'INR',));
+
+            $myRequest = [
+                'amount'          => $chargeDetails->amount,
+                'workflowId'      => $rigDetails->workflow_id,
+                'id'              => $rigDetails->id,
+                'departmentId'    => $rigModuleId
+            ];
+            $newRequest = $req->merge($myRequest);
+
+            # Api Calling for OrderId
+            $refResponse = Http::withHeaders([
+                "api-key" => "eff41ef6-d430-4887-aa55-9fcf46c72c99"                             // Static
+            ])
+                ->withToken($req->bearerToken())
+                ->post($paymentUrl . '/api/payment/generate-orderid', $newRequest);               // Static
+
+            $orderData = json_decode($refResponse);
+            if ($orderData->status == false) {
+                throw new Exception(collect($orderData->message)->first());
+            }
 
             if ($req->authRequired == true)
                 $user = authUser($req);
 
             $mReqs = [
-                "order_id"       => $orderData['id'],
+                "order_id"       => $orderData->data->orderId,
                 "merchant_id"    => $req->merchantId,
                 "related_id"     => $req->applicationId,
                 "user_id"        => $user->id ?? 0,
@@ -155,8 +176,9 @@ class RigPaymentController extends Controller
                 "ip_address"     => getClientIpAddress()
             ];
             $data = $mRazorpayReq->store($mReqs);
+            $orderData->data->user_id = $user->id ?? 0;
 
-            return responseMsgs(true, "Order id is", ['order_id' => $data->order_id], $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "Order id generated", $orderData->data, $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         }
