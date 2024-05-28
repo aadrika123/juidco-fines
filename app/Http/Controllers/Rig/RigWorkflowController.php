@@ -1183,6 +1183,12 @@ class RigWorkflowController extends Controller
             $mRigActiveRegistration = RigActiveRegistration::find($req->applicationId);
             if ($mRigActiveRegistration->doc_verify_status == 1)
                 throw new Exception("All Documents Are varified, So Application is Not BTC !!!");
+            // # Get Application details 
+            $application = $mRigActiveRegistration->getrigApplicationById($req->applicationId)->first();
+            if (!$application) {
+                throw new Exception("application Details not found!");
+            }
+
             $getDocReqs = [
                 'activeId' => $mRigActiveRegistration->id,
                 'workflowId' => $mRigActiveRegistration->workflow_id,
@@ -1200,8 +1206,7 @@ class RigWorkflowController extends Controller
                 ->where('is_initiator', true)
                 ->first();
 
-
-
+            DB::beginTransaction();
             $mRigActiveRegistration->current_role_id = $backId->wf_role_id;
             $mRigActiveRegistration->parked = 1;
             $mRigActiveRegistration->save();
@@ -1219,9 +1224,28 @@ class RigWorkflowController extends Controller
             $req->request->add($metaReqs);
             $track = new WorkflowTrack();
             $track->saveTrack($req);
+            DB::commit();
+            
+            if (strlen($application->mobile_no) == 10) {
+                $statusMessage =  "Please Re-Upload Your Document In Respective JSK/SITE";
 
+                $whatsapp2 = (Whatsapp_Send(
+                    $application->mobile_no,
+                    "juidco_rig_approval",
+                    [
+                        "content_type" => "text",
+                        [
+                            $application->applicant_name ?? "",
+                            $application->application_no,
+                            $application->ulb_name,
+                            $statusMessage
+                        ]
+                    ]
+                ));
+            }
             return responseMsgs(true, "Successfully Done", "", "", '050131', '01', responseTime(), 'POST', '');
         } catch (Exception $e) {
+            DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "050131", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }

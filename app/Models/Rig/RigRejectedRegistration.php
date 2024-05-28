@@ -28,7 +28,13 @@ class RigRejectedRegistration extends Model
             ->leftJoin('wf_roles', 'wf_roles.id', 'rig_rejected_registrations.current_role_id')
             ->join('rig_rejected_applicants', 'rig_rejected_applicants.application_id', 'rig_rejected_registrations.application_id')
             ->join('rig_vehicle_rejected_details', 'rig_vehicle_rejected_details.application_id', 'rig_rejected_registrations.application_id')
-            ->join('rig_active_registrations', 'rig_active_registrations.id', 'rig_rejected_registrations.application_id');
+            ->join('rig_active_registrations', 'rig_active_registrations.id', 'rig_rejected_registrations.application_id')
+            ->leftJoin('rig_approved_registrations', function ($join) {
+                $join->on('rig_approved_registrations.application_id', '=', 'rig_rejected_registrations.application_id');
+            })
+            ->leftJoin('rig_approve_applicants', function ($join) {
+                $join->on('rig_approve_applicants.application_id', '=', 'rig_rejected_registrations.application_id');
+            });
     }
 
     /**
@@ -39,7 +45,11 @@ class RigRejectedRegistration extends Model
         return RigRejectedRegistration::join('ulb_masters', 'ulb_masters.id', '=', 'rig_rejected_registrations.ulb_id')
             ->join('rig_rejected_applicants', 'rig_rejected_applicants.application_id', 'rig_rejected_registrations.application_id')
             ->where('rig_rejected_registrations.application_id', $id)
-            ->where('rig_rejected_registrations.status', '<>', 0);
+            ->where('rig_rejected_registrations.status', '<>', 0)
+            ->leftJoin('rig_approved_registrations', function ($join) {
+                $join->on('rig_approved_registrations.related_id', '=', 'rig_active_registrations.id')
+                    ->where('rig_trans.status', 1);
+            });
     }
 
     /**
