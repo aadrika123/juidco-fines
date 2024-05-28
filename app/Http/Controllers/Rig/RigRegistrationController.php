@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Requests\Rig\RigRegistrationReq;
 use App\IdGenerator\IdGeneration;
 use App\MicroServices\DocumentUpload;
+use App\Models\Master\UlbMaster;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropFloor;
@@ -158,7 +159,7 @@ class RigRegistrationController extends Controller
             $mMRigFee                   = new MRigFee();
             $mDocuments                 = $req->documents;
             $user                       = authUser($req);
-            $ulbId                      = $req->ulbId ?? 2;                                                 // Static / remove
+            $ulbId                      = $user->ulb_id ?? $req->ulbId;                                                 // Static / remove
             $workflowMasterId           = $this->_workflowMasterId;
             $rigParamId                 = $this->_rigParamId;
             $feeId                      = $this->_fee;
@@ -228,7 +229,7 @@ class RigRegistrationController extends Controller
                 $req->merge($refData);
             }
             # Save active details 
-            $applicationDetails = $mRigActiveRegistration->saveRegistration($req, $user);
+            $applicationDetails = $mRigActiveRegistration->saveRegistration($req, $user, $ulbId);
             $mRigActiveApplicant->saveApplicants($req, $applicationDetails['id']);
             $mRigActiveDetail->saverigDetails($req, $applicationDetails['id']);
 
@@ -274,7 +275,23 @@ class RigRegistrationController extends Controller
                 "id"            => $applicationDetails['id'],
                 "applicationNo" => $applicationDetails['applicationNo'],
             ];
-            return responseMsgs(true, "rig Registration application submitted!", $returnData, "", "01", ".ms", "POST", $req->deviceId);
+            #_Whatsaap Message
+            if (strlen($req->mobileNo) == 10) {
+
+                $whatsapp2 = (Whatsapp_Send(
+                    $req->mobileNo,
+                    "juidco_rig_initiate",
+                    [
+                        "content_type" => "text",
+                        [
+                            $req->applicantName ?? "",
+                            $rigApplicationNo,
+                            $req->registrationNumber,
+                        ]
+                    ]
+                ));
+            }
+            return responseMsgs(true, " Rig Registration Application Submitted!", $returnData, "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
@@ -491,8 +508,8 @@ class RigRegistrationController extends Controller
             $mRigRegistrationCharge = new RigRegistrationCharge();
             $mRigTran               = new RigTran();
             $approvedRegistration   = RigApprovedRegistration::where('application_id', $applicationId)
-            ->where('status', '<>' ,0)
-            ->first();
+                ->where('status', '<>', 0)
+                ->first();
 
             $applicationDetails = $mRigActiveRegistration->getrigApplicationById($applicationId)->first();
             if (is_null($applicationDetails)) {
@@ -519,7 +536,7 @@ class RigRegistrationController extends Controller
                 }
                 $applicationDetails['transactionDetails'] = $tranDetails;
             }
-           
+
 
             if ($approvedRegistration) {
                 $approveEndDate = Carbon::parse($applicationDetails->approve_end_date)->subMonth();
@@ -903,7 +920,7 @@ class RigRegistrationController extends Controller
             $ownerList = $this->getOwnerDetails($ownerDetail);
             $ownerView = [
                 'headerTitle' => 'Owner Details',
-                'tableHead' => ["#", "Owner Name", "Mobile No", "Email", "Pan"],
+                'tableHead' => ["#", "Owner Name", "Mobile No", "Email", ],
                 'tableData' => $ownerList
             ];
             $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerView]);
@@ -967,7 +984,7 @@ class RigRegistrationController extends Controller
         }
         $applyDate = Carbon::createFromFormat('Y-m-d', $applicationDetails->application_apply_date)->format('d-m-Y');
         return new Collection([
-            ['displayString' => 'Ward No',              'key' => 'WardNo',                  'value' => $applicationDetails->ward_name],
+            // ['displayString' => 'Ward No',              'key' => 'WardNo',                  'value' => $applicationDetails->ward_name],
             ['displayString' => 'Type of Connection',   'key' => 'TypeOfConnection',        'value' => $applicationType],
             ['displayString' => 'Apply From',           'key' => 'ApplyFrom',               'value' => $applicationDetails->apply_mode],
             ['displayString' => 'Apply Date',           'key' => 'ApplyDate',               'value' => $applyDate]
@@ -1034,7 +1051,7 @@ class RigRegistrationController extends Controller
     {
         $applyDate = Carbon::createFromFormat('Y-m-d', $applicationDetails->application_apply_date)->format('d-m-Y');
         return new Collection([
-            ['displayString' => 'Ward No.',             'key' => 'WardNo.',             'value' => $applicationDetails->ward_name],
+            // ['displayString' => 'Ward No.',             'key' => 'WardNo.',             'value' => $applicationDetails->ward_name],
             ['displayString' => 'Application No.',      'key' => 'ApplicationNo.',      'value' => $applicationDetails->application_no],
             ['displayString' => 'Owner Name',           'key' => 'OwnerName',           'value' => $applicationDetails->applicant_name],
             ['displayString' => 'Connection Type',      'key' => 'ConnectionType',      'value' => $applicationDetails->application_type],
@@ -1056,7 +1073,7 @@ class RigRegistrationController extends Controller
                 $value['applicant_name'],
                 $value['mobile_no'],
                 $value['email'],
-                $value['pan_no']
+                // $value['pan_no']
             ];
         });
     }
@@ -1326,14 +1343,18 @@ class RigRegistrationController extends Controller
             $userType = $user->user_type;
             $mRigActiveRegistration = new RigActiveRegistration();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $mUlbMaster          = new UlbMaster();
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+            $ulbDetails = $mUlbMaster->getUlbDetails($ulbId);
             $data['recentApplications'] = $mRigActiveRegistration->recentApplication($workflowIds, $roleId, $ulbId);
             if ($userType == 'JSK') {
                 $data['recentApplications'] = $mRigActiveRegistration->recentApplicationJsk($userId, $ulbId);
             }
-            $data['pendingApplicationCount'] = $mRigActiveRegistration->pendingApplicationCount();
+
+            $data['pendingApplicationCount']  = $mRigActiveRegistration->pendingApplicationCount();
             $data['approvedApplicationCount'] = $mRigActiveRegistration->approvedApplicationCount();
+            $data['UlbName']                  = $ulbDetails['ulb_name'];
             return responseMsgs(true, "Recent Application", remove_null($data), "011901", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011901", "1.0", "", "POST", $request->deviceId ?? "");
@@ -1680,7 +1701,7 @@ class RigRegistrationController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "", "01",  responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
- 
+
     /**
      * | btv list of application
      */

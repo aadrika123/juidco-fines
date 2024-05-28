@@ -57,17 +57,17 @@ Route::middleware([])->group(function () {
         Route::post('get-rejected-registration-list', 'getRejectedApplicationDetails');                         // Admin
         Route::post('get-approve-registration-list', 'getApprovedApplicationDetails');                          // Admin
         Route::post('application/searh-application', 'searchApplication');                                      // Admin
-        Route::post('application/approve-license-data', 'getLicnenseDetails');                                      // Admin
-        Route::post('application/dashboard-details', 'rigDashbordDtls');                                      // Admin
+        Route::post('application/approve-license-data', 'getLicnenseDetails');                                  // Admin
+        Route::post('application/dashboard-details', 'rigDashbordDtls');                                         // Admin
 
-        Route::post('application/edit-rig-details', 'editRigDetails');                                      // Admin
-        Route::post('application/collection-report', 'listCollection');                                      // Admin
+        Route::post('application/edit-rig-details', 'editRigDetails');                                           // Admin
+        Route::post('application/collection-report', 'listCollection');                                          // Admin
 
-        Route::post('application/get-doc-to-upload', 'getDocToUpload');                                         // Admin/ Citizen
-        Route::post('application/reupload-document', 'reuploadDocuments');                                      // Admin
-        Route::post('application/get-uploaded-docs', 'getUploadDocuments');                                     // Admin/ Citizen
+        Route::post('application/get-doc-to-upload', 'getDocToUpload');                                          // Admin/ Citizen
+        Route::post('application/reupload-document', 'reuploadDocuments');                                       // Admin
+        Route::post('application/get-uploaded-docs', 'getUploadDocuments');                                      // Admin/ Citizen
         Route::post('get-renewal-registration-details', 'getRenewalApplicationDetails');
-        Route::post('btc-list-application', 'btcListJsk');                                                     // Workflow
+        Route::post('btc-list-application', 'btcListJsk');                                                        // Workflow
     });
 
     /**

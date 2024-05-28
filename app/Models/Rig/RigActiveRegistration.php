@@ -13,7 +13,7 @@ class RigActiveRegistration extends Model
     use HasFactory;
     protected $guarded = [];
 
-    public function saveRegistration($req, $user)
+    public function saveRegistration($req, $user, $ulbId)
     {
         $userType = Config::get("rig.REF_USER_TYPE");
         $mrigActiveRegistration = new RigActiveRegistration();
@@ -29,7 +29,7 @@ class RigActiveRegistration extends Model
         $mrigActiveRegistration->finisher_role_id       = $req->finisherRoleId;
         $mrigActiveRegistration->current_role_id        = $req->initiatorRoleId;
         $mrigActiveRegistration->ip_address             = $req->ip();
-        $mrigActiveRegistration->ulb_id                 = $req->ulbId;
+        $mrigActiveRegistration->ulb_id                 = $ulbId;
         $mrigActiveRegistration->ward_id                = $req->ward;
 
         $mrigActiveRegistration->application_type       = $req->applicationType;                    // type new or renewal
@@ -363,7 +363,7 @@ class RigActiveRegistration extends Model
             ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
             ->join('rig_vehicle_active_details', 'rig_vehicle_active_details.application_id', 'rig_active_registrations.id')
             // ->where('rig_active_registrations.id', $registrationId);
-            ->where('rig_active_registrations.parked',true);
-            // ->get();
+            ->where('rig_active_registrations.parked', true);
+        // ->get();
     }
 }
