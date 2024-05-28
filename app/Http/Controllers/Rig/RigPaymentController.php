@@ -113,8 +113,7 @@ class RigPaymentController extends Controller
     public function initiatePayment(Request $req)
     {
         $validator = Validator::make($req->all(), [
-            "amount" => "required|numeric",
-            "applicationId" => "nullable|int",
+            "applicationId" => "required",
         ]);
 
         if ($validator->fails())
@@ -130,6 +129,8 @@ class RigPaymentController extends Controller
             $api          = new Api($keyId, $secret);
 
             $rigDetails = RigActiveRegistration::find($req->applicationId);
+            if (!$rigDetails)
+                throw new Exception("Application not found");
             $chargeDetails = RigRegistrationCharge::where('application_id', $rigDetails->id)
                 ->first();
             if (!$chargeDetails)

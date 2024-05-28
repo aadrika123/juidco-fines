@@ -90,10 +90,10 @@ Route::middleware([])->group(function () {
 
     // payment operations 
     Route::controller(RigPaymentController::class)->group(function () {
-        Route::post("application/offline-payment", "offlinePayment");                                           // Admin
+        Route::post("application/offline-payment", "offlinePayment");                                           # Admin
         Route::post('razorpay/initiate-payment', 'initiatePayment');                                            #_Initiate Online Payment ----------------- 0701   
-        Route::post('razorpay/save-response', 'saveRazorpayResponse')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);   #_Save Response of Online Payment --------- 0702   
-        Route::post("application/payment-receipt", "generatePaymentReceipt");                                   // Admin / Citizen 
+        Route::post('razorpay/save-response', 'saveRazorpayResponse');                                          #_Save Response of Online Payment --------- 0702   
+        Route::post("application/payment-receipt", "generatePaymentReceipt");                                   # Admin / Citizen 
         Route::post('cash-verification-list', 'listCashVerification');                                          #_List of Cash Verification --------------- 0703
         Route::post('cash-verification-dtl', 'cashVerificationDtl');                                            #_Cash Verification Detail ---------------- 0704
         Route::post('verify-cash', 'verifyCash');                                                               #_Verify Cash ----------------------------- 0705                                                                
