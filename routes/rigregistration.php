@@ -56,6 +56,7 @@ Route::middleware([])->group(function () {
         Route::post('get-renewal-history', 'getRenewalHistory');
         Route::post('get-rejected-registration-list', 'getRejectedApplicationDetails');                         // Admin
         Route::post('get-approve-registration-list', 'getApprovedApplicationDetails');                          // Admin
+        Route::post('get-approve-registration-list-V1', 'getApprovedApplicationDetails');                       // without user
         Route::post('application/searh-application', 'searchApplication');                                      // Admin
         Route::post('application/approve-license-data', 'getLicnenseDetails');                                  // Admin
         Route::post('application/dashboard-details', 'rigDashbordDtls');                                         // Admin

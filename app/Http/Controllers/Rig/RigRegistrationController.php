@@ -1155,9 +1155,14 @@ class RigRegistrationController extends Controller
             return validationError($validated);
 
         try {
+            $user                     = null;
             $canTakePayment             = false;
-            if ($req->authRequired == true) {
-                $user                       = authUser($req);
+            if ($req->authRequired == true && $req->token != null) {
+                $user = authUser($req);
+                // Check if user is JSK type for payment
+                if (!is_null($user) && $user->user_type == 'JSK') {
+                    $canTakePayment = true;
+                }
             }
             $viewRenewButton            = false;
             $applicationId              = $req->registrationId;
@@ -1198,9 +1203,9 @@ class RigRegistrationController extends Controller
             $approveApplicationDetails->isRenewal = $flag;
 
             # Check for jsk for renewal button
-            if ($user->user_type == 'JSK') {                                                                                // Static
-                $canTakePayment = true;
-            }
+            // if ($user->user_type == 'JSK') {                                                                                // Static
+            //     $canTakePayment = true;
+            // }
 
             # return Details 
             $approveApplicationDetails['transactionDetails']    = $tranDetails;
