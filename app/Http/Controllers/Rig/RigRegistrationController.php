@@ -918,7 +918,7 @@ class RigRegistrationController extends Controller
             $ownerList = $this->getOwnerDetails($ownerDetail);
             $ownerView = [
                 'headerTitle' => 'Owner Details',
-                'tableHead' => ["#", "Owner Name", "Mobile No", "Email", ],
+                'tableHead' => ["#", "Owner Name", "Mobile No", "Email",],
                 'tableData' => $ownerList
             ];
             $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerView]);
@@ -1156,7 +1156,9 @@ class RigRegistrationController extends Controller
 
         try {
             $canTakePayment             = false;
-            $user                       = authUser($req);
+            if ($req->authRequired == true) {
+                $user                       = authUser($req);
+            }
             $viewRenewButton            = false;
             $applicationId              = $req->registrationId;
             $mRigApprovedRegistration   = new RigApprovedRegistration();

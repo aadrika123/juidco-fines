@@ -316,7 +316,7 @@ class RigPaymentController extends Controller
                 "vehicleNo"     => $applicationDetails->vehicle_no,
                 "vehicleFrom"     => $applicationDetails->vehicle_from,
                 "vehicleName"     => $applicationDetails->vehicle_name,
-                "ulb_address"        => $transactionDetails->address,
+                "ulb_address"     => $transactionDetails->address,
                 "ulb_email"       => $transactionDetails->email
 
             ];
