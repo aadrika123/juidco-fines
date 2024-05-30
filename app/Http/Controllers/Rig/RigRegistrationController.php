@@ -1155,7 +1155,7 @@ class RigRegistrationController extends Controller
             return validationError($validated);
 
         try {
-            $user                     = null;
+            $user                       = null;
             $canTakePayment             = false;
             if ($req->authRequired == true && $req->token != null) {
                 $user = authUser($req);

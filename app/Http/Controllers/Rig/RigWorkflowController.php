@@ -700,7 +700,7 @@ class RigWorkflowController extends Controller
      */
     protected function getUniqueId($key)
     {
-        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $characters = '0123456789';
         $randomString = '';
         for ($i = 0; $i < 10; $i++) {
             $index = rand(0, strlen($characters) - 1);
