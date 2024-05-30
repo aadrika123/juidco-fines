@@ -46,7 +46,8 @@ class RigTran extends Model
             'rig_trans.id AS refTransId',
             'rig_trans.*',
             'ulb_masters.ulb_name',
-            'ulb_masters.email'
+            'ulb_masters.email',
+            'ulb_masters.address'
         )
             ->where('rig_trans.tran_no', $tranNo)
             ->where('rig_trans.status', 1)

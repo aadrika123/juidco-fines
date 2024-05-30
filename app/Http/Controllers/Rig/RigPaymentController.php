@@ -316,7 +316,7 @@ class RigPaymentController extends Controller
                 "vehicleNo"     => $applicationDetails->vehicle_no,
                 "vehicleFrom"     => $applicationDetails->vehicle_from,
                 "vehicleName"     => $applicationDetails->vehicle_name,
-                "ulb_address"        => $transactionDetails->ulb_name,
+                "ulb_address"        => $transactionDetails->address,
                 "ulb_email"       => $transactionDetails->email
 
             ];
@@ -817,6 +817,58 @@ class RigPaymentController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", $apiId, $version, responseTime(), "POST", $req->deviceId);
+        }
+    }
+
+    # ===================== Transaction Deactivation ========================== #
+    /**
+     * | Deactivate Payment
+     */
+    public function deactivatePayment(Request $request)
+    {
+        $validator = Validator::make(
+            $request->all(),
+            ["tranNo" => "required"]
+        );
+
+        if ($validator->fails())
+            return validationError($validator);
+        try {
+
+            DB::beginTransaction();
+            $tranDtls = RigTran::where('tran_no', $request->tranNo)
+                ->where('payment_mode', 'CASH')
+                ->first();
+            if (!$tranDtls)
+                throw new Exception("No Transaction Found");
+            if ($tranDtls->verify_status == 1) {
+                throw new Exception("Transaction Already Verified");
+            }
+            $tranDtls->status = 0;
+            $tranDtls->save();
+
+            $RigDetails = RigActiveRegistration::find($tranDtls->related_id);
+            $RigDetails->payment_status = false;
+            $RigDetails->save();
+
+            $RigRegistrationCharge = RigRegistrationCharge::where('application_id', $tranDtls->related_id)->first();
+
+            if ($RigRegistrationCharge) {
+                $RigRegistrationCharge->paid_status = false;
+                $RigRegistrationCharge->save();
+            }
+
+            $RigTranDetail = RigTranDetail::where('application_id', $tranDtls->related_id)->first();
+            if ($RigTranDetail) {
+                $RigTranDetail->status = false;
+                $RigTranDetail->save();
+            }
+
+            DB::commit();
+            return responseMsgs(true, "Payment Deactivated", [], "1003", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), [], "1003", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 }

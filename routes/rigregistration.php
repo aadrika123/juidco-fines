@@ -96,6 +96,7 @@ Route::middleware([])->group(function () {
         Route::post("application/payment-receipt", "generatePaymentReceipt");                                   # Admin / Citizen 
         Route::post('cash-verification-list', 'listCashVerification');                                          #_List of Cash Verification --------------- 0703
         Route::post('cash-verification-dtl', 'cashVerificationDtl');                                            #_Cash Verification Detail ---------------- 0704
-        Route::post('verify-cash', 'verifyCash');                                                               #_Verify Cash ----------------------------- 0705                                                                
+        Route::post('verify-cash', 'verifyCash');                                                               #_Verify Cash ----------------------------- 0705  
+        Route::post('transaction-dactivation', 'deactivatePayment');                                            #_Transaction Deactivation  ----------------------------- 0705                                                                 
     });
 });
