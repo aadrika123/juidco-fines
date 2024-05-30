@@ -289,7 +289,7 @@ class RigPaymentController extends Controller
             return validationError($validated);
         try {
             $now            = Carbon::now();
-            $toward         = "Rig Registration Fee";
+            $toward         = "Rig Machine Registration Fee";
             $mRigTran       = new RigTran();
 
             # Get transaction details according to trans no
