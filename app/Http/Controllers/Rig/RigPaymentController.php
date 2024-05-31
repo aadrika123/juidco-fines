@@ -15,6 +15,7 @@ use App\Http\Requests\rig\RigRegistrationReq;
 use App\IdGenerator\IdGeneration;
 use App\MicroServices\DocumentUpload;
 use App\Models\IdGenerationParam;
+use App\Models\Master\UlbMaster;
 use App\Models\PenaltyDailycollectiondetail;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
@@ -291,6 +292,7 @@ class RigPaymentController extends Controller
             $now            = Carbon::now();
             $toward         = "Rig Machine Registration Fee";
             $mRigTran       = new RigTran();
+            $mUlbMater      = new UlbMaster();
 
             # Get transaction details according to trans no
             $transactionDetails = $mRigTran->getTranDetailsByTranNo($request->transactionNo)->first();
@@ -299,6 +301,7 @@ class RigPaymentController extends Controller
             }
             # check the transaction related details in related table
             $applicationDetails = $this->getApplicationRelatedDetails($transactionDetails);
+            $ulbDetails         =  $mUlbMater->getUlbDetails($transactionDetails->ulb_id);
 
             $returnData = [
                 "transactionNo" => $transactionDetails->tran_no,
@@ -317,7 +320,8 @@ class RigPaymentController extends Controller
                 "vehicleFrom"     => $applicationDetails->vehicle_from,
                 "vehicleName"     => $applicationDetails->vehicle_name,
                 "ulb_address"     => $transactionDetails->address,
-                "ulb_email"       => $transactionDetails->email
+                "ulb_email"       => $transactionDetails->email,
+                "ulbDetails"      =>  $ulbDetails  
 
             ];
             return responseMsgs(true, 'payment Receipt!', $returnData, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
