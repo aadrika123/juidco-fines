@@ -127,7 +127,7 @@ class RigPaymentController extends Controller
             $keyId        = Config::get('constants.RAZORPAY_KEY');
             $secret       = Config::get('constants.RAZORPAY_SECRET');
             $paymentUrl   = Config::get('constants.PAYMENT_URL');
-            $rigModuleId  = 15;                                     #static Change it
+            $rigModuleId  = $this->_rigModuleId;                                     #static Change it
             $mRazorpayReq = new RigRazorPayRequest();
             $api          = new Api($keyId, $secret);
 
@@ -321,7 +321,7 @@ class RigPaymentController extends Controller
                 "vehicleName"     => $applicationDetails->vehicle_name,
                 "ulb_address"     => $transactionDetails->address,
                 "ulb_email"       => $transactionDetails->email,
-                "ulbDetails"      =>  $ulbDetails  
+                "ulbDetails"      =>  $ulbDetails
 
             ];
             return responseMsgs(true, 'payment Receipt!', $returnData, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
@@ -402,7 +402,7 @@ class RigPaymentController extends Controller
 
             # Variable declaration
             $section                    = 0;
-            $receiptIdParam             = Config::get('rig.ID_GENERATION_PARAMS.RECEIPT');
+            $receiptIdParam             = Config::get("rig.PARAM_ID.RECEIPT");
             $user                       = authUser($req);
             $todayDate                  = Carbon::now();
             $epoch                      = strtotime($todayDate);

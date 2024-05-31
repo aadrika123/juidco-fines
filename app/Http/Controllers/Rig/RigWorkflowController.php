@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Rig;
 
 use App\Http\Controllers\Controller;
+use App\IdGenerator\IdGeneration;
 use App\Models\Rig\RefRequiredDocument;
 use App\Models\Rig\RigActiveApplicant;
 use App\Models\Rig\RigActiveDetail;
@@ -450,8 +451,13 @@ class RigWorkflowController extends Controller
         $mRigActiveApplicant        = new RigActiveApplicant();
         $mRigActiveDetail           = new RigVehicleActiveDetail();
         $lastLicenceDate            = $now->copy()->addYears(2)->subDay();
-        $key                        = "REG-";                                           // Static
-        $registrationId             = $this->getUniqueId($key);
+        $rigParamId                 = $this->_rigParamId;
+        // $key                        = "REG-";                                           // Static
+        // $registrationId             = $this->getUniqueId($key);
+        $ApplicationDetails         = $mRigActiveRegistration->getApplicationDtls($applicationId)->first();
+        $ulbId                      = $ApplicationDetails->ulb_id;
+        $idGeneration = new IdGeneration($rigParamId['APPROVE'], $ulbId, 0, 0);                                     // Generate the application no 
+        $rigApprovalNo = $idGeneration->generateId();
 
 
         # Check if the approve application exist
@@ -472,7 +478,7 @@ class RigWorkflowController extends Controller
         $approvedrigRegistration->setTable('rig_approved_registrations');                           // Static
         $approvedrigRegistration->application_id    = $applicationId;
         $approvedrigRegistration->approve_date      = $now;
-        $approvedrigRegistration->registration_id   = $registrationId;
+        $approvedrigRegistration->registration_id   = $rigApprovalNo;
         $approvedrigRegistration->approve_end_date  = $lastLicenceDate;
         $approvedrigRegistration->approve_user_id   = authUser($request)->id;
         $approvedrigRegistration->save();
@@ -510,7 +516,7 @@ class RigWorkflowController extends Controller
         $mRigActiveDetail->updaterigStatus($refrigDetails->id, $refAppReq);
         return [
             "approveDetails" => $approvedrigRegistration,
-            "registrationId" => $registrationId
+            "registrationId" => $rigApprovalNo
         ];
     }
 
@@ -1225,7 +1231,7 @@ class RigWorkflowController extends Controller
             $track = new WorkflowTrack();
             $track->saveTrack($req);
             DB::commit();
-            
+
             if (strlen($application->mobile_no) == 10) {
                 $statusMessage =  "Please Re-Upload Your Document In Respective JSK/SITE";
 

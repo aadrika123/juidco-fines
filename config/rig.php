@@ -57,7 +57,8 @@ return [
     ],
     "PARAM_ID" => [
         "REGISTRATION" => 5,
-        "TRANSACTION" => 37
+        "RECEIPT"      => 6,
+        "APPROVE"      => 7,
     ],
     "RIG_RELATIVE_PATH" => [
         "REGISTRATION" => 'Uploads/RigMachine',
