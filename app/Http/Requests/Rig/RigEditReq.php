@@ -25,13 +25,20 @@ class RigEditReq extends FormRequest
      */
     public function rules()
     {
-        $rules['id']                  = 'required|int';
-        $rules['address']             = 'nullable';
-        $rules['applicantName']       = 'nullable';
-        $rules['mobileNo']            = 'nullable';
-        $rules['email']               = 'nullable';
-        $rules['vehicleComapny']      = 'nullable';
-        $rules['registrationNumber']  = 'nullable';
+        $rules = [
+            'id'                    => 'required|int',
+            'address'               => 'required|',
+            'applicantName'         => "required|",
+            'mobileNo'              => "required|digits:10|regex:/[0-9]{10}/",
+            'email'                 => "required|email",
+            'vehicleComapny'        => "required",
+            'registrationNumber'    => "required",
+            'documents'             => 'nullable|array',
+            'documents.*.image'     => 'nullable|mimes:png,jpeg,pdf,jpg|max:2048',
+
+            'documents.*.docCode'    => 'nullable|string',
+            'documents.*.ownerDtlId' => 'nullable|integer'
+        ];
 
         return $rules;
     }

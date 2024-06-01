@@ -1474,16 +1474,28 @@ class RigRegistrationController extends Controller
             $mRigActiveRegistration = new RigActiveRegistration();
             $mRIgActiveApllicants   = new RigActiveApplicant();
             $mRigAudit              = new RigAudit();
+            $mWfWorkflow            = new WfWorkflow();
+            $workflowMasterId       = $this->_workflowMasterId;
+            $user                   = authUser($req);
+            $ulbId                  = $user->ulb_id ?? $req->ulbId;
+            $mDocuments             = $req->documents;
             $refRelatedDetails      = $this->checkParamForRigUdate($req);
             $applicationDetails     = $refRelatedDetails['applicationDetails'];
 
+            $ulbWorkflowId = $mWfWorkflow->getulbWorkflowId($workflowMasterId, $ulbId);
+            if (!$ulbWorkflowId) {
+                throw new Exception("Respective Ulb is not maped to 'rig Registration' Workflow!");
+            }
             DB::beginTransaction();
             # operate with the data from above calling function 
+            $RigActiveRegistrationDtl = $mRigActiveRegistration->getApplicationDtls($applicationId)->first();
             $rigDetails           = $mRigActiveDetail->getrigDetailsByApplicationId($applicationId)->first();
             $rigApplicantDtls     = $mRIgActiveApllicants->getRigActiveApplicants($applicationId)->first();
             $oldRigDetails  = json_encode($rigDetails);
             $oldApplication = json_encode($applicationDetails);
             $oldApplicant   = json_encode($rigApplicantDtls);
+
+            $data = $this->editdocs($req, $mDocuments, $applicationId);
 
             $mRigAudit->saveAuditData($oldRigDetails, $confTableName['1']);
             $mRigAudit->saveAuditData($oldApplication, $confTableName['2']);
@@ -1502,6 +1514,62 @@ class RigRegistrationController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
         }
     }
+
+    public function editdocs($req, $mDocuments, $applicationId)
+    {
+        try {
+            $data = [];
+            $docUpload = new DocUpload();
+            $relativePath = Config::get('rig.RIG_RELATIVE_PATH.REGISTRATION');
+            $mWfActiveDocument = new WfActiveDocument();
+            $mRigActiveRegistration = new RigActiveRegistration();
+            $user = collect(authUser($req));
+
+            foreach ($mDocuments as $document) {
+                $file = $document['image'];
+                $req->merge([
+                    'document' => $file
+                ]);
+                $imageName = $docUpload->upload($req);
+
+                $metaReqs = [
+                    'moduleId' => Config::get('workflow-constants.ADVERTISMENT_MODULE') ?? 15,
+                    'unique_id' => $imageName['data']['uniqueId'] ?? null,
+                    'reference_no' => $imageName['data']['ReferenceNo'] ?? null,
+                ];
+
+                $activeId = $this->updateDocumentsV1(new Request($metaReqs), $user, $applicationId, $this->_rigModuleId);
+                $data[] = $activeId;
+            }
+
+            return $data;
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
+        }
+    }
+    #edit document 
+    public function updateDocumentsV1($req, $auth, $applicationId, $moduleId)
+    {
+        $metaReqs = WfActiveDocument::where('active_id', $applicationId)
+            ->where('module_id', $moduleId)
+            ->where('current_status', 1)
+            ->first();
+
+        if (!$metaReqs) {
+            throw new Exception("Document with applicationId: $applicationId and moduleId: $moduleId not found.");
+        }
+
+        $metaReqs->module_id = $req->moduleId;
+        $metaReqs->uploaded_by = $auth['id'];
+        $metaReqs->uploaded_by_type = $auth['user_type'];
+        $metaReqs->verify_status = 0;
+        $metaReqs->unique_id = $req->unique_id ?? null;
+        $metaReqs->reference_no = $req->reference_no ?? null;
+
+        $metaReqs->save();
+        return $metaReqs->active_id;
+    }
+
 
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Models\Rig;
 
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Config;
@@ -69,6 +70,9 @@ class WfActiveDocument extends Model
         $metaReqs->save();
         return $metaReqs->active_id;
     }
+
+
+
 
 
     /**
