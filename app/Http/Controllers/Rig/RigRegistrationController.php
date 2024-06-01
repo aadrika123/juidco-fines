@@ -1504,7 +1504,8 @@ class RigRegistrationController extends Controller
             $mRIgActiveApllicants->updateRigApplicantsDtls($req, $rigApplicantDtls);
             $mRigActiveRegistration->updateRigApplication($req, $applicationDetails);
             $updateReq = [
-                "occurrence_type_id" => $req->petFrom ?? $applicationDetails->occurrence_type_id
+                "occurrence_type_id" => $req->petFrom ?? $applicationDetails->occurrence_type_id,
+                "address"            => $req->address ?? $RigActiveRegistrationDtl->address
             ];
             $mRigActiveRegistration->saveApplicationStatus($applicationDetails->ref_application_id, $updateReq);
             DB::commit();

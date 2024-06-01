@@ -67,7 +67,7 @@ class RigVehicleActiveDetail extends Model
             ->update([
               
                 "vehicle_name"                  => $req->vehicleComapny            ?? $rigDetails->vehicle_name,
-                "vehicle_name"                  => $req->vehicleComapny            ?? $rigDetails->vehicle_name
+                "vehicle_no"                  => $req->registrationNumber            ?? $rigDetails->vehicle_no
             ]);
     }
 }
