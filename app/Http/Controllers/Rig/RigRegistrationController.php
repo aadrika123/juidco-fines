@@ -795,13 +795,15 @@ class RigRegistrationController extends Controller
             $user                       = authUser($req);
             $confUserType               = $this->_userType;
             $mRigRejectedRegistration   = new RigRejectedRegistration();
+            $moduleId                   = $this->_rigModuleId;
+            $workflowId                 = 200;                                         // static
 
             if ($user->user_type != $confUserType['1']) {                                       // If not a citizen
                 throw new Exception("You are not an autherised Citizen!");
             }
             # Collect querry Exceptions 
             try {
-                $refRejectedDetails = $mRigRejectedRegistration->getAllRejectedApplicationDetails()
+                $refRejectedDetails = $mRigRejectedRegistration->getAllRejectedApplicationDetails($moduleId,$workflowId)
                     ->select(
                         DB::raw("REPLACE(rig_rejected_registrations.application_type, '_', ' ') AS ref_application_type"),
                         DB::raw("TO_CHAR(rig_rejected_registrations.application_apply_date, 'DD-MM-YYYY') as ref_application_apply_date"),
@@ -824,11 +826,14 @@ class RigRegistrationController extends Controller
                         "rig_rejected_applicants.applicant_name",
                         "wf_roles.role_name",
                         "rig_rejected_registrations.status as registrationSatus",
+                        "workflow_tracks.message as reason",
                         DB::raw("CASE 
                         WHEN rig_rejected_registrations.status = 1 THEN 'Rejected'
                         WHEN rig_rejected_registrations.status = 2 THEN 'Under Renewal Process'
                         END as current_status")
                     )
+                    
+
                     ->where('rig_rejected_registrations.status', '<>', 0)
                     ->where('rig_rejected_registrations.citizen_id', $user->id)
                     ->orderByDesc('rig_rejected_registrations.id')

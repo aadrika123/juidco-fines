@@ -22,7 +22,7 @@ class RigRejectedRegistration extends Model
     /**
      * | Get all details according to key 
      */
-    public function getAllRejectedApplicationDetails()
+    public function getAllRejectedApplicationDetails($workflowId,$moduleId)
     {
         return DB::table('rig_rejected_registrations')
             ->leftJoin('wf_roles', 'wf_roles.id', 'rig_rejected_registrations.current_role_id')
@@ -34,7 +34,16 @@ class RigRejectedRegistration extends Model
             })
             ->leftJoin('rig_approve_applicants', function ($join) {
                 $join->on('rig_approve_applicants.application_id', '=', 'rig_rejected_registrations.application_id');
+            })
+            ->leftJoin('workflow_tracks', function ($join) use ($workflowId, $moduleId) {
+                $join->on('workflow_tracks.ref_table_id_value', 'rig_rejected_registrations.id')
+                    ->where('workflow_tracks.status', true)
+                    ->where('workflow_tracks.message', '<>', null)
+                    ->where('workflow_tracks.verification_status', 3)
+                    ->where('workflow_tracks.workflow_id', $workflowId)
+                    ->where('workflow_tracks.module_id', $moduleId);
             });
+             
     }
 
     /**

@@ -1086,13 +1086,15 @@ class RigWorkflowController extends Controller
             $refstring                  = Str::snake($key);
             $msg                        = "Rejected application list!";
             $mRigRejectedRegistration   = new RigRejectedRegistration();
+            $moduleId                   = $this->_rigModuleId;
+            $workflowId                 = 200;
 
             # Check params for role user 
             // $roleDetails = $this->getUserRollV2($userId, $user->ulb_id, $confWorkflowMasterId);
             // $this->checkParamForUser($user, $roleDetails);
 
             try {
-                $baseQuerry = $mRigRejectedRegistration->getAllRejectedApplicationDetails()
+                $baseQuerry = $mRigRejectedRegistration->getAllRejectedApplicationDetails($moduleId,$workflowId)
                     ->select(
                         DB::raw("REPLACE(rig_rejected_registrations.application_type, '_', ' ') AS ref_application_type"),
                         DB::raw("TO_CHAR(rig_rejected_registrations.application_apply_date, 'DD-MM-YYYY') as ref_application_apply_date"),
