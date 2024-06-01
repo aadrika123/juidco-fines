@@ -515,7 +515,7 @@ class RigRegistrationController extends Controller
             if (is_null($applicationDetails)) {
                 throw new Exception("application Not found!");
             }
-            $chargeDetails = $mRigRegistrationCharge->getChargesbyId($applicationDetails->ref_application_id)
+            $chargeDetails = $mRigRegistrationCharge->getChargesbyId($applicationDetails->id)
                 ->select(
                     'id AS chargeId',
                     'amount',
