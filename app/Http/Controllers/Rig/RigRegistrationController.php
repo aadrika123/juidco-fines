@@ -1169,6 +1169,8 @@ class RigRegistrationController extends Controller
             $mRigApprovedRegistration   = new RigApprovedRegistration();
             $mRigRegistrationCharge     = new RigRegistrationCharge();
             $mPetTran                   = new RigTran();
+            $mUlbMater                  = new UlbMaster();
+
 
             $approveApplicationDetails = $mRigApprovedRegistration->getRigApprovedApplicationById($applicationId)
                 ->where('rig_approved_registrations.status', '<>', 0)                                                       // Static
@@ -1189,6 +1191,8 @@ class RigRegistrationController extends Controller
             if (is_null($chargeDetails)) {
                 throw new Exception("Charges for respective application not found!");
             }
+            #Ulb Details 
+            $ulbDetails         =  $mUlbMater->getUlbDetails($approveApplicationDetails->ulb_id);
             # Get Transaction details
             $tranDetails = null;
             if ($chargeDetails->paid_status == 1) {
@@ -1212,7 +1216,9 @@ class RigRegistrationController extends Controller
             $chargeDetails['roundAmount']                       = round($chargeDetails['amount']);
             $approveApplicationDetails['charges']               = $chargeDetails;
             // "canTakePayment" => $canTakePayment
-            $approveApplicationDetails['canTakePayment']     = $canTakePayment;
+            $approveApplicationDetails['canTakePayment']        = $canTakePayment;
+            $approveApplicationDetails['ulbDetails']            = $ulbDetails;
+
             return responseMsgs(true, "Listed application details!", remove_null($approveApplicationDetails), "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);

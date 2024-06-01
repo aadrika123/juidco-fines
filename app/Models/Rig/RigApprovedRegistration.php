@@ -123,6 +123,7 @@ class RigApprovedRegistration extends Model
             'rig_approved_registrations.status as registrationStatus',
             'rig_approve_active_details.status as Status',
             'rig_approve_applicants.status as applicantsStatus',
+            'rig_approved_registrations.ulb_id',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
          
