@@ -102,7 +102,7 @@ class RigActiveRegistration extends Model
     public function getrigApplicationById($applicationId)
     {
         return RigActiveRegistration::select(
-            // 'rig_active_registrations.id as ref_application_id',
+            'rig_active_registrations.id as ref_application_id',
             DB::raw("REPLACE(rig_active_registrations.application_type, '_', ' ') AS ref_application_type"),
             'rig_vehicle_active_details.application_id as ref_rig_id',
             'rig_active_applicants.application_id as ref_applicant_id',
