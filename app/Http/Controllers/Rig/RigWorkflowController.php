@@ -502,7 +502,8 @@ class RigWorkflowController extends Controller
             'refTableDotId'     => 'rig_active_registrations.id',                                   // Static
             'refTableIdValue'   => $applicationId,
             'user_id'           => authUser($request)->id,
-            'ulb_id'            =>  $applicationDetails->ulb_id
+            'ulb_id'            =>  $applicationDetails->ulb_id,
+            'verificationStatus' => 1
         ];
         $request->request->add($metaReqs);
         $rigTrack->saveTrack($request);
@@ -684,7 +685,8 @@ class RigWorkflowController extends Controller
             'refTableDotId'     => 'rig_active_registrations.id',                                   // Static
             'refTableIdValue'   => $applicationId,
             'user_id'           => authUser($request)->id,
-            'ulb_id'            =>  $refApplicationDetial->ulb_id
+            'ulb_id'            =>  $refApplicationDetial->ulb_id,
+            'verificationStatus' => 3
         ];
         $request->request->add($metaReqs);
         $rigTrack->saveTrack($request);
@@ -1225,7 +1227,7 @@ class RigWorkflowController extends Controller
             $metaReqs['senderRoleId'] = $req->currentRoleId;
             $metaReqs['senderRoleId'] = $req->currentRoleId;
             $metaReqs['ulbId'] = $mRigActiveRegistration->ulb_id;
-            $metaReqs['verfication_status'] = 2;
+            $metaReqs['verificationStatus'] = 2;
             $req->request->add($metaReqs);
 
             $req->request->add($metaReqs);
