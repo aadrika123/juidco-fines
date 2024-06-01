@@ -1233,7 +1233,7 @@ class RigWorkflowController extends Controller
             DB::commit();
 
             if (strlen($application->mobile_no) == 10) {
-                $statusMessage =  "Please Re-Upload Your Document In Respective JSK/SITE";
+                $statusMessage =  "Sent Back.Please Re-Upload Your Document In Respective JSK/SITE";
 
                 $whatsapp2 = (Whatsapp_Send(
                     $application->mobile_no,
