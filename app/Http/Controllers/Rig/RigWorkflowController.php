@@ -1225,6 +1225,7 @@ class RigWorkflowController extends Controller
             $metaReqs['senderRoleId'] = $req->currentRoleId;
             $metaReqs['senderRoleId'] = $req->currentRoleId;
             $metaReqs['ulbId'] = $mRigActiveRegistration->ulb_id;
+            $metaReqs['verfication_status'] = 2;
             $req->request->add($metaReqs);
 
             $req->request->add($metaReqs);

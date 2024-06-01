@@ -825,7 +825,7 @@ class RigRegistrationController extends Controller
                         "wf_roles.role_name",
                         "rig_rejected_registrations.status as registrationSatus",
                         DB::raw("CASE 
-                        WHEN rig_rejected_registrations.status = 1 THEN 'Approved'
+                        WHEN rig_rejected_registrations.status = 1 THEN 'Rejected'
                         WHEN rig_rejected_registrations.status = 2 THEN 'Under Renewal Process'
                         END as current_status")
                     )

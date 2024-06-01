@@ -59,7 +59,7 @@ Route::middleware([])->group(function () {
         Route::post('get-approve-registration-list-V1', 'getApprovedApplicationDetails');                       // without user
         Route::post('application/searh-application', 'searchApplication');                                      // Admin
         Route::post('application/approve-license-data', 'getLicnenseDetails');                                  // Admin
-        Route::post('application/dashboard-details', 'rigDashbordDtls');                                         // Admin
+        Route::post('application/dashboard-details', 'rigDashbordDtls');                                        // Admin
 
         Route::post('application/edit-rig-details', 'editRigDetails');                                           // Admin
         Route::post('application/collection-report', 'listCollection');                                          // Admin
