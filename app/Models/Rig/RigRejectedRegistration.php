@@ -22,7 +22,7 @@ class RigRejectedRegistration extends Model
     /**
      * | Get all details according to key 
      */
-    public function getAllRejectedApplicationDetails($workflowId,$moduleId)
+    public function getAllRejectedApplicationDetails($moduleId,$workflowId)
     {
         return DB::table('rig_rejected_registrations')
             ->leftJoin('wf_roles', 'wf_roles.id', 'rig_rejected_registrations.current_role_id')

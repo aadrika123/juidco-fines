@@ -805,6 +805,7 @@ class RigRegistrationController extends Controller
             try {
                 $refRejectedDetails = $mRigRejectedRegistration->getAllRejectedApplicationDetails($moduleId,$workflowId)
                     ->select(
+                        "workflow_tracks.message as reason",
                         DB::raw("REPLACE(rig_rejected_registrations.application_type, '_', ' ') AS ref_application_type"),
                         DB::raw("TO_CHAR(rig_rejected_registrations.application_apply_date, 'DD-MM-YYYY') as ref_application_apply_date"),
                         "rig_active_registrations.id",
@@ -826,7 +827,7 @@ class RigRegistrationController extends Controller
                         "rig_rejected_applicants.applicant_name",
                         "wf_roles.role_name",
                         "rig_rejected_registrations.status as registrationSatus",
-                        "workflow_tracks.message as reason",
+                        
                         DB::raw("CASE 
                         WHEN rig_rejected_registrations.status = 1 THEN 'Rejected'
                         WHEN rig_rejected_registrations.status = 2 THEN 'Under Renewal Process'
