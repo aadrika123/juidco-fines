@@ -796,16 +796,17 @@ class RigRegistrationController extends Controller
             $confUserType               = $this->_userType;
             $mRigRejectedRegistration   = new RigRejectedRegistration();
             $moduleId                   = $this->_rigModuleId;
-            $workflowId                 = 200;                                         // static
+            $workflowId                 = 200;                                      // static
+            $citizenId                  = $req->auth['id'];
 
             if ($user->user_type != $confUserType['1']) {                                       // If not a citizen
                 throw new Exception("You are not an autherised Citizen!");
             }
             # Collect querry Exceptions 
             try {
-                $refRejectedDetails = $mRigRejectedRegistration->getAllRejectedApplicationDetails($moduleId,$workflowId)
+                $refRejectedDetails = $mRigRejectedRegistration->getAllRejectedApplicationDetails()
                     ->select(
-                        "workflow_tracks.message as reason",
+                        // "workflow_tracks.message as reason",
                         DB::raw("REPLACE(rig_rejected_registrations.application_type, '_', ' ') AS ref_application_type"),
                         DB::raw("TO_CHAR(rig_rejected_registrations.application_apply_date, 'DD-MM-YYYY') as ref_application_apply_date"),
                         "rig_active_registrations.id",
@@ -827,13 +828,12 @@ class RigRegistrationController extends Controller
                         "rig_rejected_applicants.applicant_name",
                         "wf_roles.role_name",
                         "rig_rejected_registrations.status as registrationSatus",
-                        
+
                         DB::raw("CASE 
                         WHEN rig_rejected_registrations.status = 1 THEN 'Rejected'
                         WHEN rig_rejected_registrations.status = 2 THEN 'Under Renewal Process'
                         END as current_status")
                     )
-                    
 
                     ->where('rig_rejected_registrations.status', '<>', 0)
                     ->where('rig_rejected_registrations.citizen_id', $user->id)
@@ -842,7 +842,7 @@ class RigRegistrationController extends Controller
             } catch (QueryException $qurry) {
                 return responseMsgs(false, "An error occurred during the query!", $qurry->getMessage(), "", "01", responseTime(), $req->getMethod(), $req->deviceId);
             }
-            return responseMsgs(true, "list of active registration!", remove_null($refRejectedDetails), "", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "list of Rejected registration!", remove_null($refRejectedDetails), "", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
@@ -1104,8 +1104,10 @@ class RigRegistrationController extends Controller
             $mRigRejectedRegistration   = new RigRejectedRegistration();
             $mRigRegistrationCharge     = new RigRegistrationCharge();
             $mRigTran                   = new RigTran();
+            $moduleId                   = $this->_rigModuleId;
+            $workflowId                 = 200;
 
-            $rejectedApplicationDetails = $mRigRejectedRegistration->getRigRejectedApplicationById($applicationId)
+            $rejectedApplicationDetails = $mRigRejectedRegistration->getRigRejectedApplicationById($applicationId,$moduleId,$workflowId )
                 ->where('rig_rejected_registrations.status', '<>', 0)                                                       // Static
                 ->first();
             if (is_null($rejectedApplicationDetails)) {
