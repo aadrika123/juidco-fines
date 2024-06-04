@@ -1368,7 +1368,7 @@ class PenaltyRecordController extends Controller
                 $docByReference = $docUpload->getDocUrl($document);           #_Calling BLL for Document Path from DMS
 
             $data['challanDetails'] = $finalRecord;
-            $data['document'] = $document;
+            $data['document'] = $docByReference;
 
             $totalAmountInWord = getHindiIndianCurrency($finalRecord->total_amount);
             $data['challanDetails']['amount_in_words'] = $totalAmountInWord . ' मात्र';
