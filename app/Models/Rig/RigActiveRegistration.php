@@ -116,6 +116,7 @@ class RigActiveRegistration extends Model
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
             'rig_approved_registrations.approve_end_date',
+            'rig_approved_registrations.registration_id',
             DB::raw("CASE 
             WHEN rig_vehicle_active_details.sex = '1' THEN 'Male'
             WHEN rig_vehicle_active_details.sex = '2' THEN 'Female'

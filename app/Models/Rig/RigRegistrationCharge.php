@@ -15,17 +15,17 @@ class RigRegistrationCharge extends Model
      */
     public function saveRegisterCharges($req)
     {
-        $mPetRegistrationCharge = new RigRegistrationCharge();
-        $mPetRegistrationCharge->application_id     = $req->applicationId;
-        $mPetRegistrationCharge->charge_category    = $req->applicationTypeId;
-        $mPetRegistrationCharge->amount             = $req->amount;
-        $mPetRegistrationCharge->penalty            = 0;                                        // Static
-        $mPetRegistrationCharge->registration_fee   = $req->registrationFee;
-        $mPetRegistrationCharge->created_at         = Carbon::now();
-        $mPetRegistrationCharge->rebate             = 0;                                        // Static
-        $mPetRegistrationCharge->paid_status        = $req->refPaidstatus ?? 0;
-        $mPetRegistrationCharge->charge_category_name = $req->applicationType;
-        $mPetRegistrationCharge->save();
+        $mRigRegistrationCharge = new RigRegistrationCharge();
+        $mRigRegistrationCharge->application_id     = $req->applicationId;
+        $mRigRegistrationCharge->charge_category    = $req->applicationTypeId;
+        $mRigRegistrationCharge->amount             = $req->amount;
+        $mRigRegistrationCharge->penalty            = 0;                                        // Static
+        $mRigRegistrationCharge->registration_fee   = $req->registrationFee;
+        $mRigRegistrationCharge->created_at         = Carbon::now();
+        $mRigRegistrationCharge->rebate             = 0;                                        // Static
+        $mRigRegistrationCharge->paid_status        = $req->refPaidstatus ?? 0;
+        $mRigRegistrationCharge->charge_category_name = $req->applicationType;
+        $mRigRegistrationCharge->save();
     }
 
     /**

@@ -65,7 +65,7 @@ class RigApprovedRegistration extends Model
             ->where('status', 1)
             ->update($refReq);
     }
-/**
+    /**
      * | Get all details according to key 
      */
     public function getAllApprovdApplicationDetails()
@@ -127,6 +127,7 @@ class RigApprovedRegistration extends Model
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
          
+            
             DB::raw("CASE 
             WHEN rig_approve_active_details.sex = '1' THEN 'Male'
             WHEN rig_approve_active_details.sex = '2' THEN 'Female'

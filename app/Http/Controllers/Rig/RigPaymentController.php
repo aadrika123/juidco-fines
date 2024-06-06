@@ -415,6 +415,11 @@ class RigPaymentController extends Controller
             $wardId             = $payRelatedDetails['applicationDetails']['ward_id'];
             $tranType           = $payRelatedDetails['applicationDetails']['application_type'];
             $tranTypeId         = $payRelatedDetails['chargeCategory'];
+            $mobileNo           = $payRelatedDetails['applicationDetails']['mobile_no'];
+            $applicantName      = $payRelatedDetails['applicationDetails']['applicant_name'];
+            $registrationNo     = $payRelatedDetails['applicationDetails']['registration_id'];
+            $ulbName            = $payRelatedDetails['applicationDetails']['ulb_name'];
+            $amount             = $payRelatedDetails['refRoundAmount'];
 
             DB::beginTransaction();
             # Generate transaction no 
@@ -454,6 +459,25 @@ class RigPaymentController extends Controller
             $payRelatedDetails['applicationDetails']->payment_status = 1;
             $payRelatedDetails['applicationDetails']->save();
             DB::commit();
+
+            #_Whatsaap Message
+            if (strlen($mobileNo) == 10) {
+                $Url = "https://jharkhandegovernance.com/rig/rig-payment-receipt/" . $transactionNo;
+                $whatsapp2 = (Whatsapp_Send(
+                    $mobileNo,
+                    "juidco_rig_payment",
+                    [
+                        "content_type" => "text",
+                        [
+                            $applicantName ?? "",
+                            $registrationNo,
+                            $ulbName,
+                            $amount,
+                            $Url
+                        ]
+                    ]
+                ));
+            }
             $returnData = [
                 "transactionNo" => $transactionNo
             ];
