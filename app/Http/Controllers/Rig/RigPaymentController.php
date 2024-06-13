@@ -467,57 +467,57 @@ class RigPaymentController extends Controller
 
             # Save Dms for license
 
-            $user = collect(authUser($req));
+            // $user = collect(authUser($req));
 
-            $data = [
-                "RegistrationNo"   => $payRelatedDetails['applicationDetails']['registration_id'],
-                "AplicantName"     => $payRelatedDetails['applicationDetails']['applicant_name'],
-                "approveDate"      => $payRelatedDetails['applicationDetails']['approve_date'],
-                "approveEndDate"   => $payRelatedDetails['applicationDetails']['approve_end_date'],
-                "vehicleNo"        => $payRelatedDetails['applicationDetails']['vehicle_no'],
-                "mobileNo"         => $payRelatedDetails['applicationDetails']['mobile_no'],
-                "applicationNo"    => $payRelatedDetails['applicationDetails']['application_no'],
-                "applyDate"        => $payRelatedDetails['applicationDetails']['application_apply_date']
-            ];
-            $filename = $req->applicationId . "-LICENSE" . '.' . 'pdf';
-            $pdf = PDF::loadView('Rig_Machine_License', ["data" => $data]);
-            $url = "Uploads/Rig/License/" . $filename;
-            $file = $pdf->output();
-            Storage::put('public/' . $url, $file);
+            // $data = [
+            //     "RegistrationNo"   => $payRelatedDetails['applicationDetails']['registration_id'],
+            //     "AplicantName"     => $payRelatedDetails['applicationDetails']['applicant_name'],
+            //     "approveDate"      => $payRelatedDetails['applicationDetails']['approve_date'],
+            //     "approveEndDate"   => $payRelatedDetails['applicationDetails']['approve_end_date'],
+            //     "vehicleNo"        => $payRelatedDetails['applicationDetails']['vehicle_no'],
+            //     "mobileNo"         => $payRelatedDetails['applicationDetails']['mobile_no'],
+            //     "applicationNo"    => $payRelatedDetails['applicationDetails']['application_no'],
+            //     "applyDate"        => $payRelatedDetails['applicationDetails']['application_apply_date']
+            // ];
+            // $filename = $req->applicationId . "-LICENSE" . '.' . 'pdf';
+            // $pdf = PDF::loadView('Rig_Machine_License', ["data" => $data]);
+            // $url = "Uploads/Rig/License/" . $filename;
+            // $file = $pdf->output();
+            // Storage::put('public/' . $url, $file);
 
-            // Prepare a temporary file for upload
-            $tempPath = tempnam(sys_get_temp_dir(), 'license');
-            file_put_contents($tempPath, $file);
-            $uploadedFile = new \Illuminate\Http\UploadedFile(
-                $tempPath,
-                $filename,
-                'application/pdf',
-                null,
-                true
-            );
+            // // Prepare a temporary file for upload
+            // $tempPath = tempnam(sys_get_temp_dir(), 'license');
+            // file_put_contents($tempPath, $file);
+            // $uploadedFile = new \Illuminate\Http\UploadedFile(
+            //     $tempPath,
+            //     $filename,
+            //     'application/pdf',
+            //     null,
+            //     true
+            // );
 
-            $req->merge(['document' => $uploadedFile]);
+            // $req->merge(['document' => $uploadedFile]);
 
-            // Document Upload through DMS
-            $imageName = $docUpload->upload($req);
+            // // Document Upload through DMS
+            // $imageName = $docUpload->upload($req);
 
-            // Meta data for document upload
-            $metaReqs = [
-                'moduleId' => Config::get('workflow-constants.ADVERTISMENT_MODULE') ?? 15,
-                'activeId' => $req->id,
-                'workflowId' => $payRelatedDetails['applicationDetails']['workflow_id'],
-                'ulbId' =>  $ulbId,
-                'relativePath' => $relativePath,
-                'document' => $imageName,
-                'doc_category' => $req->docCategory,
-                'docCode' => 'Lisence',
-                'ownerDtlId' => $req->ownerDtlId,
-                'unique_id' => $imageName['data']['uniqueId'] ?? null,
-                'reference_no' => $imageName['data']['ReferenceNo'] ?? null,
-            ];
+            // // Meta data for document upload
+            // $metaReqs = [
+            //     'moduleId' => Config::get('workflow-constants.ADVERTISMENT_MODULE') ?? 15,
+            //     'activeId' => $req->id,
+            //     'workflowId' => $payRelatedDetails['applicationDetails']['workflow_id'],
+            //     'ulbId' =>  $ulbId,
+            //     'relativePath' => $relativePath,
+            //     'document' => $imageName,
+            //     'doc_category' => $req->docCategory,
+            //     'docCode' => 'Lisence',
+            //     'ownerDtlId' => $req->ownerDtlId,
+            //     'unique_id' => $imageName['data']['uniqueId'] ?? null,
+            //     'reference_no' => $imageName['data']['ReferenceNo'] ?? null,
+            // ];
 
-            // Save document metadata in wfActiveDocuments
-            $mWfActiveDocument->postDocuments(new Request($metaReqs), $user);
+            // // Save document metadata in wfActiveDocuments
+            // $mWfActiveDocument->postDocuments(new Request($metaReqs), $user);
 
             DB::commit();
 
