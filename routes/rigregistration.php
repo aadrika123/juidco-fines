@@ -35,7 +35,7 @@ Route::post('/rig-connection', function () {
 /**
  * | Grouped Route for middleware
  */
-Route::middleware([])->group(function () {
+Route::middleware(['request_logger'])->group(function () {
     /**
      * | Rig Machine Registration Operation and more fundamental oprations
         | Serial No : 01
@@ -86,7 +86,9 @@ Route::middleware([])->group(function () {
         Route::post('list-rejected-application', 'listfinisherRejectApplications');                             // Workflow
         Route::post('back-to-jsk-list', 'btJskInbox');                                                          // Workflow
         Route::post('back-to-citizen', 'backToCitizen');                                                        // Workflow
-       
+        Route::post('generateLicense', 'generateLicense');                                                      // Workflow
+        Route::post('application/get-uploaded-doc', 'getUploadDocumentsEsign');                                     // Admin/ Citizen
+
     });
 
     // payment operations 

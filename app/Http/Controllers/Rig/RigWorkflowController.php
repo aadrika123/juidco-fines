@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Rig;
 
+use App\DocUpload;
 use App\Http\Controllers\Controller;
 use App\IdGenerator\IdGeneration;
 use App\Models\Rig\RefRequiredDocument;
@@ -37,6 +38,8 @@ use App\Pipelines\Rig\SearchByApplicationNo;
 use App\Pipelines\Rig\SearchByMobileNo;
 use App\Models\Rig\WfActiveDocument;
 use Illuminate\Support\Collection;
+use Barryvdh\DomPDF\Facade\PDF;
+use Illuminate\Support\Facades\Storage;
 
 class RigWorkflowController extends Controller
 {
@@ -1094,7 +1097,7 @@ class RigWorkflowController extends Controller
             // $this->checkParamForUser($user, $roleDetails);
 
             try {
-                $baseQuerry = $mRigRejectedRegistration->getAllRejectedApplicationDetails($moduleId,$workflowId)
+                $baseQuerry = $mRigRejectedRegistration->getAllRejectedApplicationDetails($moduleId, $workflowId)
                     ->select(
                         DB::raw("REPLACE(rig_rejected_registrations.application_type, '_', ' ') AS ref_application_type"),
                         DB::raw("TO_CHAR(rig_rejected_registrations.application_apply_date, 'DD-MM-YYYY') as ref_application_apply_date"),
@@ -1298,6 +1301,111 @@ class RigWorkflowController extends Controller
             return responseMsgs(true, $msg, remove_null($list), '', '02', '', 'Post', '');
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $mDeviceId);
+        }
+    }
+
+    public function generateLicense(Request $req)
+    {
+        $docUpload = new DocUpload;
+        $relativePath = Config::get('rig.RIG_RELATIVE_PATH.REGISTRATION');
+        $mWfActiveDocument = new WfActiveDocument();
+        $user = collect(authUser($req));
+
+        $filename = $req->applicationId . "-LICENSE" . '.' . 'pdf';
+        $pdf = PDF::loadView('Rig_Machine_License');
+        $url = "Uploads/Rig/License/" . $filename;
+        $file = $pdf->output();
+        Storage::put('public/' . $url, $file);
+
+        // Prepare a temporary file for upload
+        $tempPath = tempnam(sys_get_temp_dir(), 'license');
+        file_put_contents($tempPath, $file);
+        $uploadedFile = new \Illuminate\Http\UploadedFile(
+            $tempPath,
+            $filename,
+            'application/pdf',
+            null,
+            true
+        );
+
+        $req->merge(['document' => $uploadedFile]);
+
+        // Document Upload through DMS
+        $imageName = $docUpload->upload($req);
+
+        // Meta data for document upload
+        $metaReqs = [
+            'moduleId' => Config::get('workflow-constants.ADVERTISMENT_MODULE') ?? 15,
+            'activeId' => 151,
+            'workflowId' => 101,
+            'ulbId' => 2,
+            'relativePath' => $relativePath,
+            'document' => $imageName,
+            'doc_category' => $req->docCategory,
+            'docCode' => $req->docCode,
+            'ownerDtlId' => $req->ownerDtlId,
+            'unique_id' => $imageName['data']['uniqueId'] ?? null,
+            'reference_no' => $imageName['data']['ReferenceNo'] ?? null,
+        ];
+
+        // Save document metadata in wfActiveDocuments
+        $mWfActiveDocument->postDocuments(new Request($metaReqs), $user);
+
+        return view("Rig_Machine_License");
+    }
+
+    public function getUploadDocumentsEsign(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'nullable|numeric'
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+
+        try {
+            $mWfActiveDocument = new WfActiveDocument();
+            $mRigActiveRegistration = new RigActiveRegistration();
+            $refDocUpload = new DocUpload;
+            $moduleId = $this->_rigModuleId;
+            $applicationId = $req->applicationId;
+            $workflowId = 200;
+            $moduleId = 15;
+
+            $documents = $mWfActiveDocument->getRigDocsByAppNoEsighn($workflowId, $moduleId)
+                ->where('d.status', '!=', 0)
+                ->get();
+
+            // Iterate over documents to find the first valid active_id
+            $activeId = null;
+            foreach ($documents as $document) {
+                if (isset($document->active_id)) {
+                    $activeId = $document->active_id;
+                    break;
+                }
+            }
+            if (!$activeId) {
+                throw new Exception("No valid active_id found in the documents.");
+            }
+            $RigDetails = $mRigActiveRegistration->getrigApplicationByIds($activeId)->first();
+            if (!$RigDetails) {
+                throw new Exception("Application Not Found for this ($applicationId) application Id!");
+            }
+            $workflowId = $RigDetails->workflow_id;
+
+            $documents = $refDocUpload->getDocUrl($documents)->toArray();
+
+            // Merge RigDetails with each document
+            foreach ($documents as &$document) {
+                $document = array_merge($document, $RigDetails->toArray());
+            }
+
+            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }

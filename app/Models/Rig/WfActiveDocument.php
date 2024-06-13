@@ -52,6 +52,29 @@ class WfActiveDocument extends Model
 
         $metaReqs->save();
     }
+    /**
+     * | Upload document funcation
+     */
+    public function postDocumentForEsighn($req,)
+    {
+        $auth = collect(authUser($req));
+        $metaReqs = new WfActiveDocument();
+        $metaReqs->active_id            = $req->activeId;
+        $metaReqs->workflow_id          = $req->workflowId;
+        $metaReqs->ulb_id               = $req->ulbId;
+        $metaReqs->module_id            = $req->moduleId;
+        $metaReqs->relative_path        = $req->relativePath;
+        // $metaReqs->document             = $req->document;
+        $metaReqs->uploaded_by          = $auth['id'];
+        $metaReqs->uploaded_by_type     = $auth['user_type'];
+        $metaReqs->remarks              = $req->remarks ?? null;
+        $metaReqs->doc_code             = $req->docCode;
+        $metaReqs->owner_dtl_id         = $req->ownerDtlId;
+        $metaReqs->unique_id            = $req->unique_id ?? null;
+        $metaReqs->reference_no         = $req->reference_no ?? null;
+
+        $metaReqs->save();
+    }
 
 
     /**
@@ -427,5 +450,28 @@ class WfActiveDocument extends Model
             ->where('verify_status', 2)
             ->where('status', 1)
             ->get();
+    }
+
+    public function getRigDocsByAppNoEsighn($workflowId, $moduleId)
+    {
+        $upload_url = Config::get('constants.DMS_URL');
+        return DB::table('wf_active_documents as d')
+            ->select(
+                'd.id',
+                'd.document',
+                'd.active_id',
+                DB::raw("concat('$upload_url/',relative_path,'/',document) as ref_doc_path"),
+                'd.remarks',
+                'd.verify_status',
+                'd.doc_code',
+                'd.reference_no',
+                'd.doc_category',
+                'd.status',
+                'o.applicant_name as owner_name'
+            )
+            ->leftJoin('rig_active_applicants as o', 'o.id', '=', 'd.owner_dtl_id')
+            ->where('d.workflow_id', $workflowId)
+            ->where('d.module_id', $moduleId)
+            ->where('d.doc_code', 'Lisence');
     }
 }

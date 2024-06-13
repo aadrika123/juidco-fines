@@ -48,6 +48,7 @@ use  App\Models\Rig\WfActiveDocument;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Razorpay\Api\Api;
+use Barryvdh\DomPDF\Facade\PDF;
 
 class RigPaymentController extends Controller
 {
@@ -408,6 +409,9 @@ class RigPaymentController extends Controller
             $epoch                      = strtotime($todayDate);
             $offlineVerificationModes   = $this->_offlineVerificationModes;
             $mRigTran                   = new RigTran();
+            $docUpload                  = new DocUpload;
+            $relativePath               = Config::get('rig.RIG_RELATIVE_PATH.REGISTRATION');
+            $mWfActiveDocument          = new WfActiveDocument();
 
             # Check the params for checking payment method
             $payRelatedDetails  = $this->checkParamForPayment($req, $req->paymentMode);
@@ -419,6 +423,7 @@ class RigPaymentController extends Controller
             $applicantName      = $payRelatedDetails['applicationDetails']['applicant_name'];
             $registrationNo     = $payRelatedDetails['applicationDetails']['registration_id'];
             $ulbName            = $payRelatedDetails['applicationDetails']['ulb_name'];
+
             $amount             = $payRelatedDetails['refRoundAmount'];
 
             DB::beginTransaction();
@@ -455,9 +460,65 @@ class RigPaymentController extends Controller
                 ]);
                 $this->postOtherPaymentModes($req);
             }
+
             $this->saverigRequestStatus($req, $offlineVerificationModes, $payRelatedDetails['rigCharges'], $RigTrans['transactionId'], $payRelatedDetails['applicationDetails']);
             $payRelatedDetails['applicationDetails']->payment_status = 1;
             $payRelatedDetails['applicationDetails']->save();
+
+            # Save Dms for license
+
+            $user = collect(authUser($req));
+
+            $data = [
+                "RegistrationNo"   => $payRelatedDetails['applicationDetails']['registration_id'],
+                "AplicantName"     => $payRelatedDetails['applicationDetails']['applicant_name'],
+                "approveDate"      => $payRelatedDetails['applicationDetails']['approve_date'],
+                "approveEndDate"   => $payRelatedDetails['applicationDetails']['approve_end_date'],
+                "vehicleNo"        => $payRelatedDetails['applicationDetails']['vehicle_no'],
+                "mobileNo"         => $payRelatedDetails['applicationDetails']['mobile_no'],
+                "applicationNo"    => $payRelatedDetails['applicationDetails']['application_no'],
+                "applyDate"        => $payRelatedDetails['applicationDetails']['application_apply_date']
+            ];
+            $filename = $req->applicationId . "-LICENSE" . '.' . 'pdf';
+            $pdf = PDF::loadView('Rig_Machine_License', ["data" => $data]);
+            $url = "Uploads/Rig/License/" . $filename;
+            $file = $pdf->output();
+            Storage::put('public/' . $url, $file);
+
+            // Prepare a temporary file for upload
+            $tempPath = tempnam(sys_get_temp_dir(), 'license');
+            file_put_contents($tempPath, $file);
+            $uploadedFile = new \Illuminate\Http\UploadedFile(
+                $tempPath,
+                $filename,
+                'application/pdf',
+                null,
+                true
+            );
+
+            $req->merge(['document' => $uploadedFile]);
+
+            // Document Upload through DMS
+            $imageName = $docUpload->upload($req);
+
+            // Meta data for document upload
+            $metaReqs = [
+                'moduleId' => Config::get('workflow-constants.ADVERTISMENT_MODULE') ?? 15,
+                'activeId' => $req->id,
+                'workflowId' => $payRelatedDetails['applicationDetails']['workflow_id'],
+                'ulbId' =>  $ulbId,
+                'relativePath' => $relativePath,
+                'document' => $imageName,
+                'doc_category' => $req->docCategory,
+                'docCode' => 'Lisence',
+                'ownerDtlId' => $req->ownerDtlId,
+                'unique_id' => $imageName['data']['uniqueId'] ?? null,
+                'reference_no' => $imageName['data']['ReferenceNo'] ?? null,
+            ];
+
+            // Save document metadata in wfActiveDocuments
+            $mWfActiveDocument->postDocuments(new Request($metaReqs), $user);
+
             DB::commit();
 
             #_Whatsaap Message
