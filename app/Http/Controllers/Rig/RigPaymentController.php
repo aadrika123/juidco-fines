@@ -476,6 +476,7 @@ class RigPaymentController extends Controller
                 "applicationNo"    => $payRelatedDetails['applicationDetails']['application_no'],
                 "applyDate"        => $payRelatedDetails['applicationDetails']['application_apply_date']
             ];
+            $this->saveLisenceLetter($data, $req, $workflowId, $ulbId);
             DB::commit();
 
             #_Whatsaap Message
@@ -499,7 +500,7 @@ class RigPaymentController extends Controller
             $returnData = [
                 "transactionNo" => $transactionNo
             ];
-            $this->saveLisenceLetter($data, $req, $workflowId, $ulbId);
+            
             return responseMsgs(true, "Paymet done!", $returnData, "", "01", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
