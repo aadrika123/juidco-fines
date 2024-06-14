@@ -423,7 +423,7 @@ class RigPaymentController extends Controller
             $applicantName      = $payRelatedDetails['applicationDetails']['applicant_name'];
             $registrationNo     = $payRelatedDetails['applicationDetails']['registration_id'];
             $ulbName            = $payRelatedDetails['applicationDetails']['ulb_name'];
-
+            $workflowId         = $payRelatedDetails['applicationDetails']['workflow_id'];
             $amount             = $payRelatedDetails['refRoundAmount'];
 
             DB::beginTransaction();
@@ -465,10 +465,7 @@ class RigPaymentController extends Controller
             $payRelatedDetails['applicationDetails']->payment_status = 1;
             $payRelatedDetails['applicationDetails']->save();
 
-            # Save Dms for license
-
-            // $user = collect(authUser($req));
-
+            # Rerive Data for license
             $data = [
                 "RegistrationNo"   => $payRelatedDetails['applicationDetails']['registration_id'],
                 "AplicantName"     => $payRelatedDetails['applicationDetails']['applicant_name'],
@@ -479,7 +476,50 @@ class RigPaymentController extends Controller
                 "applicationNo"    => $payRelatedDetails['applicationDetails']['application_no'],
                 "applyDate"        => $payRelatedDetails['applicationDetails']['application_apply_date']
             ];
-            $filename = $req->applicationId . "-LICENSE" . '.' . 'pdf';
+            DB::commit();
+
+            #_Whatsaap Message
+            if (strlen($mobileNo) == 10) {
+                $Url = "https://jharkhandegovernance.com/rig/rig-payment-receipt/" . $transactionNo;
+                $whatsapp2 = (Whatsapp_Send(
+                    $mobileNo,
+                    "juidco_rig_payment",
+                    [
+                        "content_type" => "text",
+                        [
+                            $applicantName ?? "",
+                            $registrationNo,
+                            $ulbName,
+                            $amount,
+                            $Url
+                        ]
+                    ]
+                ));
+            }
+            $returnData = [
+                "transactionNo" => $transactionNo
+            ];
+            $this->saveLisenceLetter($data, $req, $workflowId, $ulbId);
+            return responseMsgs(true, "Paymet done!", $returnData, "", "01", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * |Save lisence Data
+     */
+    public function saveLisenceLetter($data, $req, $workflowId, $ulbId)
+    {
+        try {
+            $user = collect(authUser($req));
+
+            $docUpload                  = new DocUpload;
+            $relativePath               = Config::get('rig.RIG_RELATIVE_PATH.REGISTRATION');
+            $mWfActiveDocument          = new WfActiveDocument();
+
+            $filename = $req->id . "-LICENSE" . '.' . 'pdf';
             $pdf = PDF::loadView('Rig_Machine_License', ["data" => $data]);
             $url = "Uploads/Rig/License/" . $filename;
             $file = $pdf->output();
@@ -506,7 +546,7 @@ class RigPaymentController extends Controller
             $metaReqs = [
                 'moduleId' => Config::get('workflow-constants.ADVERTISMENT_MODULE') ?? 15,
                 'activeId' => $req->id,
-                'workflowId' => $payRelatedDetails['applicationDetails']['workflow_id'],
+                'workflowId' => $workflowId,
                 'ulbId' =>  $ulbId,
                 'relativePath' => $relativePath,
                 'document' => $imageName,
@@ -518,32 +558,7 @@ class RigPaymentController extends Controller
             ];
 
             // Save document metadata in wfActiveDocuments
-            // $mWfActiveDocument->postDocuments(new Request($metaReqs), $user);
-
-            DB::commit();
-
-            #_Whatsaap Message
-            if (strlen($mobileNo) == 10) {
-                $Url = "https://jharkhandegovernance.com/rig/rig-payment-receipt/" . $transactionNo;
-                $whatsapp2 = (Whatsapp_Send(
-                    $mobileNo,
-                    "juidco_rig_payment",
-                    [
-                        "content_type" => "text",
-                        [
-                            $applicantName ?? "",
-                            $registrationNo,
-                            $ulbName,
-                            $amount,
-                            $Url
-                        ]
-                    ]
-                ));
-            }
-            $returnData = [
-                "transactionNo" => $transactionNo
-            ];
-            return responseMsgs(true, "Paymet done!", $returnData, "", "01", responseTime(), "POST", $req->deviceId);
+            $mWfActiveDocument->postDocuments(new Request($metaReqs), $user);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
