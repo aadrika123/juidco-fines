@@ -467,7 +467,7 @@ class RigPaymentController extends Controller
 
             # Save Dms for license
 
-            $user = collect(authUser($req));
+            // $user = collect(authUser($req));
 
             $data = [
                 "RegistrationNo"   => $payRelatedDetails['applicationDetails']['registration_id'],
@@ -486,7 +486,7 @@ class RigPaymentController extends Controller
             Storage::put('public/' . $url, $file);
 
             // Prepare a temporary file for upload
-            
+
             $tempPath = tempnam(sys_get_temp_dir(), 'license');
             file_put_contents($tempPath, $file);
             $uploadedFile = new \Illuminate\Http\UploadedFile(
@@ -518,7 +518,7 @@ class RigPaymentController extends Controller
             ];
 
             // Save document metadata in wfActiveDocuments
-            $mWfActiveDocument->postDocuments(new Request($metaReqs), $user);
+            // $mWfActiveDocument->postDocuments(new Request($metaReqs), $user);
 
             DB::commit();
 
