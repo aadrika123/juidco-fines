@@ -522,9 +522,9 @@ class RigPaymentController extends Controller
 
             $filename = $req->id . "-LICENSE" . '.' . 'pdf';
             $pdf = PDF::loadView('Rig_Machine_License', ["data" => $data]);
-            $url = "Uploads/Rig/License/" . $filename;
+            // $url = "$relativePath" . $filename;
             $file = $pdf->output();
-            Storage::put('public/' . $url, $file);
+            // Storage::put('public/' . $url, $file);
 
             // Prepare a temporary file for upload
 
