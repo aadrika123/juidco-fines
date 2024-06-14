@@ -514,7 +514,7 @@ class RigPaymentController extends Controller
     public function saveLisenceLetter($data, $req, $workflowId, $ulbId)
     {
         try {
-            $user = collect(authUser($req));
+            // $user = collect(authUser($req));
 
             $docUpload                  = new DocUpload;
             $relativePath               = Config::get('rig.RIG_RELATIVE_PATH.REGISTRATION');
@@ -538,7 +538,7 @@ class RigPaymentController extends Controller
                 true
             );
 
-            $req->merge(['document' => $uploadedFile]);
+            $req->merge(['document' => $file]);
 
             // Document Upload through DMS
             $imageName = $docUpload->upload($req);
@@ -559,7 +559,7 @@ class RigPaymentController extends Controller
             ];
 
             // Save document metadata in wfActiveDocuments
-            $mWfActiveDocument->postDocuments(new Request($metaReqs), $user);
+            // $mWfActiveDocument->postDocuments(new Request($metaReqs), $user);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);

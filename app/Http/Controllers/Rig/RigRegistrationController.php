@@ -1107,7 +1107,7 @@ class RigRegistrationController extends Controller
             $moduleId                   = $this->_rigModuleId;
             $workflowId                 = 200;
 
-            $rejectedApplicationDetails = $mRigRejectedRegistration->getRigRejectedApplicationById($applicationId,$moduleId,$workflowId )
+            $rejectedApplicationDetails = $mRigRejectedRegistration->getRigRejectedApplicationById($applicationId, $moduleId, $workflowId)
                 ->where('rig_rejected_registrations.status', '<>', 0)                                                       // Static
                 ->first();
             if (is_null($rejectedApplicationDetails)) {
