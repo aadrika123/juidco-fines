@@ -126,6 +126,8 @@ class DocUpload
                     $key['latitude'] = $document->latitude ?? null;
                     $key['longitude'] = $document->longitude ?? null;
                     $key['document_name'] = $document->document_name ?? null;
+                    $key['reference_no'] = $document->reference_no ?? null;
+                    $key['active_id'] = $document->active_id ?? null;
                     // $key['responseData'] = $responseData;
                     $data->push($key);
                 }

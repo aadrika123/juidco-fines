@@ -500,7 +500,7 @@ class RigPaymentController extends Controller
             $returnData = [
                 "transactionNo" => $transactionNo
             ];
-            
+
             return responseMsgs(true, "Paymet done!", $returnData, "", "01", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
@@ -514,7 +514,7 @@ class RigPaymentController extends Controller
     public function saveLisenceLetter($data, $req, $workflowId, $ulbId)
     {
         try {
-            // $user = collect(authUser($req));
+            $user = collect(authUser($req));
 
             $docUpload                  = new DocUpload;
             $relativePath               = Config::get('rig.RIG_RELATIVE_PATH.REGISTRATION');
@@ -522,9 +522,13 @@ class RigPaymentController extends Controller
 
             $filename = $req->id . "-LICENSE" . '.' . 'pdf';
             $pdf = PDF::loadView('Rig_Machine_License', ["data" => $data]);
-            // $url = "$relativePath" . $filename;
+            
+            $customPaper = [0, 0, 600, 900]; // 11 * 72 = 792, 17 * 72 = 1224
+            $pdf->setPaper($customPaper, 'landscape');
+
+            $url = "Uploads/Rig/License/" . $filename;
             $file = $pdf->output();
-            // Storage::put('public/' . $url, $file);
+            Storage::put('public/' . $url, $file);
 
             // Prepare a temporary file for upload
 
@@ -538,7 +542,7 @@ class RigPaymentController extends Controller
                 true
             );
 
-            $req->merge(['document' => $file]);
+            $req->merge(['document' => $uploadedFile]);
 
             // Document Upload through DMS
             $imageName = $docUpload->upload($req);
@@ -559,7 +563,7 @@ class RigPaymentController extends Controller
             ];
 
             // Save document metadata in wfActiveDocuments
-            // $mWfActiveDocument->postDocuments(new Request($metaReqs), $user);
+            $mWfActiveDocument->postDocuments(new Request($metaReqs), $user);
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);

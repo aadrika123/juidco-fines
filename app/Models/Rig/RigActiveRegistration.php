@@ -408,4 +408,39 @@ class RigActiveRegistration extends Model
             ->where('rig_active_registrations.id', $applicationId);
         // ->where('rig_active_registrations.status', '<>', 0);
     }
+
+    public function getrigApplicationByIdv1($applicationId)
+    {
+        return RigActiveRegistration::select(
+            DB::raw("REPLACE(rig_active_registrations.application_type, '_', ' ') AS ref_application_type"),
+            'rig_active_applicants.applicant_name',
+            'rig_vehicle_active_details.vehicle_name',
+            'rig_vehicle_active_details.vehicle_no',
+            'rig_active_registrations.application_no',
+            'rig_active_registrations.status as registrationStatus',
+            'rig_vehicle_active_details.status as rigStatus',
+            'rig_active_applicants.status as applicantsStatus',
+            'ulb_ward_masters.ward_name',
+            'ulb_masters.ulb_name',
+            'rig_approved_registrations.approve_end_date',
+            'rig_approved_registrations.registration_id',
+            DB::raw("CASE 
+            WHEN rig_vehicle_active_details.sex = '1' THEN 'Male'
+            WHEN rig_vehicle_active_details.sex = '2' THEN 'Female'
+            END AS ref_gender"),
+            'wf_roles.role_name AS roleName'
+        )
+            ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
+            ->join('rig_vehicle_active_details', 'rig_vehicle_active_details.application_id', 'rig_active_registrations.id')
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'rig_active_registrations.ulb_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_active_registrations.ward_id')
+            ->leftjoin('wf_roles', 'wf_roles.id', 'rig_active_registrations.current_role_id')
+            ->leftJoin('rig_approved_registrations', function ($join) {
+                $join->on('rig_approved_registrations.application_id', '=', 'rig_active_registrations.id')
+                    ->where('rig_approved_registrations.status', 1);
+            })
+
+            ->where('rig_active_registrations.id', $applicationId);
+        // ->where('rig_active_registrations.status', '<>', 0);
+    }
 }

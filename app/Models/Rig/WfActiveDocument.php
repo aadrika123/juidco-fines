@@ -52,29 +52,7 @@ class WfActiveDocument extends Model
 
         $metaReqs->save();
     }
-    /**
-     * | Upload document funcation
-     */
-    public function postDocumentForEsighn($req,)
-    {
-        $auth = collect(authUser($req));
-        $metaReqs = new WfActiveDocument();
-        $metaReqs->active_id            = $req->activeId;
-        $metaReqs->workflow_id          = $req->workflowId;
-        $metaReqs->ulb_id               = $req->ulbId;
-        $metaReqs->module_id            = $req->moduleId;
-        $metaReqs->relative_path        = $req->relativePath;
-        // $metaReqs->document             = $req->document;
-        $metaReqs->uploaded_by          = $auth['id'];
-        $metaReqs->uploaded_by_type     = $auth['user_type'];
-        $metaReqs->remarks              = $req->remarks ?? null;
-        $metaReqs->doc_code             = $req->docCode;
-        $metaReqs->owner_dtl_id         = $req->ownerDtlId;
-        $metaReqs->unique_id            = $req->unique_id ?? null;
-        $metaReqs->reference_no         = $req->reference_no ?? null;
 
-        $metaReqs->save();
-    }
 
 
     /**
@@ -452,6 +430,7 @@ class WfActiveDocument extends Model
             ->get();
     }
 
+
     public function getRigDocsByAppNoEsighn($workflowId, $moduleId)
     {
         $upload_url = Config::get('constants.DMS_URL');
@@ -467,11 +446,79 @@ class WfActiveDocument extends Model
                 'd.reference_no',
                 'd.doc_category',
                 'd.status',
+                'd.reference_no',
                 'o.applicant_name as owner_name'
             )
             ->leftJoin('rig_active_applicants as o', 'o.id', '=', 'd.owner_dtl_id')
             ->where('d.workflow_id', $workflowId)
             ->where('d.module_id', $moduleId)
-            ->where('d.doc_code', 'Lisence');
+            ->where('d.doc_code', 'Lisence')
+            ->where('d.sighn_doc', 'true');
+    }
+    public function getRigDocsByAppNoEsighns($workflowId, $moduleId)
+    {
+        $upload_url = Config::get('constants.DMS_URL');
+        return DB::table('wf_active_documents as d')
+            ->select(
+                'd.id',
+                'd.document',
+                'd.active_id',
+                DB::raw("concat('$upload_url/',relative_path,'/',document) as ref_doc_path"),
+                'd.remarks',
+                'd.verify_status',
+                'd.doc_code',
+                'd.reference_no',
+                'd.doc_category',
+                'd.status',
+                'd.reference_no',
+                'o.applicant_name as owner_name'
+            )
+            ->leftJoin('rig_active_applicants as o', 'o.id', '=', 'd.owner_dtl_id')
+            ->where('d.workflow_id', $workflowId)
+            ->where('d.module_id', $moduleId)
+            ->where('d.doc_code', 'Lisence')
+            ->where('d.sighn_doc', 'false')
+            ->where('d.verify_status', 0);
+    }
+    /**
+     * | Upload document funcation
+     */
+    public function saveSighnDocs($req, $moduleId, $workflowId, $relativePath, $ulbId)
+    {
+        $auth = collect(authUser($req));
+        $metaReqs = new WfActiveDocument();
+        $metaReqs->active_id            = $req->activeId;
+        $metaReqs->workflow_id          = $workflowId;
+        $metaReqs->ulb_id               = $ulbId;
+        $metaReqs->module_id            = $moduleId;
+        $metaReqs->relative_path        = $relativePath;
+        // $metaReqs->document             = $req->document;
+        $metaReqs->uploaded_by          = $auth['id'];
+        $metaReqs->uploaded_by_type     = $auth['user_type'];
+        $metaReqs->remarks              = $req->remarks ?? null;
+        $metaReqs->doc_code             = 'Lisence';
+        $metaReqs->owner_dtl_id         = $req->ownerDtlId;
+        $metaReqs->unique_id            = $req->uniqueId ?? null;
+        $metaReqs->reference_no         = $req->referenceNo ?? null;
+        $metaReqs->verify_status         = 1;
+        $metaReqs->sighn_doc            = true ?? null;
+
+        $metaReqs->save();
+    }
+
+    /**
+     * | update varify license document
+     * | @param metaReqs
+       
+     */
+    public function updateVarifyStatus($metaReqs)
+    {
+        WfActiveDocument::where('active_id', $metaReqs['activeId'])
+            ->where('workflow_id', $metaReqs['workflowId'])
+            ->where('module_id', $metaReqs['moduleId'])
+            ->where('verify_status', 0)
+            ->update([
+                "verify_status" => 1
+            ]);
     }
 }

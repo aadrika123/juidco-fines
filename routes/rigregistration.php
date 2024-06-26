@@ -69,6 +69,7 @@ Route::middleware(['request_logger'])->group(function () {
         Route::post('application/get-uploaded-docs', 'getUploadDocuments');                                      // Admin/ Citizen
         Route::post('get-renewal-registration-details', 'getRenewalApplicationDetails');
         Route::post('btc-list-application', 'btcListJsk');                                                        // Workflow
+
     });
 
     /**
@@ -87,7 +88,10 @@ Route::middleware(['request_logger'])->group(function () {
         Route::post('back-to-jsk-list', 'btJskInbox');                                                          // Workflow
         Route::post('back-to-citizen', 'backToCitizen');                                                        // Workflow
         Route::post('generateLicense', 'generateLicense');                                                      // Workflow
-        Route::post('application/get-uploaded-doc', 'getUploadDocumentsEsign');                                     // Admin/ Citizen
+        Route::post('application/get-uploaded-doc', 'getUploadDocumentsEsign');                                 // Admin/ Citizen
+        Route::post('application/save-esighn-documents', 'saveEsighndocuments');                                // Esighn Documents
+        Route::get('application/save-esighn', 'getUploadDocumentsEsigns');                                     // test case
+        Route::post('application/get-sighnDocument', 'getSighnDocument');                                       // Admin/ Citizen
 
     });
 

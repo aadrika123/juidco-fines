@@ -37,6 +37,7 @@ return [
     ],
     "WORKFLOW_MASTER_ID" => 39,
     "RIG_MODULE_ID" => 15,
+    "workflow_id" => 200,
     "ROLE_LABEL" => [
         "BO" => 11,
         "DA" => 6,
