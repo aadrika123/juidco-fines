@@ -866,6 +866,7 @@ class RigPaymentController extends Controller
             $data['numberOfTransaction'] =  $details->count();
             $data['date'] = Carbon::parse($date)->format('d-m-Y');
             $data['tcId'] = $userId;
+            $data['tcName'] = $details->pluck('user_name');
 
             return responseMsgs(true, "Cash Verification Details", remove_null($data), $apiId, $version, responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
