@@ -461,22 +461,22 @@ class RigPaymentController extends Controller
                 $this->postOtherPaymentModes($req);
             }
 
-            $this->saverigRequestStatus($req, $offlineVerificationModes, $payRelatedDetails['rigCharges'], $RigTrans['transactionId'], $payRelatedDetails['applicationDetails']);
-            $payRelatedDetails['applicationDetails']->payment_status = 1;
-            $payRelatedDetails['applicationDetails']->save();
+            // $this->saverigRequestStatus($req, $offlineVerificationModes, $payRelatedDetails['rigCharges'], $RigTrans['transactionId'], $payRelatedDetails['applicationDetails']);
+            // $payRelatedDetails['applicationDetails']->payment_status = 1;
+            // $payRelatedDetails['applicationDetails']->save();
 
-            # Rerive Data for license
-            $data = [
-                "RegistrationNo"   => $payRelatedDetails['applicationDetails']['registration_id'],
-                "AplicantName"     => $payRelatedDetails['applicationDetails']['applicant_name'],
-                "approveDate"      => $payRelatedDetails['applicationDetails']['approve_date'],
-                "approveEndDate"   => $payRelatedDetails['applicationDetails']['approve_end_date'],
-                "vehicleNo"        => $payRelatedDetails['applicationDetails']['vehicle_no'],
-                "mobileNo"         => $payRelatedDetails['applicationDetails']['mobile_no'],
-                "applicationNo"    => $payRelatedDetails['applicationDetails']['application_no'],
-                "applyDate"        => $payRelatedDetails['applicationDetails']['application_apply_date']
-            ];
-            $this->saveLisenceLetter($data, $req, $workflowId, $ulbId);
+            // # Rerive Data for license
+            // $data = [
+            //     "RegistrationNo"   => $payRelatedDetails['applicationDetails']['registration_id'],
+            //     "AplicantName"     => $payRelatedDetails['applicationDetails']['applicant_name'],
+            //     "approveDate"      => $payRelatedDetails['applicationDetails']['approve_date'],
+            //     "approveEndDate"   => $payRelatedDetails['applicationDetails']['approve_end_date'],
+            //     "vehicleNo"        => $payRelatedDetails['applicationDetails']['vehicle_no'],
+            //     "mobileNo"         => $payRelatedDetails['applicationDetails']['mobile_no'],
+            //     "applicationNo"    => $payRelatedDetails['applicationDetails']['application_no'],
+            //     "applyDate"        => $payRelatedDetails['applicationDetails']['application_apply_date']
+            // ];
+            // $this->saveLisenceLetter($data, $req, $workflowId, $ulbId);
             DB::commit();
 
             #_Whatsaap Message
@@ -522,7 +522,7 @@ class RigPaymentController extends Controller
 
             $filename = $req->id . "-LICENSE" . '.' . 'pdf';
             $pdf = PDF::loadView('Rig_Machine_License', ["data" => $data]);
-            
+
             $customPaper = [0, 0, 600, 900]; // 11 * 72 = 792, 17 * 72 = 1224
             $pdf->setPaper($customPaper, 'landscape');
 
@@ -828,7 +828,7 @@ class RigPaymentController extends Controller
                     "date" => Carbon::parse($date)->format('d-m-Y'),
                 ];
             });
-
+            $data = (array_values(objtoarray($data)));
             return responseMsgs(true, "Cash Verification List", $data, $apiId, $version, responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", $apiId, $version, responseTime(), "POST", $req->deviceId);
@@ -855,7 +855,7 @@ class RigPaymentController extends Controller
             $details = $mRigTransaction->cashDtl($date, $userId)
                 ->where('emp_dtl_id', $userId)
                 ->get();
-            return $details;
+             $details;
 
             if (collect($details)->isEmpty())
                 throw new Exception("No Application Found for this id");
