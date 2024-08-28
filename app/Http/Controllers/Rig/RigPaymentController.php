@@ -461,11 +461,11 @@ class RigPaymentController extends Controller
                 $this->postOtherPaymentModes($req);
             }
 
-            // $this->saverigRequestStatus($req, $offlineVerificationModes, $payRelatedDetails['rigCharges'], $RigTrans['transactionId'], $payRelatedDetails['applicationDetails']);
-            // $payRelatedDetails['applicationDetails']->payment_status = 1;
-            // $payRelatedDetails['applicationDetails']->save();
+            $this->saverigRequestStatus($req, $offlineVerificationModes, $payRelatedDetails['rigCharges'], $RigTrans['transactionId'], $payRelatedDetails['applicationDetails']);
+            $payRelatedDetails['applicationDetails']->payment_status = 1;
+            $payRelatedDetails['applicationDetails']->save();
 
-            // # Rerive Data for license
+            # Rerive Data for license
             // $data = [
             //     "RegistrationNo"   => $payRelatedDetails['applicationDetails']['registration_id'],
             //     "AplicantName"     => $payRelatedDetails['applicationDetails']['applicant_name'],
