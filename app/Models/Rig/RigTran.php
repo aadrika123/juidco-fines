@@ -177,7 +177,8 @@ class RigTran extends Model
             "rig_cheque_dtls.cheque_no",
             DB::raw("TO_CHAR(clear_bounce_date, 'DD-MM-YYYY') as clear_bounce_date"),
             "users.name as user_name",
-            'rig_cheque_dtls.status'
+            'rig_cheque_dtls.status',
+            'rig_cheque_dtls.remarks'
         )
             ->join('rig_cheque_dtls', 'rig_cheque_dtls.transaction_id', '=', 'rig_trans.id')
             ->leftJoin('users', 'users.id', 'rig_trans.emp_dtl_id')
