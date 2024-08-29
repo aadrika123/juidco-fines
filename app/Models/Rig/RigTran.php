@@ -180,7 +180,7 @@ class RigTran extends Model
             'rig_cheque_dtls.status'
         )
             ->join('rig_cheque_dtls', 'rig_cheque_dtls.transaction_id', '=', 'rig_trans.id')
-            ->leftJoin('users', 'users.id', 'rig_cheque_dtls.user_id')
+            ->leftJoin('users', 'users.id', 'rig_trans.emp_dtl_id')
             ->whereIn('payment_mode', ['CHEQUE', 'DD'])
             ->where('rig_trans.ulb_id', $ulbId)
             ->orderby('rig_cheque_dtls.id', 'Desc');
