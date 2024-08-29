@@ -22,8 +22,10 @@ use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropProperty;
 use App\Models\Rig\MRigFee;
+use App\Models\Rig\PaymentReconciliation;
 use App\Models\Rig\RigActiveApplicant;
 use App\Models\Rig\RigActiveRegistration;
+use App\Models\Rig\RigApproveApplicant;
 use App\Models\Rig\RigApprovedRegistration;
 use App\Models\Rig\RigChequeDtl;
 use App\Models\Rig\RigDailycollection;
@@ -855,7 +857,7 @@ class RigPaymentController extends Controller
             $details = $mRigTransaction->cashDtl($date, $userId)
                 ->where('emp_dtl_id', $userId)
                 ->get();
-             $details;
+            $details;
 
             if (collect($details)->isEmpty())
                 throw new Exception("No Application Found for this id");
@@ -980,6 +982,275 @@ class RigPaymentController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), [], "1003", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+    #---created by Arshad Hussain
+    /**
+     * | search chque transactions for Advertisement,Market,  
+     * |  Function = 1
+     */
+    public function searchTransaction(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'fromDate' => 'required',
+                'toDate' => 'required',
+                'workflowID' => 'nullable'
+            ]);
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validator->errors()
+                ]);
+            }
+            $ulbId = authUser($request)->ulb_id;
+            $workflowID = $request->workflowID;
+            $paymentMode = $request->paymentMode;
+            $verifyStatus = $request->verificationType;
+            $fromDate = Carbon::create($request->fromDate)->format('Y-m-d');
+            $toDate = Carbon::create($request->toDate)->format('Y-m-d');
+
+            $data = $this->CommonHandleTransaction($ulbId, $request, $fromDate, $toDate, $workflowID);                 // common funtion all workflows of ADVERTISEMENT & MARKET
+
+            $data = $this->filterDataByPaymentMode($data, $paymentMode);
+            $data = $this->filterDataByVerificationStatus($data, $verifyStatus);
+
+            if (collect($data)->isNotEmpty()) {
+                return responseMsgs(true, "Data Acording to request!", $data, '010801', '01', '382ms-547ms', 'Post', '');
+            }
+            return responseMsg(false, "data not found!", "");
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+    /**\
+     * | This is common function for searching chewque details 
+     * | Function = 2
+     */
+
+    private function CommonHandleTransaction($ulbId, $request, $fromDate, $toDate, $workflowID)
+    {
+        $rigTransaction = new RigTran();
+        $chequeTranDtl = $rigTransaction->chequeTranDtl($ulbId);
+        //  $chequeTranDtl = $chequeTranDtl->where('rig_trans.workflow_id', $workflowID);
+        if ($request->verificationType != "bounce") {
+            $chequeTranDtl = $chequeTranDtl->where("rig_trans.status", 1);
+        }
+        if ($request->chequeNo) {
+            return $chequeTranDtl->where('cheque_no', $request->chequeNo)->get();
+        }
+        return $chequeTranDtl->whereBetween('tran_date', [$fromDate, $toDate])->get();
+    }
+
+    /**
+     * | Function = 3
+     */
+    private function filterDataByPaymentMode($data, $paymentMode)
+    {
+        if ($paymentMode == 'DD') {
+            $filteredData = collect($data)->where('payment_mode', 'DD');
+            return array_values(objtoarray($filteredData));
+        }
+        if ($paymentMode == 'CHEQUE') {
+            $filteredData = collect($data)->where('payment_mode', 'CHEQUE');
+            return array_values(objtoarray($filteredData));
+        }
+        if ($paymentMode == 'NEFT') {
+            $filteredData = collect($data)->where('payment_mode', 'NEFT');
+            return array_values(objtoarray($filteredData));
+        }
+        return $data;
+    }
+
+    /**
+     * |Function = 4
+     */
+    private function filterDataByVerificationStatus($data, $verifyStatus)
+    {
+        if ($verifyStatus == 'pending') {
+            $filteredData = collect($data)->where('status', '2');
+            return array_values(objtoarray($filteredData));
+        }
+        if ($verifyStatus == 'clear') {
+            $filteredData = collect($data)->where('status', '1');
+            return array_values(objtoarray($filteredData));
+        }
+        if ($verifyStatus == 'bounce') {
+            $filteredData = collect($data)->where('status', '3');
+            return array_values(objtoarray($filteredData));
+        }
+        return $data;
+    }
+
+    /**
+     * | Function =5 
+     */
+    public function chequeDtlByIdRig(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'workflowId' => 'nullable',
+                'chequeId' => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['status' => False, 'msg' => $validator()->errors()]);
+            }
+            $advchequedtls   = new RigChequeDtl();
+
+            $data = $advchequedtls->chequeDtlById($request);
+            if ($data)
+                return responseMsg(true, "data found", $data);
+            else
+                return responseMsg(false, "data not found!", "");
+        } catch (Exception $error) {
+            return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+
+    /**
+     * |Rig 
+     This for final cheque clear or Bounce 
+     * |
+     */
+
+
+    public function chequeClearance(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'workflowId'    => 'nullable',
+                'chequeId'      => 'required',
+                'status'        => 'required|in:clear,bounce',
+                'clearanceDate' => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                return validationError($validator);
+            }
+            $user = authUser($request);
+            $ulbId = $user->ulb_id;
+            $userId = $user->id;
+            $workfowId = $request->workflowId ?? 200;
+            $paymentStatus = 1;
+            $applicationPaymentStatus = 1;
+            $mPaymentReconciliation = new PaymentReconciliation();
+            $mChequeDtl =  new RigChequeDtl();
+            $rigWorkflowId = Config::get('rig.workflow_id');
+            if ($request->status == 'clear') {
+                $applicationPaymentStatus = $paymentStatus = 1;
+            }
+            if ($request->status == 'bounce') {
+                $paymentStatus = 2;
+                $applicationPaymentStatus = 0;
+            }
+
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+            if ($workfowId == $rigWorkflowId && $applicationPaymentStatus == 1) {
+                $mChequeDtl =  RigChequeDtl::find($request->chequeId);
+                if ($mChequeDtl->status == 1) {
+                    throw new Exception('Cheque Already Deactivated!');
+                }
+
+                $mChequeDtl->status = $paymentStatus;
+                $mChequeDtl->clear_bounce_date = $request->clearanceDate;
+                $mChequeDtl->bounce_amount = $request->cancellationCharge;
+                $mChequeDtl->remarks = $request->remarks;
+                $mChequeDtl->save();
+
+                $transaction = RigTran::where('id', $mChequeDtl->transaction_id)
+                    ->first();
+                $applicationId = $transaction->related_id;
+
+                if ($applicationId) {
+                    $wardId = RigApprovedRegistration::where('application_id', $applicationId)->value('ward_id');
+                }
+
+
+                RigTran::where('id', $mChequeDtl->transaction_id)
+                    ->update(
+                        [
+                            'verify_status' => $paymentStatus,
+                            'verified_date' => Carbon::now(),
+                            'verified_by' => $userId
+                        ]
+                    );
+                $msg = 'Cheque Clear successfully';
+            }
+            if ($workfowId == $rigWorkflowId && $applicationPaymentStatus == 0) {
+                if ($mChequeDtl->status == 1) {
+                    throw new Exception('Cheque Already Verified!');
+                }
+                $mChequeDtl =  RigChequeDtl::find($request->chequeId);
+                if ($mChequeDtl->status == 1) {
+                    throw new Exception('Cheque Already Deactivated!');
+                }
+                $mChequeDtl->status = 3;
+                $mChequeDtl->clear_bounce_date = $request->clearanceDate;
+                $mChequeDtl->remarks = $request->remarks;
+                $mChequeDtl->save();
+
+                $transaction = RigTran::where('id', $mChequeDtl->transaction_id)->first();
+                $applicationId = $transaction->related_id;
+
+                if ($applicationId) {
+                    $wardId = RigApprovedRegistration::where('application_id', $applicationId)->value('ward_id');
+                }
+
+                $mChequeDtl =  RigChequeDtl::find($request->chequeId);
+                $mChequeDtl->status = 3;
+                RigTran::where('id', $mChequeDtl->transaction_id)
+                    ->update(
+                        [
+                            'verify_status' => 2,
+                            'status' => 0,
+                            'verified_date' => Carbon::now(),
+                            'verified_by' => $userId
+                        ]
+                    );
+                RigApprovedRegistration::where('application_id', $applicationId)->update(['payment_status' => 0]);
+                RigActiveRegistration::where('id', $applicationId)->update(['payment_status' => 0]);
+                RigRegistrationCharge::where('application_id', $applicationId)->update(['paid_status' => 0]);
+                TempTransaction::where('transaction_id', $mChequeDtl->transaction_id)
+                    // ->where('workflow_id', $mChequeDtl->workflow_id)
+                    ->update(['status' => 0]);
+                $msg = 'Cheque Bounce successfully';
+            }
+            $request->merge([
+                'id' => $mChequeDtl->id,
+                'paymentMode' => $transaction->payment_mode,
+                'transactionNo' => $transaction->tran_no,
+                'transactionAmount' => $transaction->amount,
+                'transactionDate' => $transaction->tran_date,
+                'wardId' => $wardId,
+                'chequeNo' => $mChequeDtl->cheque_no,
+                'branchName' => $mChequeDtl->branch_name,
+                'bankName' => $mChequeDtl->bank_name,
+                'clearanceDate' => $mChequeDtl->clear_bounce_date,
+                'bounceReason' => $mChequeDtl->remarks,
+                'chequeDate' => $mChequeDtl->cheque_date,
+                'moduleId' => 15,
+                'ulbId' => $ulbId,
+                'userId' => $userId,
+                'workflowId' => $workfowId
+            ]);
+
+            // return $request;
+            $mPaymentReconciliation->addReconcilation($request);
+
+
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
+            return responseMsg(true, $msg, '');
+        } catch (Exception $error) {
+            DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
+            return responseMsg(false, "ERROR!", $error->getMessage());
         }
     }
 }

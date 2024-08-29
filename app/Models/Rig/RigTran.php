@@ -158,4 +158,31 @@ class RigTran extends Model
             ->where('verify_status', 0)
             ->where('tran_date', $date);
     }
+
+     /**
+     * | Cheque Dtl And Transaction Dtl
+     */
+    public function chequeTranDtl($ulbId)
+    {
+        return RigTran::select(
+            'rig_cheque_dtls.id',
+            DB::raw("TO_CHAR(tran_date, 'DD-MM-YYYY') as tran_date"),
+            'rig_trans.tran_no',
+            'payment_mode',
+            'amount',
+            DB::raw("TO_CHAR(rig_cheque_dtls.cheque_date, 'DD-MM-YYYY') as cheque_date"),
+            "rig_cheque_dtls.bank_name",
+            "rig_cheque_dtls.branch_name",
+            "rig_cheque_dtls.cheque_no",
+            DB::raw("TO_CHAR(clear_bounce_date, 'DD-MM-YYYY') as clear_bounce_date"),
+            "users.name as user_name",
+            'rig_cheque_dtls.status'
+        )
+            ->join('rig_cheque_dtls', 'rig_cheque_dtls.transaction_id', '=', 'rig_trans.id')
+            ->leftJoin('users', 'users.id', 'rig_cheque_dtls.user_id')
+            ->whereIn('payment_mode', ['CHEQUE', 'DD'])
+            ->where('rig_trans.ulb_id', $ulbId)
+            ->orderby('rig_cheque_dtls.id', 'Desc');
+    }
+
 }

@@ -105,5 +105,8 @@ Route::middleware(['request_logger'])->group(function () {
         Route::post('cash-verification-dtl', 'cashVerificationDtl');                                            #_Cash Verification Detail ---------------- 0704
         Route::post('verify-cash', 'verifyCash');                                                               #_Verify Cash ----------------------------- 0705  
         Route::post('transaction-dactivation', 'deactivatePayment');                                            #_Transaction Deactivation  ----------------------------- 0705                                                                 
+        Route::post('search/transaction-cheque', 'searchTransaction');                                          #_Transaction Deactivation  ----------------------------- 0705                                                                 
+        Route::post('search/transaction-cheque-dtl', 'chequeDtlByIdRig');                                       #_Transaction Deactivation  ----------------------------- 0705                                                                 
+        Route::post('transaction/cheque-clear-bounce', 'chequeClearance');                                       #_Transaction Deactivation  ----------------------------- 0705                                                                 
     });
 });

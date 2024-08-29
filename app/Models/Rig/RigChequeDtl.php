@@ -34,4 +34,15 @@ class RigChequeDtl extends Model
         return RigChequeDtl::where('transaction_id', $tranId)
             ->where('status', 1);
     }
+     /**
+     * | Get data of cheque details 
+     */
+    public function chequeDtlById($request)
+    {
+        return RigChequeDtl::select('*')
+            ->where('id', $request->chequeId)
+            // ->where('workflow_id', $request->workflowId)
+            ->where('status', 2)
+            ->first();
+    }
 }
