@@ -1039,9 +1039,9 @@ class RigPaymentController extends Controller
         $rigTransaction = new RigTran();
         $chequeTranDtl = $rigTransaction->chequeTranDtl($ulbId);
         //  $chequeTranDtl = $chequeTranDtl->where('rig_trans.workflow_id', $workflowID);
-        if ($request->verificationType != "bounce") {
-            $chequeTranDtl = $chequeTranDtl->where("rig_trans.status", 1);
-        }
+        // if ($request->verificationType != "bounce") {
+        //     $chequeTranDtl = $chequeTranDtl->where("rig_trans.status", 1);
+        // }
         if ($request->chequeNo != null) {
             return $chequeTranDtl->where('cheque_no', $request->chequeNo)->get();
         }
@@ -1056,6 +1056,7 @@ class RigPaymentController extends Controller
      */
     private function filterDataByPaymentMode($data, $paymentMode)
     {
+        
         if ($paymentMode == 'DD') {
             $filteredData = collect($data)->where('payment_mode', 'DD');
             return array_values(objtoarray($filteredData));
@@ -1076,6 +1077,9 @@ class RigPaymentController extends Controller
      */
     private function filterDataByVerificationStatus($data, $verifyStatus)
     {
+        if($verifyStatus  == 'All'){
+            return array_values(objtoarray($data));
+        }
         if ($verifyStatus == 'pending') {
             $filteredData = collect($data)->where('status', '2');
             return array_values(objtoarray($filteredData));
