@@ -996,7 +996,10 @@ class RigPaymentController extends Controller
             $validator = Validator::make($request->all(), [
                 'fromDate' => 'required',
                 'toDate' => 'required',
-                'workflowID' => 'nullable'
+                'workflowID' => 'nullable',
+                'paymentMode' => 'nullable',
+                'verificationType' => 'nullable',
+                'chequeNo'   => 'nullable'
             ]);
             if ($validator->fails()) {
                 return response()->json([
@@ -1039,8 +1042,11 @@ class RigPaymentController extends Controller
         if ($request->verificationType != "bounce") {
             $chequeTranDtl = $chequeTranDtl->where("rig_trans.status", 1);
         }
-        if ($request->chequeNo) {
+        if ($request->chequeNo != null) {
             return $chequeTranDtl->where('cheque_no', $request->chequeNo)->get();
+        }
+        if ($request->paymentMode != null){
+            return $chequeTranDtl->where('payment_mode', $request->paymentMode)->get();
         }
         return $chequeTranDtl->whereBetween('tran_date', [$fromDate, $toDate])->get();
     }

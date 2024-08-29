@@ -51,7 +51,7 @@ class RigTran extends Model
         )
             ->where('rig_trans.tran_no', $tranNo)
             ->where('rig_trans.status', 1)
-            ->join('ulb_masters','ulb_masters.id','rig_trans.ulb_id')
+            ->join('ulb_masters', 'ulb_masters.id', 'rig_trans.ulb_id')
             ->orderByDesc('rig_trans.id');
     }
 
@@ -159,7 +159,7 @@ class RigTran extends Model
             ->where('tran_date', $date);
     }
 
-     /**
+    /**
      * | Cheque Dtl And Transaction Dtl
      */
     public function chequeTranDtl($ulbId)
@@ -168,6 +168,7 @@ class RigTran extends Model
             'rig_cheque_dtls.id',
             DB::raw("TO_CHAR(tran_date, 'DD-MM-YYYY') as tran_date"),
             'rig_trans.tran_no',
+            'rig_trans.verify_status',
             'payment_mode',
             'amount',
             DB::raw("TO_CHAR(rig_cheque_dtls.cheque_date, 'DD-MM-YYYY') as cheque_date"),
@@ -184,5 +185,4 @@ class RigTran extends Model
             ->where('rig_trans.ulb_id', $ulbId)
             ->orderby('rig_cheque_dtls.id', 'Desc');
     }
-
 }
