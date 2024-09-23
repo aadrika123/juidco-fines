@@ -500,6 +500,7 @@ class PenaltyRecordController extends Controller
 
             $challanRecord = $mPenaltyChallan->store($challanReqs);
             $penaltyRecord->status = 2;
+            $penaltyRecord->amount = $finalRecord->amount;
             $penaltyRecord->save();
 
             $data['id'] = $challanRecord->id;
