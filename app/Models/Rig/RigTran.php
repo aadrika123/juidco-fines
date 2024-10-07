@@ -156,7 +156,7 @@ class RigTran extends Model
         return RigTran::select('rig_trans.*', 'users.user_name', 'users.id as user_id', 'mobile')
             ->join('users', 'users.id', 'rig_trans.emp_dtl_id')
             ->where('rig_trans.status', 1)
-            ->where('verify_status', [0, 2])
+            ->whereIn('verify_status', [0, 2])
             ->where('tran_date', $date);
     }
 
