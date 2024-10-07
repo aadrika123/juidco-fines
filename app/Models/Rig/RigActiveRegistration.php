@@ -86,12 +86,13 @@ class RigActiveRegistration extends Model
     **
      * | Get all details according to key 
      */
-    public function getAllApplicationDetails($value, $key)
+    public function getAllApplicationDetails($value, $key, $ulbId)
     {
         return DB::table('rig_active_registrations')
             ->leftJoin('wf_roles', 'wf_roles.id', 'rig_active_registrations.current_role_id')
             ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
             ->join('rig_vehicle_active_details', 'rig_vehicle_active_details.application_id', 'rig_active_registrations.id')
+            ->where('rig_active_registrations.ulb_id', $ulbId)
             ->where('rig_active_registrations.' . $key, $value)
             ->where('rig_active_registrations.status', 1);
     }
@@ -289,22 +290,24 @@ class RigActiveRegistration extends Model
         return $application;
     }
 
-    public function pendingApplicationCount()
+    public function pendingApplicationCount($ulbId)
     {
         $data =  RigActiveRegistration::select(
             DB::raw('count(rig_active_registrations.id) as total_pending_application')
         )
+            ->where('rig_active_registrations.ulb_id', $ulbId)
             ->where('rig_active_registrations.status', 1)
             ->first();
 
         return $data;
     }
 
-    public function approvedApplicationCount()
+    public function approvedApplicationCount($ulbId)
     {
         $data =  RigApprovedRegistration::select(
             DB::raw('count(rig_approved_registrations.id) as total_approved_application')
         )
+            ->where('rig_approved_registrations.ulb_id', $ulbId)
             ->where('rig_approved_registrations.status', 1)
             ->first();
 

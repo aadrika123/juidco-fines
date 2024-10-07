@@ -443,6 +443,7 @@ class RigRegistrationController extends Controller
         try {
             $user                   = authUser($req);
             $confUserType           = $this->_userType;
+            $ulbId                  = $user->ulb_id;
             $confDbKey              = $this->_dbKey;
             $mRigActiveRegistration = new RigActiveRegistration();
             $mRigTran               = new RigTran();
@@ -452,7 +453,7 @@ class RigRegistrationController extends Controller
             }
             # Collect querry Exceptions 
             try {
-                $refAppDetails = $mRigActiveRegistration->getAllApplicationDetails($user->id, $confDbKey['1'])
+                $refAppDetails = $mRigActiveRegistration->getAllApplicationDetails($user->id, $confDbKey['1'], $ulbId)
                     ->select(
                         DB::raw("REPLACE(rig_active_registrations.application_type, '_', ' ') AS ref_application_type"),
                         DB::raw("TO_CHAR(rig_active_registrations.application_apply_date, 'DD-MM-YYYY') as ref_application_apply_date"),
@@ -1371,8 +1372,8 @@ class RigRegistrationController extends Controller
                 $data['recentApplications'] = $mRigActiveRegistration->recentApplicationJsk($userId, $ulbId);
             }
 
-            $data['pendingApplicationCount']  = $mRigActiveRegistration->pendingApplicationCount();
-            $data['approvedApplicationCount'] = $mRigActiveRegistration->approvedApplicationCount();
+            $data['pendingApplicationCount']  = $mRigActiveRegistration->pendingApplicationCount($ulbId);
+            $data['approvedApplicationCount'] = $mRigActiveRegistration->approvedApplicationCount($ulbId);
             $data['UlbName']                  = $ulbDetails['ulb_name'];
             return responseMsgs(true, "Recent Application", remove_null($data), "011901", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
