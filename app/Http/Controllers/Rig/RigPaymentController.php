@@ -850,13 +850,16 @@ class RigPaymentController extends Controller
         if ($validator->fails())
             return validationError($validator);
         try {
+            $user  = authUser($req);
+            $ulbId = $user->ulb_id;
             $apiId = "0704";
             $version = "01";
             $mRigTransaction = new RigTran();
             $userId =  $req->userId;
             $date = date('Y-m-d', strtotime($req->date));
             $details = $mRigTransaction->cashDtl($date, $userId)
-                ->where('emp_dtl_id', $userId)
+                ->where('rig_trans.emp_dtl_id', $userId)
+                ->where('rig_trans.ulb_id', $ulbId)
                 ->get();
             $details;
 
@@ -865,12 +868,13 @@ class RigPaymentController extends Controller
 
             $data['tranDtl'] = collect($details)->values();
             $data['Cash'] = collect($details)->where('payment_mode', 'CASH')->sum('amount');
+            $data['Cheque'] = collect($details)->where('payment_mode', 'CHEQUE')->sum('amount');
+            $data['Dd'] = collect($details)->where('payment_mode', 'Dd')->sum('amount');
             $data['totalAmount'] =  $details->sum('amount');
             $data['numberOfTransaction'] =  $details->count();
             $data['date'] = Carbon::parse($date)->format('d-m-Y');
             $data['tcId'] = $userId;
-            $data['tcName'] = $details->pluck('user_name');
-
+            $data['tcName'] = $details->pluck('user_name')->unique()->values();
             return responseMsgs(true, "Cash Verification Details", remove_null($data), $apiId, $version, responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", $apiId, $version, responseTime(), "POST", $req->deviceId);
@@ -1262,6 +1266,44 @@ class RigPaymentController extends Controller
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, "ERROR!", $error->getMessage());
+        }
+    }
+
+    /**
+     * | Edit Cheque No
+       | Currently not in use
+     */
+    public function editChequeNo(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|numeric',
+            'chequeNo' => 'required',
+            'bankName' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validator->errors()
+            ], 401);
+        }
+        try {
+            $tranDtl = RigTran::find($request->id);
+            $tranId = $tranDtl->id;
+
+            DB::beginTransaction();
+            RigChequeDtl::where('transaction_id', $tranId)
+                ->update(
+                    [
+                        'cheque_no' => $request->chequeNo,
+                        'bank_name' => $request->bankName,
+                    ]
+                );
+            DB::commit();
+            return responseMsgs(true, "Edit Successful", "", "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         }
     }
 }

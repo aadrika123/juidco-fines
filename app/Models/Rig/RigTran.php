@@ -151,13 +151,15 @@ class RigTran extends Model
     /**
      * | Details for Cash Verification
      */
-    public function cashDtl($date)
+    public function cashDtl($date,$ulbId)
     {
-        return RigTran::select('rig_trans.*', 'users.user_name', 'users.id as user_id', 'mobile')
+        return RigTran::select('rig_trans.*', 'users.user_name', 'users.id as user_id', 'mobile', 'rig_cheque_dtls.cheque_no', 'rig_cheque_dtls.bank_name', 'rig_cheque_dtls.branch_name')
             ->join('users', 'users.id', 'rig_trans.emp_dtl_id')
+            ->leftjoin('rig_cheque_dtls', 'rig_cheque_dtls.application_id', 'rig_trans.related_id')
             ->where('rig_trans.status', 1)
-            ->whereIn('verify_status', [0, 2])
-            ->where('tran_date', $date);
+            // ->where('rig_trans.ulb_id',$ulbId)
+            ->whereIn('rig_trans.verify_status', [0, 2])
+            ->where('rig_trans.tran_date', $date);
     }
 
     /**
