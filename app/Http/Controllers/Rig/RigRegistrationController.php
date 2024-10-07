@@ -1665,6 +1665,8 @@ class RigRegistrationController extends Controller
         }
         // return $req->all();
         try {
+            $user    = authUser($req);
+            $ulbId   = $user->ulb_id;
             $perPage = $req->perPage ? $req->perPage : 10;
 
             $paymentMode = null;
@@ -1681,7 +1683,7 @@ class RigRegistrationController extends Controller
                 $paymentMode = $req->paymentMode;
             }
             $mRigPayment = new RigTran();
-            $data = $mRigPayment->listCollections($fromDate, $toDate,);                              // Get Shop Payment collection between givrn two dates
+            $data = $mRigPayment->listCollections($fromDate, $toDate, $ulbId);                              // Get Shop Payment collection between givrn two dates
             if ($req->paymentMode != 0)
                 $data = $data->where('rig_trans.payment_mode', $req->paymentMode);
             if ($req->auth['user_type'] == 'JSK' || $req->auth['user_type'] == 'TC')

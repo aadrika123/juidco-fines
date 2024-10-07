@@ -126,7 +126,7 @@ class RigTran extends Model
             ->where('payment_mode', '=', 'CASH');
     }
 
-    public function listCollections($fromDate, $toDate,)
+    public function listCollections($fromDate, $toDate, $ulbId)
     {
         return RigTran::select(
             'rig_trans.id as transactionId',
@@ -144,6 +144,7 @@ class RigTran extends Model
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_active_registrations.ward_id')
             ->where('rig_trans.tran_date', '>=', $fromDate)
             ->where('rig_trans.tran_date', '<=', $toDate)
+            ->where('rig_trans.ulb_id', $ulbId)
             ->where('rig_trans.status', 1);
     }
 

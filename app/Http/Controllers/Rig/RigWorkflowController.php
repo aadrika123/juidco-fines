@@ -936,6 +936,7 @@ class RigWorkflowController extends Controller
         try {
             $canTakePayment             = false;
             $user                       = authUser($request);
+            $ulbId                      = $user->ulb_id;
             $userId                     = $user->id;
             $confWorkflowMasterId       = $this->_workflowMasterId;
             $key                        = $request->filterBy;
@@ -988,6 +989,8 @@ class RigWorkflowController extends Controller
                     ->where('rig_approved_registrations.status', '<>', 0)
                     ->where('rig_approve_applicants.status', '<>', 0)
                     ->where('rig_approve_active_details.status', '<>', 0)
+                    ->where('rig_approved_registrations.ulb_id', $ulbId)
+                    // ->where('rig_approve_active_details.ulb_id', '<>', 0)
                     // ->where('rig_approved_registrations.approve_user_id', $userId)
                     // ->where('rig_approved_registrations.finisher_role_id', $roleDetails->role_id)
                     // ->where('rig_approved_registrations.current_role_id', $roleDetails->role_id)
@@ -1083,6 +1086,7 @@ class RigWorkflowController extends Controller
         try {
             $user                       = authUser($request);
             $userId                     = $user->id;
+            $ulbId                      = $user->ulb_id;
             $confWorkflowMasterId       = $this->_workflowMasterId;
             $key                        = $request->filterBy;
             $paramenter                 = $request->parameter;
@@ -1125,6 +1129,7 @@ class RigWorkflowController extends Controller
                     ->where('rig_rejected_registrations.status', '<>', 0)
                     ->where('rig_rejected_applicants.status', '<>', 0)
                     ->where('rig_vehicle_rejected_details.status', '<>', 0)
+                    ->where('rig_rejected_registrations.ulb_id', $ulbId)
                     // ->where('rig_rejected_registrations.rejected_user_id', $userId)
                     // ->where('rig_rejected_registrations.finisher_role_id', $roleDetails->role_id)
                     // ->where('rig_rejected_registrations.current_role_id', $roleDetails->role_id)
@@ -1380,7 +1385,7 @@ class RigWorkflowController extends Controller
                 ->where('d.status', '!=', 0)
                 ->get();
 
-                 $documents = $refDocUpload->getDocUrl($documents)->toArray();
+            $documents = $refDocUpload->getDocUrl($documents)->toArray();
 
             $mergedDocuments = [];
             foreach ($documents as $document) {
@@ -1398,7 +1403,7 @@ class RigWorkflowController extends Controller
                 }
             }
 
-// return collect($mergedDocuments);
+            // return collect($mergedDocuments);
             return responseMsgs(true, "Uploaded Documents", remove_null($mergedDocuments), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
