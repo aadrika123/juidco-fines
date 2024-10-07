@@ -1203,7 +1203,7 @@ class RigRegistrationController extends Controller
             $ulbDetails         =  $mUlbMater->getUlbDetails($approveApplicationDetails->ulb_id);
             # Get Transaction details
             $tranDetails = null;
-            if ($chargeDetails->paid_status == 1) {
+            if (in_array($chargeDetails->paid_status, [1, 2])) {                                                            // 2 for Cheque reconcilation 
                 $tranDetails = $mPetTran->getTranByApplicationId($approveApplicationDetails->application_id)->first();
                 if (!$tranDetails) {
                     throw new Exception("Transaction details not found there is some error in data !");
