@@ -286,7 +286,7 @@ class RigPaymentController extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                'transactionNo' => 'required|',
+                'transactionNo' => 'required',
             ]
         );
         if ($validated->fails())
@@ -324,6 +324,7 @@ class RigPaymentController extends Controller
                 "vehicleName"     => $applicationDetails->vehicle_name,
                 "ulb_address"     => $transactionDetails->address,
                 "ulb_email"       => $transactionDetails->email,
+                "VerifyStatus"       => $transactionDetails->verify_status,
                 "ulbDetails"      =>  $ulbDetails
 
             ];
@@ -1045,7 +1046,7 @@ class RigPaymentController extends Controller
         if ($request->chequeNo != null) {
             return $chequeTranDtl->where('cheque_no', $request->chequeNo)->get();
         }
-        if ($request->paymentMode != null){
+        if ($request->paymentMode != null) {
             return $chequeTranDtl->where('payment_mode', $request->paymentMode)->get();
         }
         return $chequeTranDtl->whereBetween('tran_date', [$fromDate, $toDate])->get();
@@ -1056,7 +1057,7 @@ class RigPaymentController extends Controller
      */
     private function filterDataByPaymentMode($data, $paymentMode)
     {
-        
+
         if ($paymentMode == 'DD') {
             $filteredData = collect($data)->where('payment_mode', 'DD');
             return array_values(objtoarray($filteredData));
@@ -1077,7 +1078,7 @@ class RigPaymentController extends Controller
      */
     private function filterDataByVerificationStatus($data, $verifyStatus)
     {
-        if($verifyStatus  == 'All'){
+        if ($verifyStatus  == 'All') {
             return array_values(objtoarray($data));
         }
         if ($verifyStatus == 'pending') {

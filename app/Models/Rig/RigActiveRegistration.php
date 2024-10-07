@@ -113,7 +113,7 @@ class RigActiveRegistration extends Model
             'rig_active_registrations.id as id',
             'rig_active_registrations.status as registrationStatus',
             'rig_vehicle_active_details.status as rigStatus',
-            'rig_active_applicants.status as applicantsStatus',
+            'rig_approved_registrations.status as applicantsStatus',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
             'rig_approved_registrations.approve_end_date',
