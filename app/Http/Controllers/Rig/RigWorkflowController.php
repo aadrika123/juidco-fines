@@ -387,23 +387,23 @@ class RigWorkflowController extends Controller
             DB::commit();
             $returnData["applicationNo"] = $applicationNo;
             #_Whatsaap Message
-            if (strlen($application->mobile_no) == 10) {
-                $statusMessage = ($request->status == 1) ? "Approved" : "Rejected";
+            // if (strlen($application->mobile_no) == 10) {
+            //     $statusMessage = ($request->status == 1) ? "Approved" : "Rejected";
 
-                $whatsapp2 = (Whatsapp_Send(
-                    $application->mobile_no,
-                    "juidco_rig_approval",
-                    [
-                        "content_type" => "text",
-                        [
-                            $application->applicant_name ?? "",
-                            $application->application_no,
-                            $application->ulb_name,
-                            $statusMessage
-                        ]
-                    ]
-                ));
-            }
+            //     $whatsapp2 = (Whatsapp_Send(
+            //         $application->mobile_no,
+            //         "juidco_rig_approval",
+            //         [
+            //             "content_type" => "text",
+            //             [
+            //                 $application->applicant_name ?? "",
+            //                 $application->application_no,
+            //                 $application->ulb_name,
+            //                 $statusMessage
+            //             ]
+            //         ]
+            //     ));
+            // }
 
             return responseMsgs(true, $msg, $returnData, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
@@ -1249,19 +1249,19 @@ class RigWorkflowController extends Controller
             if (strlen($application->mobile_no) == 10) {
                 $statusMessage =  "Sent Back.Please Re-Upload Your Document In Respective JSK/SITE";
 
-                $whatsapp2 = (Whatsapp_Send(
-                    $application->mobile_no,
-                    "juidco_rig_approval",
-                    [
-                        "content_type" => "text",
-                        [
-                            $application->applicant_name ?? "",
-                            $application->application_no,
-                            $application->ulb_name,
-                            $statusMessage
-                        ]
-                    ]
-                ));
+            //     $whatsapp2 = (Whatsapp_Send(
+            //         $application->mobile_no,
+            //         "juidco_rig_approval",
+            //         [
+            //             "content_type" => "text",
+            //             [
+            //                 $application->applicant_name ?? "",
+            //                 $application->application_no,
+            //                 $application->ulb_name,
+            //                 $statusMessage
+            //             ]
+            //         ]
+            //     ));
             }
             return responseMsgs(true, "Successfully Done", "", "", '050131', '01', responseTime(), 'POST', '');
         } catch (Exception $e) {

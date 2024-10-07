@@ -276,21 +276,21 @@ class RigRegistrationController extends Controller
                 "applicationNo" => $applicationDetails['applicationNo'],
             ];
             #_Whatsaap Message
-            if (strlen($req->mobileNo) == 10) {
+            // if (strlen($req->mobileNo) == 10) {
 
-                $whatsapp2 = (Whatsapp_Send(
-                    $req->mobileNo,
-                    "juidco_rig_initiate",
-                    [
-                        "content_type" => "text",
-                        [
-                            $req->applicantName ?? "",
-                            $rigApplicationNo,
-                            $req->registrationNumber,
-                        ]
-                    ]
-                ));
-            }
+            //     $whatsapp2 = (Whatsapp_Send(
+            //         $req->mobileNo,
+            //         "juidco_rig_initiate",
+            //         [
+            //             "content_type" => "text",
+            //             [
+            //                 $req->applicantName ?? "",
+            //                 $rigApplicationNo,
+            //                 $req->registrationNumber,
+            //             ]
+            //         ]
+            //     ));
+            // }
             return responseMsgs(true, " Rig Registration Application Submitted!", $returnData, "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();

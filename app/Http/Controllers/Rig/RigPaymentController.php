@@ -483,23 +483,23 @@ class RigPaymentController extends Controller
             DB::commit();
 
             #_Whatsaap Message
-            if (strlen($mobileNo) == 10) {
-                $Url = "https://jharkhandegovernance.com/rig/rig-payment-receipt/" . $transactionNo;
-                $whatsapp2 = (Whatsapp_Send(
-                    $mobileNo,
-                    "juidco_rig_payment",
-                    [
-                        "content_type" => "text",
-                        [
-                            $applicantName ?? "",
-                            $registrationNo,
-                            $ulbName,
-                            $amount,
-                            $Url
-                        ]
-                    ]
-                ));
-            }
+            // if (strlen($mobileNo) == 10) {
+            //     $Url = "https://jharkhandegovernance.com/rig/rig-payment-receipt/" . $transactionNo;
+            //     $whatsapp2 = (Whatsapp_Send(
+            //         $mobileNo,
+            //         "juidco_rig_payment",
+            //         [
+            //             "content_type" => "text",
+            //             [
+            //                 $applicantName ?? "",
+            //                 $registrationNo,
+            //                 $ulbName,
+            //                 $amount,
+            //                 $Url
+            //             ]
+            //         ]
+            //     ));
+            // }
             $returnData = [
                 "transactionNo" => $transactionNo
             ];
