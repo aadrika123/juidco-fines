@@ -443,17 +443,16 @@ class RigRegistrationController extends Controller
         try {
             $user                   = authUser($req);
             $confUserType           = $this->_userType;
-            $ulbId                  = $user->ulb_id;
+            // $ulbId                  = $user->ulb_id;
             $confDbKey              = $this->_dbKey;
             $mRigActiveRegistration = new RigActiveRegistration();
             $mRigTran               = new RigTran();
-
             if ($user->user_type != $confUserType['1']) {                                       // If not a citizen
                 throw new Exception("You are not an autherised Citizen!");
             }
             # Collect querry Exceptions 
             try {
-                $refAppDetails = $mRigActiveRegistration->getAllApplicationDetails($user->id, $confDbKey['1'], $ulbId)
+                $refAppDetails = $mRigActiveRegistration->getAllApplicationDetails($user->id, $confDbKey['1'])
                     ->select(
                         DB::raw("REPLACE(rig_active_registrations.application_type, '_', ' ') AS ref_application_type"),
                         DB::raw("TO_CHAR(rig_active_registrations.application_apply_date, 'DD-MM-YYYY') as ref_application_apply_date"),
@@ -724,7 +723,7 @@ class RigRegistrationController extends Controller
     public function getApproveRegistration(Request $req)
     {
         try {
-            $user                       = authUser($req);
+           $user                 = authUser($req);
             $confUserType               = $this->_userType;
             $mRigApprovedRegistration   = new RigApprovedRegistration();
 
@@ -1173,6 +1172,7 @@ class RigRegistrationController extends Controller
                     $canTakePayment = true;
                 }
             }
+
             $viewRenewButton            = false;
             $applicationId              = $req->registrationId;
             $mRigApprovedRegistration   = new RigApprovedRegistration();

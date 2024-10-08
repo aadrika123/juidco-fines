@@ -86,13 +86,13 @@ class RigActiveRegistration extends Model
     **
      * | Get all details according to key 
      */
-    public function getAllApplicationDetails($value, $key, $ulbId)
+    public function getAllApplicationDetails($value, $key,)
     {
         return DB::table('rig_active_registrations')
             ->leftJoin('wf_roles', 'wf_roles.id', 'rig_active_registrations.current_role_id')
             ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
             ->join('rig_vehicle_active_details', 'rig_vehicle_active_details.application_id', 'rig_active_registrations.id')
-            ->where('rig_active_registrations.ulb_id', $ulbId)
+            // ->where('rig_active_registrations.ulb_id', $ulbId)
             ->where('rig_active_registrations.' . $key, $value)
             ->where('rig_active_registrations.status', 1);
     }

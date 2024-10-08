@@ -35,7 +35,8 @@ Route::post('/rig-connection', function () {
 /**
  * | Grouped Route for middleware
  */
-Route::middleware(['request_logger'])->group(function () {
+// Route::middleware(['request_logger'])->group(function () {
+Route::middleware([])->group(function () {
     /**
      * | Rig Machine Registration Operation and more fundamental oprations
         | Serial No : 01
