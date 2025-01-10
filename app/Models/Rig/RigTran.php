@@ -153,7 +153,15 @@ class RigTran extends Model
      */
     public function cashDtl($date,)
     {
-        return RigTran::select('rig_trans.*', 'users.user_name', 'users.id as user_id', 'mobile', 'rig_cheque_dtls.cheque_no', 'rig_cheque_dtls.bank_name', 'rig_cheque_dtls.branch_name')
+        return RigTran::select(
+            'rig_trans.*',
+            'users.name as user_name',
+            'users.id as user_id',
+            'mobile',
+            'rig_cheque_dtls.cheque_no',
+            'rig_cheque_dtls.bank_name',
+            'rig_cheque_dtls.branch_name'
+        )
             ->join('users', 'users.id', 'rig_trans.emp_dtl_id')
             ->leftjoin('rig_cheque_dtls', 'rig_cheque_dtls.application_id', 'rig_trans.related_id')
             ->where('rig_trans.status', 1)
