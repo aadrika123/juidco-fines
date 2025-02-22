@@ -13,6 +13,10 @@ use App\Models\AdvActiveVehicle;
 use App\Models\AdvAgency;
 use App\Models\AdvMarTransaction;
 use App\Models\AdvPrivateland;
+use App\Models\AdvRejectedAgency;
+use App\Models\AdvRejectedPrivateland;
+use App\Models\AdvRejectedSelfadvertisement;
+use App\Models\AdvRejectedVehicle;
 use App\Models\AdvSelfadvertisement;
 use App\Models\AdvVehicle;
 use App\Models\MarActiveBanquteHall;
@@ -22,6 +26,10 @@ use App\Models\MarActiveLodge;
 use App\Models\MarDharamshala;
 use App\Models\MarHostel;
 use App\Models\MarLodge;
+use App\Models\MarRejectedBanquteHall;
+use App\Models\MarRejectedDharamshala;
+use App\Models\MarRejectedHostel;
+use App\Models\MarRejectedLodge;
 use App\Models\MarToll;
 use App\Models\MarTollPayment;
 use App\Models\Master\Section;
@@ -1517,7 +1525,8 @@ class PenaltyRecordController extends Controller
         $wtBooking       = WtBooking::where('booking_date', $todayDate)->where('status', 1);
         $wtTodayDelivery = WtBooking::where('delivery_date', $todayDate)->where('status', 1);
         $wtDelivered     = WtBooking::where('delivery_date', $todayDate)->where('delivery_track_status', 2)->where('status', 1);
-        $wtCancelledTrip    = WtBooking::where('delivery_track_status', 1)->where('status', 1);
+        // $wtCancelledTrip    = WtBooking::where('delivery_track_status', 1)->where('status', 1);
+        $wtCancelledTrip    = WtBooking::where('delivery_date', $todayDate)->where('delivery_track_status', 1)->where('status', 1);
         $wtCancelledBooking = WtCancellation::whereDate('cancel_date', $todayDate)->where('status', 1);
 
         $stTransaction     = StBooking::where('payment_date', $todayDate)->where('status', 1);
@@ -1562,6 +1571,19 @@ class PenaltyRecordController extends Controller
         $marDharamshala                  = MarDharamshala::where('application_date', $todayDate);
         $marActiveBanquteHall            = MarActiveBanquteHall::where('application_date', $todayDate);
         $marketTransaction               = AdvMarTransaction::where('transaction_date', $todayDate)->where('module_type', 'Market');
+
+        #Advertisement Rejected Data
+        $advSelfRejected     = AdvRejectedSelfadvertisement::where('application_date', $todayDate);
+        $advVehicleRejected  = AdvRejectedVehicle::where('application_date', $todayDate);
+        $advPrivateRejected  = AdvRejectedPrivateland::where('application_date', $todayDate);
+        $advAgencyRejected   = AdvRejectedAgency::where('application_date', $todayDate);
+
+        # Market Rejected Data
+        $marLodgeRejected            = MarRejectedLodge::where('application_date', $todayDate);
+        $marHostelRejected           = MarRejectedHostel::where('application_date', $todayDate);
+        $marDharamshalaRejected      = MarRejectedDharamshala::where('application_date', $todayDate);
+        $marBanquteHallRejected      = MarRejectedBanquteHall::where('application_date', $todayDate);     # Market Rejected Data
+
 
 
 
@@ -1622,6 +1644,18 @@ class PenaltyRecordController extends Controller
             $marActiveBanquteHall            = $marActiveBanquteHall->where('ulb_id', $ulbId);
             $marDharamshala                  = $marDharamshala->where('ulb_id', $ulbId);
             $marketTransaction               = $marketTransaction->where('ulb_id', $ulbId);
+
+            # Advertisement Rejected Data
+            $advSelfRejected                  = $advSelfRejected->where('ulb_id', $ulbId);
+            $advVehicleRejected               = $advVehicleRejected->where('ulb_id', $ulbId);
+            $advPrivateRejected               = $advPrivateRejected->where('ulb_id', $ulbId);
+            $advAgencyRejected                = $advAgencyRejected->where('ulb_id', $ulbId);
+
+            # Market Rejected Data
+            $marLodgeRejected                  = $marLodgeRejected->where('ulb_id', $ulbId);
+            $marHostelRejected                 = $marHostelRejected->where('ulb_id', $ulbId);
+            $marDharamshalaRejected            = $marDharamshalaRejected->where('ulb_id', $ulbId);
+            $marBanquteHallRejected            = $marBanquteHallRejected->where('ulb_id', $ulbId);
         }
 
         $penaltyChallanCount  =  $penaltyChallan->count();
@@ -1679,6 +1713,11 @@ class PenaltyRecordController extends Controller
         $AdvActiveAgency              = $AdvActiveAgency->count();
         $AdvAgency                    = $AdvAgency->count();
         $advertisementTransaction      = $advertisementTransaction->sum('amount');
+        #  Rejected Advertisement
+        $advSelfRejected              = $advSelfRejected->count();
+        $advVehicleRejected           = $advVehicleRejected->count();
+        $advPrivateRejected           = $advPrivateRejected->count();
+        $advAgencyRejected            = $advAgencyRejected->count();
 
         # Market
         $marActiveLodge                  = $marActiveLodge->count();
@@ -1689,6 +1728,13 @@ class PenaltyRecordController extends Controller
         $marDharamshala                  = $marDharamshala->count();
         $marActiveBanquteHall            = $marActiveBanquteHall->count();
         $marketTransaction               = $marketTransaction->sum('amount');
+
+        # Market Rejected Data
+        $marLodgeRejected                  = $marLodgeRejected->count();
+        $marHostelRejected                 = $marHostelRejected->count();
+        $marDharamshalaRejected            = $marDharamshalaRejected->count();
+        $marBanquteHallRejected            = $marBanquteHallRejected->count();
+
 
 
         $data['fines_collection']   = $penaltyCollectionAmt;
@@ -1731,11 +1777,13 @@ class PenaltyRecordController extends Controller
 
         $data['adv_new_registration']               = $AdvActiveSelfadvertisement + $AdvActiveVehicle + $AdvActivePrivateland + $AdvActiveAgency;
         $data['adv_approve_registration']           = $AdvSelfadvertisement + $AdvVehicle + $AdvPrivateland + $AdvAgency;
+        $data['adv_rejected_registration']          = $advSelfRejected + $advVehicleRejected + $advPrivateRejected + $advAgencyRejected;
+        $data['mar_rejected_registration']          = $marLodgeRejected + $marHostelRejected + $marDharamshalaRejected + $marBanquteHallRejected;
         $data['mar_new_registration']               = $marActiveLodge + $marActiveHostel + $marActiveDharamshala + $marActiveBanquteHall;
         $data['mar_approve_registration']           = $marLodge + $marHostel + $marDharamshala + $marDharamshala;
-        $data['total_market_collection']           = $marketTransaction;
-        $data['total_adv_transactions']         = $advertisementTransaction;
-        $data['total_collection']   = $penaltyCollectionAmt + $wtCollectionAmt + $stCollectionAmt + $rigCollection + $petCollectionAmt + $data['total_collection_amount'];
+        $data['total_market_collection']            = $marketTransaction;
+        $data['total_adv_transactions']             = $advertisementTransaction;
+        $data['total_collection']   = $penaltyCollectionAmt + $wtCollectionAmt + $stCollectionAmt + $rigCollection + $petCollectionAmt + $data['total_collection_amount'] + $marketTransaction + $advertisementTransaction;
 
         return responseMsgs(true, "Mini Dashboard Data", $data, "0625", "01", responseTime(), $req->getMethod(), $req->deviceId);
     }
