@@ -6,9 +6,28 @@ use App\DocUpload;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\InfractionRecordingFormRequest;
 use App\IdGenerator\IdGeneration;
+use App\Models\AdvActiveAgency;
+use App\Models\AdvActivePrivateland;
+use App\Models\AdvActiveSelfadvertisement;
+use App\Models\AdvActiveVehicle;
+use App\Models\AdvAgency;
+use App\Models\AdvMarTransaction;
+use App\Models\AdvPrivateland;
+use App\Models\AdvSelfadvertisement;
+use App\Models\AdvVehicle;
+use App\Models\MarActiveBanquteHall;
+use App\Models\MarActiveDharamshala;
+use App\Models\MarActiveHostel;
+use App\Models\MarActiveLodge;
+use App\Models\MarDharamshala;
+use App\Models\MarHostel;
+use App\Models\MarLodge;
+use App\Models\MarToll;
+use App\Models\MarTollPayment;
 use App\Models\Master\Section;
 use App\Models\Master\UlbMaster;
 use App\Models\Master\Violation;
+use App\Models\MMarket;
 use App\Models\Payment\RazorpayResponse;
 use App\Models\PenaltyChallan;
 use App\Models\PenaltyDocument;
@@ -20,6 +39,8 @@ use App\Models\PetApprovedRegistration;
 use App\Models\PetTran;
 use App\Models\Rig\RigActiveRegistration;
 use App\Models\Rig\RigTran;
+use App\Models\Shop;
+use App\Models\ShopPayment;
 use App\Models\StBooking;
 use App\Models\StCancelledBooking;
 use App\Models\WfRoleusermap;
@@ -1516,6 +1537,33 @@ class PenaltyRecordController extends Controller
         $petRenewalLicense      = PetActiveRegistration::where('application_apply_date', $todayDate)->where('renewal', 1)->where('status', 1);
         $petApprovedLicense     = PetApprovedRegistration::where('approve_date', $todayDate)->where('status', 1);
         $petCollectionAmt       = PetTran::where('tran_date', $todayDate)->where('status', 1);
+        # shop and toll
+        $shopAdd                 = Shop::where('apply_date', $todayDate)->where('status', 1);
+        $tollAdd                 = MarToll::where('apply_date', $todayDate)->where('status', 1);
+        $totalMarket             = MMarket::where('is_active', 1);
+        $shopCollectionAmt       = ShopPayment::where('payment_date', $todayDate)->where('is_active', true);
+        $tollCollectionAmt       = MarTollPayment::where('payment_date', $todayDate)->where('is_active', true);
+        # Advetsiment
+        $AdvActiveSelfadvertisement       = AdvActiveSelfadvertisement::where('application_date', $todayDate);
+        $AdvSelfadvertisement             = AdvSelfadvertisement::where('application_date', $todayDate);
+        $AdvActiveVehicle                 = AdvActiveVehicle::where('application_date', $todayDate);
+        $AdvVehicle                       = AdvVehicle::where('application_date', $todayDate);
+        $AdvActivePrivateland             = AdvActivePrivateland::where('application_date', $todayDate);
+        $AdvPrivateland                   = AdvPrivateland::where('application_date', $todayDate);
+        $AdvActiveAgency                  = AdvActiveAgency::where('application_date', $todayDate);
+        $AdvAgency                        = AdvAgency::where('application_date', $todayDate);
+        $advertisementTransaction         = AdvMarTransaction::where('transaction_date', $todayDate)->where('module_type', 'Advertisement');
+        # Market
+        $marActiveLodge                  = MarActiveLodge::where('application_date', $todayDate);
+        $marLodge                        = MarLodge::where('application_date', $todayDate);
+        $marActiveHostel                 = MarActiveHostel::where('application_date', $todayDate);
+        $marHostel                       = MarHostel::where('application_date', $todayDate);
+        $marActiveDharamshala            = MarActiveDharamshala::where('application_date', $todayDate);
+        $marDharamshala                  = MarDharamshala::where('application_date', $todayDate);
+        $marActiveBanquteHall            = MarActiveBanquteHall::where('application_date', $todayDate);
+        $marketTransaction               = AdvMarTransaction::where('transaction_date', $todayDate)->where('module_type', 'Market');
+
+
 
         if ($ulbId) {
             $penaltyTransaction =  $penaltyTransaction->where('ulb_id', $ulbId);
@@ -1548,6 +1596,32 @@ class PenaltyRecordController extends Controller
             $petRenewalLicense      = $petRenewalLicense->where('ulb_id', $ulbId);
             $petApprovedLicense     = $petApprovedLicense->where('ulb_id', $ulbId);
             $petCollectionAmt       = $petCollectionAmt->where('ulb_id', $ulbId);
+
+            $shopAdd                 = $shopAdd->where('ulb_id', $ulbId);
+            $tollAdd                 = $tollAdd->where('ulb_id', $ulbId);
+            $shopCollectionAmt       = $shopCollectionAmt->where('ulb_id', $ulbId);
+            $tollCollectionAmt       = $tollCollectionAmt->where('ulb_id', $ulbId);
+            $totalMarket             = $totalMarket->where('ulb_id', $ulbId);
+            # Advertisement
+            $AdvActiveSelfadvertisement   = $AdvActiveSelfadvertisement->where('ulb_id', $ulbId);
+            $AdvSelfadvertisement         = $AdvSelfadvertisement->where('ulb_id', $ulbId);
+            $AdvActiveVehicle             = $AdvActiveVehicle->where('ulb_id', $ulbId);
+            $AdvVehicle                   = $AdvVehicle->where('ulb_id', $ulbId);
+            $AdvActivePrivateland         = $AdvActivePrivateland->where('ulb_id', $ulbId);
+            $AdvPrivateland               = $AdvPrivateland->where('ulb_id', $ulbId);
+            $AdvActiveAgency              = $AdvActiveAgency->where('ulb_id', $ulbId);
+            $AdvAgency                    = $AdvAgency->where('ulb_id', $ulbId);
+            $advertisementTransaction     = $advertisementTransaction->where('ulb_id', $ulbId);
+            # Market
+            $marActiveLodge                  = $marActiveLodge->where('ulb_id', $ulbId);
+            $marLodge                        = $marLodge->where('ulb_id', $ulbId);
+            $marActiveHostel                 = $marActiveHostel->where('ulb_id', $ulbId);
+            $marHostel                       = $marHostel->where('ulb_id', $ulbId);
+            $marActiveDharamshala            = $marActiveDharamshala->where('ulb_id', $ulbId);
+            $marDharamshala                  = $marDharamshala->where('ulb_id', $ulbId);
+            $marActiveBanquteHall            = $marActiveBanquteHall->where('ulb_id', $ulbId);
+            $marDharamshala                  = $marDharamshala->where('ulb_id', $ulbId);
+            $marketTransaction               = $marketTransaction->where('ulb_id', $ulbId);
         }
 
         $penaltyChallanCount  =  $penaltyChallan->count();
@@ -1588,6 +1662,35 @@ class PenaltyRecordController extends Controller
         $petApprovedLicense     = $petApprovedLicense->count();
         $petCollectionAmt       = $petCollectionAmt->sum('amount');
 
+        # Mar Shop and Toll
+        $shopAdd     = $shopAdd->count();
+        $tollAdd     = $tollAdd->count();
+        $totalMarket     = $totalMarket->count();
+        $shopCollectionAmt       = $shopCollectionAmt->sum('amount');
+        $tollCollectionAmt       = $tollCollectionAmt->sum('amount');
+
+        #  Advertisement
+        $AdvActiveSelfadvertisement   = $AdvActiveSelfadvertisement->count();
+        $AdvSelfadvertisement         = $AdvSelfadvertisement->count();
+        $AdvActiveVehicle             = $AdvActiveVehicle->count();
+        $AdvVehicle                   = $AdvVehicle->count();
+        $AdvActivePrivateland         = $AdvActivePrivateland->count();
+        $AdvPrivateland               = $AdvPrivateland->count();
+        $AdvActiveAgency              = $AdvActiveAgency->count();
+        $AdvAgency                    = $AdvAgency->count();
+        $advertisementTransaction      = $advertisementTransaction->sum('amount');
+
+        # Market
+        $marActiveLodge                  = $marActiveLodge->count();
+        $marLodge                        = $marLodge->count();
+        $marActiveHostel                 = $marActiveHostel->count();
+        $marHostel                       = $marHostel->count();
+        $marActiveDharamshala            = $marActiveDharamshala->count();
+        $marDharamshala                  = $marDharamshala->count();
+        $marActiveBanquteHall            = $marActiveBanquteHall->count();
+        $marketTransaction               = $marketTransaction->sum('amount');
+
+
         $data['fines_collection']   = $penaltyCollectionAmt;
         $data['challan_count']      = $penaltyChallanCount;
         $data['unpaid_penalty_amount']  = $unpaidPenaltyAmount;
@@ -1617,7 +1720,22 @@ class PenaltyRecordController extends Controller
         $data['pet_approved_license']      = $petApprovedLicense;
         $data['pet_collection_amt']        = $petCollectionAmt;
 
-        $data['total_collection']   = $penaltyCollectionAmt + $wtCollectionAmt + $stCollectionAmt + $rigCollection + $petCollectionAmt;
+
+        $data['shopp_add']                      = $shopAdd;
+        $data['toll_add']                       = $tollAdd;
+        $data['total_market']                   = $totalMarket;
+        $data['shop_collection']                = $shopCollectionAmt;
+        $data['toll_collection_amount']         = $tollCollectionAmt;
+        $data['total_collection_amount']        = $tollCollectionAmt + $shopCollectionAmt;
+
+
+        $data['adv_new_registration']               = $AdvActiveSelfadvertisement + $AdvActiveVehicle + $AdvActivePrivateland + $AdvActiveAgency;
+        $data['adv_approve_registration']           = $AdvSelfadvertisement + $AdvVehicle + $AdvPrivateland + $AdvAgency;
+        $data['mar_new_registration']               = $marActiveLodge + $marActiveHostel + $marActiveDharamshala + $marActiveBanquteHall;
+        $data['mar_approve_registration']           = $marLodge + $marHostel + $marDharamshala + $marDharamshala;
+        $data['total_market_collection']           = $marketTransaction;
+        $data['total_adv_transactions']         = $advertisementTransaction;
+        $data['total_collection']   = $penaltyCollectionAmt + $wtCollectionAmt + $stCollectionAmt + $rigCollection + $petCollectionAmt + $data['total_collection_amount'];
 
         return responseMsgs(true, "Mini Dashboard Data", $data, "0625", "01", responseTime(), $req->getMethod(), $req->deviceId);
     }
@@ -1736,9 +1854,57 @@ class PenaltyRecordController extends Controller
             ->orderByDesc('total_amount')
             ->get();
 
+        # advertisement
+        $advertisementTransaction = DB::connection('pgsql_advertisements')->table('ulb_masters')
+            ->leftJoin('adv_mar_transactions', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'adv_mar_transactions.ulb_id')
+                    ->where('adv_mar_transactions.transaction_date', $todayDate)
+                    ->where('adv_mar_transactions.status', 1)
+                    ->where('adv_mar_transactions.module_type', 'Advertisement');
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+                DB::raw('COALESCE(SUM(adv_mar_transactions.amount), 0) as total_amount')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('total_amount')
+            ->get();
+        # market
+        $marketTransaction = DB::connection('pgsql_advertisements')->table('ulb_masters')
+            ->leftJoin('adv_mar_transactions', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'adv_mar_transactions.ulb_id')
+                    ->where('adv_mar_transactions.transaction_date', $todayDate)
+                    ->where('adv_mar_transactions.status', 1)
+                    ->where('adv_mar_transactions.module_type', 'Market');
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+                DB::raw('COALESCE(SUM(adv_mar_transactions.amount), 0) as total_amount')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('total_amount')
+            ->get();
+        # shop
+        $shopTransaction = DB::connection('pgsql_advertisements')->table('ulb_masters')
+            ->leftJoin('mar_shop_payments', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'mar_shop_payments.ulb_id')
+                    ->where('mar_shop_payments.payment_date', $todayDate)
+                    ->where('mar_shop_payments.is_active', true);
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+                DB::raw('COALESCE(SUM(mar_shop_payments.amount), 0) as total_amount')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('total_amount')
+            ->get();
+
         $waterSepticCollection = $wtTransaction->union($stTransaction)->get();
         $finesRigCollection = $penaltyTransaction->union($rigTransaction)->get();
-        $combinedCollection = $waterSepticCollection->concat($finesRigCollection)->concat($petTransaction);
+        $combinedCollection = $waterSepticCollection->concat($finesRigCollection)->concat($petTransaction)->concat($advertisementTransaction)->concat($marketTransaction)->concat($shopTransaction);
 
         // return  $combinedCollection;
 
@@ -1851,7 +2017,56 @@ class PenaltyRecordController extends Controller
             ->orderByDesc('daily_collection')
             ->take(5)
             ->get();
-
+        # advertisement
+        $advertisementTransaction = DB::connection('pgsql_advertisements')->table('ulb_masters')
+            ->leftJoin('adv_mar_transactions', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'adv_mar_transactions.ulb_id')
+                    ->where('adv_mar_transactions.transaction_date', $todayDate)
+                    ->where('adv_mar_transactions.status', 1)
+                    ->where('adv_mar_transactions.module_type', 'Advertisement');
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+                DB::raw('COALESCE(SUM(adv_mar_transactions.amount), 0) as daily_collection')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('daily_collection')
+            ->take(5)
+            ->get();
+        # market
+        $marketTransaction = DB::connection('pgsql_advertisements')->table('ulb_masters')
+            ->leftJoin('adv_mar_transactions', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'adv_mar_transactions.ulb_id')
+                    ->where('adv_mar_transactions.transaction_date', $todayDate)
+                    ->where('adv_mar_transactions.status', 1)
+                    ->where('adv_mar_transactions.module_type', 'Market');
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+                DB::raw('COALESCE(SUM(adv_mar_transactions.amount), 0) as daily_collection')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('daily_collection')
+            ->take(5)
+            ->get();
+        #shop
+        $shopTransaction = DB::connection('pgsql_advertisements')->table('ulb_masters')
+            ->leftJoin('mar_shop_payments', function ($join) use ($todayDate) {
+                $join->on('ulb_masters.id', '=', 'mar_shop_payments.ulb_id')
+                    ->where('mar_shop_payments.payment_date', $todayDate)
+                    ->where('mar_shop_payments.is_active', true);
+            })
+            ->select(
+                'ulb_masters.id as ulb_id',
+                DB::raw("split_part(ulb_masters.ulb_name, ' ', 1) as ulb_name"),
+                DB::raw('COALESCE(SUM(mar_shop_payments.amount), 0) as daily_collection')
+            )
+            ->groupBy('ulb_masters.id', 'ulb_masters.ulb_name')
+            ->orderByDesc('daily_collection')
+            ->take(5)
+            ->get();
         $data['fines']            = $finestopULBCollection;
         $data['water_tanker']     = $waterTankertopULBCollection;
         $data['septic_tanker']    = $septicTankertopULBCollection;
@@ -1859,6 +2074,9 @@ class PenaltyRecordController extends Controller
         $data['rig_machine']      = $rigMachinetopULBCollection;
         $data['rig_machine']      = $rigMachinetopULBCollection;
         $data['pet_registration'] = $petTransaction;
+        $data['advertisement']    = $advertisementTransaction;
+        $data['marketTransaction'] = $marketTransaction;
+        $data['shopTransaction']   = $shopTransaction;
 
         return responseMsgs(true, "Today Top ULB Collection", $data, "0627", "01", responseTime(), $req->getMethod(), $req->deviceId);
     }

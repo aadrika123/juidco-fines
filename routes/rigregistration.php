@@ -109,6 +109,6 @@ Route::middleware([])->group(function () {
         Route::post('search/transaction-cheque', 'searchTransaction');                                          #_Transaction Deactivation  ----------------------------- 0705                                                                 
         Route::post('search/transaction-cheque-dtl', 'chequeDtlByIdRig');                                       #_Transaction Deactivation  ----------------------------- 0705                                                                 
         Route::post('transaction/cheque-clear-bounce', 'chequeClearance');                                       #_Transaction Deactivation  ----------------------------- 0705                                                                 
-        Route::post('transaction/cheque-edit-dtls', 'editChequeNo');                                       #_Transaction Deactivation  ----------------------------- 0705                                                                 
+        Route::post('transaction/cheque-edit-dtls', 'editChequeNo');                                             #_Transaction Deactivation  ----------------------------- 0705                                                                 
     });
 });
