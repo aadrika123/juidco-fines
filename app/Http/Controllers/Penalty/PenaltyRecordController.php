@@ -1546,43 +1546,43 @@ class PenaltyRecordController extends Controller
         $petRenewalLicense      = PetActiveRegistration::where('application_apply_date', $todayDate)->where('renewal', 1)->where('status', 1);
         $petApprovedLicense     = PetApprovedRegistration::where('approve_date', $todayDate)->where('status', 1);
         $petCollectionAmt       = PetTran::where('tran_date', $todayDate)->where('status', 1);
-        # shop and toll
-        $shopAdd                 = Shop::where('apply_date', $todayDate)->where('status', 1);
-        $tollAdd                 = MarToll::where('apply_date', $todayDate)->where('status', 1);
-        $totalMarket             = MMarket::where('is_active', 1);
-        $shopCollectionAmt       = ShopPayment::where('payment_date', $todayDate)->where('is_active', true);
-        $tollCollectionAmt       = MarTollPayment::where('payment_date', $todayDate)->where('is_active', true);
-        # Advetsiment
-        $AdvActiveSelfadvertisement       = AdvActiveSelfadvertisement::where('application_date', $todayDate);
-        $AdvSelfadvertisement             = AdvSelfadvertisement::where('application_date', $todayDate);
-        $AdvActiveVehicle                 = AdvActiveVehicle::where('application_date', $todayDate);
-        $AdvVehicle                       = AdvVehicle::where('application_date', $todayDate);
-        $AdvActivePrivateland             = AdvActivePrivateland::where('application_date', $todayDate);
-        $AdvPrivateland                   = AdvPrivateland::where('application_date', $todayDate);
-        $AdvActiveAgency                  = AdvActiveAgency::where('application_date', $todayDate);
-        $AdvAgency                        = AdvAgency::where('application_date', $todayDate);
-        $advertisementTransaction         = AdvMarTransaction::where('transaction_date', $todayDate)->where('module_type', 'Advertisement');
-        # Market
-        $marActiveLodge                  = MarActiveLodge::where('application_date', $todayDate);
-        $marLodge                        = MarLodge::where('application_date', $todayDate);
-        $marActiveHostel                 = MarActiveHostel::where('application_date', $todayDate);
-        $marHostel                       = MarHostel::where('application_date', $todayDate);
-        $marActiveDharamshala            = MarActiveDharamshala::where('application_date', $todayDate);
-        $marDharamshala                  = MarDharamshala::where('application_date', $todayDate);
-        $marActiveBanquteHall            = MarActiveBanquteHall::where('application_date', $todayDate);
-        $marketTransaction               = AdvMarTransaction::where('transaction_date', $todayDate)->where('module_type', 'Market');
+        // # shop and toll
+        // $shopAdd                 = Shop::where('apply_date', $todayDate)->where('status', 1);
+        // $tollAdd                 = MarToll::where('apply_date', $todayDate)->where('status', 1);
+        // $totalMarket             = MMarket::where('is_active', 1);
+        // $shopCollectionAmt       = ShopPayment::where('payment_date', $todayDate)->where('is_active', true);
+        // $tollCollectionAmt       = MarTollPayment::where('payment_date', $todayDate)->where('is_active', true);
+        // # Advetsiment
+        // $AdvActiveSelfadvertisement       = AdvActiveSelfadvertisement::where('application_date', $todayDate);
+        // $AdvSelfadvertisement             = AdvSelfadvertisement::where('application_date', $todayDate);
+        // $AdvActiveVehicle                 = AdvActiveVehicle::where('application_date', $todayDate);
+        // $AdvVehicle                       = AdvVehicle::where('application_date', $todayDate);
+        // $AdvActivePrivateland             = AdvActivePrivateland::where('application_date', $todayDate);
+        // $AdvPrivateland                   = AdvPrivateland::where('application_date', $todayDate);
+        // $AdvActiveAgency                  = AdvActiveAgency::where('application_date', $todayDate);
+        // $AdvAgency                        = AdvAgency::where('application_date', $todayDate);
+        // $advertisementTransaction         = AdvMarTransaction::where('transaction_date', $todayDate)->where('module_type', 'Advertisement');
+        // # Market
+        // $marActiveLodge                  = MarActiveLodge::where('application_date', $todayDate);
+        // $marLodge                        = MarLodge::where('application_date', $todayDate);
+        // $marActiveHostel                 = MarActiveHostel::where('application_date', $todayDate);
+        // $marHostel                       = MarHostel::where('application_date', $todayDate);
+        // $marActiveDharamshala            = MarActiveDharamshala::where('application_date', $todayDate);
+        // $marDharamshala                  = MarDharamshala::where('application_date', $todayDate);
+        // $marActiveBanquteHall            = MarActiveBanquteHall::where('application_date', $todayDate);
+        // $marketTransaction               = AdvMarTransaction::where('transaction_date', $todayDate)->where('module_type', 'Market');
 
-        #Advertisement Rejected Data
-        $advSelfRejected     = AdvRejectedSelfadvertisement::where('application_date', $todayDate);
-        $advVehicleRejected  = AdvRejectedVehicle::where('application_date', $todayDate);
-        $advPrivateRejected  = AdvRejectedPrivateland::where('application_date', $todayDate);
-        $advAgencyRejected   = AdvRejectedAgency::where('application_date', $todayDate);
+        // #Advertisement Rejected Data
+        // $advSelfRejected     = AdvRejectedSelfadvertisement::where('application_date', $todayDate);
+        // $advVehicleRejected  = AdvRejectedVehicle::where('application_date', $todayDate);
+        // $advPrivateRejected  = AdvRejectedPrivateland::where('application_date', $todayDate);
+        // $advAgencyRejected   = AdvRejectedAgency::where('application_date', $todayDate);
 
-        # Market Rejected Data
-        $marLodgeRejected            = MarRejectedLodge::where('application_date', $todayDate);
-        $marHostelRejected           = MarRejectedHostel::where('application_date', $todayDate);
-        $marDharamshalaRejected      = MarRejectedDharamshala::where('application_date', $todayDate);
-        $marBanquteHallRejected      = MarRejectedBanquteHall::where('application_date', $todayDate);     # Market Rejected Data
+        // # Market Rejected Data
+        // $marLodgeRejected            = MarRejectedLodge::where('application_date', $todayDate);
+        // $marHostelRejected           = MarRejectedHostel::where('application_date', $todayDate);
+        // $marDharamshalaRejected      = MarRejectedDharamshala::where('application_date', $todayDate);
+        // $marBanquteHallRejected      = MarRejectedBanquteHall::where('application_date', $todayDate);     # Market Rejected Data
 
 
 
@@ -1619,43 +1619,43 @@ class PenaltyRecordController extends Controller
             $petApprovedLicense     = $petApprovedLicense->where('ulb_id', $ulbId);
             $petCollectionAmt       = $petCollectionAmt->where('ulb_id', $ulbId);
 
-            $shopAdd                 = $shopAdd->where('ulb_id', $ulbId);
-            $tollAdd                 = $tollAdd->where('ulb_id', $ulbId);
-            $shopCollectionAmt       = $shopCollectionAmt->where('ulb_id', $ulbId);
-            $tollCollectionAmt       = $tollCollectionAmt->where('ulb_id', $ulbId);
-            $totalMarket             = $totalMarket->where('ulb_id', $ulbId);
-            # Advertisement
-            $AdvActiveSelfadvertisement   = $AdvActiveSelfadvertisement->where('ulb_id', $ulbId);
-            $AdvSelfadvertisement         = $AdvSelfadvertisement->where('ulb_id', $ulbId);
-            $AdvActiveVehicle             = $AdvActiveVehicle->where('ulb_id', $ulbId);
-            $AdvVehicle                   = $AdvVehicle->where('ulb_id', $ulbId);
-            $AdvActivePrivateland         = $AdvActivePrivateland->where('ulb_id', $ulbId);
-            $AdvPrivateland               = $AdvPrivateland->where('ulb_id', $ulbId);
-            $AdvActiveAgency              = $AdvActiveAgency->where('ulb_id', $ulbId);
-            $AdvAgency                    = $AdvAgency->where('ulb_id', $ulbId);
-            $advertisementTransaction     = $advertisementTransaction->where('ulb_id', $ulbId);
-            # Market
-            $marActiveLodge                  = $marActiveLodge->where('ulb_id', $ulbId);
-            $marLodge                        = $marLodge->where('ulb_id', $ulbId);
-            $marActiveHostel                 = $marActiveHostel->where('ulb_id', $ulbId);
-            $marHostel                       = $marHostel->where('ulb_id', $ulbId);
-            $marActiveDharamshala            = $marActiveDharamshala->where('ulb_id', $ulbId);
-            $marDharamshala                  = $marDharamshala->where('ulb_id', $ulbId);
-            $marActiveBanquteHall            = $marActiveBanquteHall->where('ulb_id', $ulbId);
-            $marDharamshala                  = $marDharamshala->where('ulb_id', $ulbId);
-            $marketTransaction               = $marketTransaction->where('ulb_id', $ulbId);
+            // $shopAdd                 = $shopAdd->where('ulb_id', $ulbId);
+            // $tollAdd                 = $tollAdd->where('ulb_id', $ulbId);
+            // $shopCollectionAmt       = $shopCollectionAmt->where('ulb_id', $ulbId);
+            // $tollCollectionAmt       = $tollCollectionAmt->where('ulb_id', $ulbId);
+            // $totalMarket             = $totalMarket->where('ulb_id', $ulbId);
+            // # Advertisement
+            // $AdvActiveSelfadvertisement   = $AdvActiveSelfadvertisement->where('ulb_id', $ulbId);
+            // $AdvSelfadvertisement         = $AdvSelfadvertisement->where('ulb_id', $ulbId);
+            // $AdvActiveVehicle             = $AdvActiveVehicle->where('ulb_id', $ulbId);
+            // $AdvVehicle                   = $AdvVehicle->where('ulb_id', $ulbId);
+            // $AdvActivePrivateland         = $AdvActivePrivateland->where('ulb_id', $ulbId);
+            // $AdvPrivateland               = $AdvPrivateland->where('ulb_id', $ulbId);
+            // $AdvActiveAgency              = $AdvActiveAgency->where('ulb_id', $ulbId);
+            // $AdvAgency                    = $AdvAgency->where('ulb_id', $ulbId);
+            // $advertisementTransaction     = $advertisementTransaction->where('ulb_id', $ulbId);
+            // # Market
+            // $marActiveLodge                  = $marActiveLodge->where('ulb_id', $ulbId);
+            // $marLodge                        = $marLodge->where('ulb_id', $ulbId);
+            // $marActiveHostel                 = $marActiveHostel->where('ulb_id', $ulbId);
+            // $marHostel                       = $marHostel->where('ulb_id', $ulbId);
+            // $marActiveDharamshala            = $marActiveDharamshala->where('ulb_id', $ulbId);
+            // $marDharamshala                  = $marDharamshala->where('ulb_id', $ulbId);
+            // $marActiveBanquteHall            = $marActiveBanquteHall->where('ulb_id', $ulbId);
+            // $marDharamshala                  = $marDharamshala->where('ulb_id', $ulbId);
+            // $marketTransaction               = $marketTransaction->where('ulb_id', $ulbId);
 
-            # Advertisement Rejected Data
-            $advSelfRejected                  = $advSelfRejected->where('ulb_id', $ulbId);
-            $advVehicleRejected               = $advVehicleRejected->where('ulb_id', $ulbId);
-            $advPrivateRejected               = $advPrivateRejected->where('ulb_id', $ulbId);
-            $advAgencyRejected                = $advAgencyRejected->where('ulb_id', $ulbId);
+            // # Advertisement Rejected Data
+            // $advSelfRejected                  = $advSelfRejected->where('ulb_id', $ulbId);
+            // $advVehicleRejected               = $advVehicleRejected->where('ulb_id', $ulbId);
+            // $advPrivateRejected               = $advPrivateRejected->where('ulb_id', $ulbId);
+            // $advAgencyRejected                = $advAgencyRejected->where('ulb_id', $ulbId);
 
-            # Market Rejected Data
-            $marLodgeRejected                  = $marLodgeRejected->where('ulb_id', $ulbId);
-            $marHostelRejected                 = $marHostelRejected->where('ulb_id', $ulbId);
-            $marDharamshalaRejected            = $marDharamshalaRejected->where('ulb_id', $ulbId);
-            $marBanquteHallRejected            = $marBanquteHallRejected->where('ulb_id', $ulbId);
+            // # Market Rejected Data
+            // $marLodgeRejected                  = $marLodgeRejected->where('ulb_id', $ulbId);
+            // $marHostelRejected                 = $marHostelRejected->where('ulb_id', $ulbId);
+            // $marDharamshalaRejected            = $marDharamshalaRejected->where('ulb_id', $ulbId);
+            // $marBanquteHallRejected            = $marBanquteHallRejected->where('ulb_id', $ulbId);
         }
 
         $penaltyChallanCount  =  $penaltyChallan->count();
@@ -1696,44 +1696,44 @@ class PenaltyRecordController extends Controller
         $petApprovedLicense     = $petApprovedLicense->count();
         $petCollectionAmt       = $petCollectionAmt->sum('amount');
 
-        # Mar Shop and Toll
-        $shopAdd     = $shopAdd->count();
-        $tollAdd     = $tollAdd->count();
-        $totalMarket     = $totalMarket->count();
-        $shopCollectionAmt       = $shopCollectionAmt->sum('amount');
-        $tollCollectionAmt       = $tollCollectionAmt->sum('amount');
+        // # Mar Shop and Toll
+        // $shopAdd     = $shopAdd->count();
+        // $tollAdd     = $tollAdd->count();
+        // $totalMarket     = $totalMarket->count();
+        // $shopCollectionAmt       = $shopCollectionAmt->sum('amount');
+        // $tollCollectionAmt       = $tollCollectionAmt->sum('amount');
 
-        #  Advertisement
-        $AdvActiveSelfadvertisement   = $AdvActiveSelfadvertisement->count();
-        $AdvSelfadvertisement         = $AdvSelfadvertisement->count();
-        $AdvActiveVehicle             = $AdvActiveVehicle->count();
-        $AdvVehicle                   = $AdvVehicle->count();
-        $AdvActivePrivateland         = $AdvActivePrivateland->count();
-        $AdvPrivateland               = $AdvPrivateland->count();
-        $AdvActiveAgency              = $AdvActiveAgency->count();
-        $AdvAgency                    = $AdvAgency->count();
-        $advertisementTransaction      = $advertisementTransaction->sum('amount');
-        #  Rejected Advertisement
-        $advSelfRejected              = $advSelfRejected->count();
-        $advVehicleRejected           = $advVehicleRejected->count();
-        $advPrivateRejected           = $advPrivateRejected->count();
-        $advAgencyRejected            = $advAgencyRejected->count();
+        // #  Advertisement
+        // $AdvActiveSelfadvertisement   = $AdvActiveSelfadvertisement->count();
+        // $AdvSelfadvertisement         = $AdvSelfadvertisement->count();
+        // $AdvActiveVehicle             = $AdvActiveVehicle->count();
+        // $AdvVehicle                   = $AdvVehicle->count();
+        // $AdvActivePrivateland         = $AdvActivePrivateland->count();
+        // $AdvPrivateland               = $AdvPrivateland->count();
+        // $AdvActiveAgency              = $AdvActiveAgency->count();
+        // $AdvAgency                    = $AdvAgency->count();
+        // $advertisementTransaction      = $advertisementTransaction->sum('amount');
+        // #  Rejected Advertisement
+        // $advSelfRejected              = $advSelfRejected->count();
+        // $advVehicleRejected           = $advVehicleRejected->count();
+        // $advPrivateRejected           = $advPrivateRejected->count();
+        // $advAgencyRejected            = $advAgencyRejected->count();
 
-        # Market
-        $marActiveLodge                  = $marActiveLodge->count();
-        $marLodge                        = $marLodge->count();
-        $marActiveHostel                 = $marActiveHostel->count();
-        $marHostel                       = $marHostel->count();
-        $marActiveDharamshala            = $marActiveDharamshala->count();
-        $marDharamshala                  = $marDharamshala->count();
-        $marActiveBanquteHall            = $marActiveBanquteHall->count();
-        $marketTransaction               = $marketTransaction->sum('amount');
+        // # Market
+        // $marActiveLodge                  = $marActiveLodge->count();
+        // $marLodge                        = $marLodge->count();
+        // $marActiveHostel                 = $marActiveHostel->count();
+        // $marHostel                       = $marHostel->count();
+        // $marActiveDharamshala            = $marActiveDharamshala->count();
+        // $marDharamshala                  = $marDharamshala->count();
+        // $marActiveBanquteHall            = $marActiveBanquteHall->count();
+        // $marketTransaction               = $marketTransaction->sum('amount');
 
-        # Market Rejected Data
-        $marLodgeRejected                  = $marLodgeRejected->count();
-        $marHostelRejected                 = $marHostelRejected->count();
-        $marDharamshalaRejected            = $marDharamshalaRejected->count();
-        $marBanquteHallRejected            = $marBanquteHallRejected->count();
+        // # Market Rejected Data
+        // $marLodgeRejected                  = $marLodgeRejected->count();
+        // $marHostelRejected                 = $marHostelRejected->count();
+        // $marDharamshalaRejected            = $marDharamshalaRejected->count();
+        // $marBanquteHallRejected            = $marBanquteHallRejected->count();
 
 
 
@@ -1767,23 +1767,23 @@ class PenaltyRecordController extends Controller
         $data['pet_collection_amt']        = $petCollectionAmt;
 
 
-        $data['shopp_add']                      = $shopAdd;
-        $data['toll_add']                       = $tollAdd;
-        $data['total_market']                   = $totalMarket;
-        $data['shop_collection']                = $shopCollectionAmt;
-        $data['toll_collection_amount']         = $tollCollectionAmt;
-        $data['total_collection_amount']        = $tollCollectionAmt + $shopCollectionAmt;
+        // $data['shopp_add']                      = $shopAdd;
+        // $data['toll_add']                       = $tollAdd;
+        // $data['total_market']                   = $totalMarket;
+        // $data['shop_collection']                = $shopCollectionAmt;
+        // $data['toll_collection_amount']         = $tollCollectionAmt;
+        // $data['total_collection_amount']        = $tollCollectionAmt + $shopCollectionAmt;
 
 
-        $data['adv_new_registration']               = $AdvActiveSelfadvertisement + $AdvActiveVehicle + $AdvActivePrivateland + $AdvActiveAgency;
-        $data['adv_approve_registration']           = $AdvSelfadvertisement + $AdvVehicle + $AdvPrivateland + $AdvAgency;
-        $data['adv_rejected_registration']          = $advSelfRejected + $advVehicleRejected + $advPrivateRejected + $advAgencyRejected;
-        $data['mar_rejected_registration']          = $marLodgeRejected + $marHostelRejected + $marDharamshalaRejected + $marBanquteHallRejected;
-        $data['mar_new_registration']               = $marActiveLodge + $marActiveHostel + $marActiveDharamshala + $marActiveBanquteHall;
-        $data['mar_approve_registration']           = $marLodge + $marHostel + $marDharamshala + $marDharamshala;
-        $data['total_market_collection']            = $marketTransaction;
-        $data['total_adv_transactions']             = $advertisementTransaction;
-        $data['total_collection']   = $penaltyCollectionAmt + $wtCollectionAmt + $stCollectionAmt + $rigCollection + $petCollectionAmt + $data['total_collection_amount'] + $marketTransaction + $advertisementTransaction;
+        // $data['adv_new_registration']               = $AdvActiveSelfadvertisement + $AdvActiveVehicle + $AdvActivePrivateland + $AdvActiveAgency;
+        // $data['adv_approve_registration']           = $AdvSelfadvertisement + $AdvVehicle + $AdvPrivateland + $AdvAgency;
+        // $data['adv_rejected_registration']          = $advSelfRejected + $advVehicleRejected + $advPrivateRejected + $advAgencyRejected;
+        // $data['mar_rejected_registration']          = $marLodgeRejected + $marHostelRejected + $marDharamshalaRejected + $marBanquteHallRejected;
+        // $data['mar_new_registration']               = $marActiveLodge + $marActiveHostel + $marActiveDharamshala + $marActiveBanquteHall;
+        // $data['mar_approve_registration']           = $marLodge + $marHostel + $marDharamshala + $marDharamshala;
+        // $data['total_market_collection']            = $marketTransaction;
+        // $data['total_adv_transactions']             = $advertisementTransaction;
+        $data['total_collection']   = $penaltyCollectionAmt + $wtCollectionAmt + $stCollectionAmt + $rigCollection + $petCollectionAmt;
 
         return responseMsgs(true, "Mini Dashboard Data", $data, "0625", "01", responseTime(), $req->getMethod(), $req->deviceId);
     }
