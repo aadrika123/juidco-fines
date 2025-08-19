@@ -8,6 +8,7 @@ return [
     "RAZORPAY_SECRET" => env('RAZORPAY_SECRET'),
     "URL"             => env('PAYMENT_URL'),                    // ( Payment Engine )
     "WF_MASTER_ID"     => 38,
+    "MODULE_ID"       => 14,
     "ROLES" => [
         "ENFORCEMENTCELL"    => 38,
         "ENFORCEMENTOFFICER" => 45,

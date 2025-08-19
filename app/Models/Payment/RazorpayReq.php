@@ -28,4 +28,11 @@ class RazorpayReq extends Model
             ->where('payment_status', 0)
             ->first();
     }
+    public function getPaymentRecordv1($req)
+    {
+        return RazorpayReq::where('order_id', $req->orderId)
+            ->where('application_id', $req->id)
+            ->where('payment_status', 0)
+            ->first();
+    }
 }
