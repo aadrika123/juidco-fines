@@ -2265,7 +2265,7 @@ class PenaltyRecordController extends Controller
             $refResponse = Http::withHeaders([
                 "api-key" => "eff41ef6-d430-4887-aa55-9fcf46c72c99"
             ])
-                ->post($Url . 'api/user/verify-otp', [
+                ->post($Url . '/api/user/verify-otp', [
                     'mobileNo' => $challan->mobile,
                     'otp'      => $req->otp
                 ]);
