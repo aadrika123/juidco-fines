@@ -2320,7 +2320,7 @@ class PenaltyRecordController extends Controller
             $challanDtl = $mPenaltyChallan->details()
                 ->whereIn('penalty_challans.id', $challanIds)
                 ->get();
-            $checkChallan = collect($challanDtl)->first();
+            $checkChallan = collect($challanDtl);
             if (is_null($checkChallan)) {
                 throw new Exception("Challan Details Not Found!");
             }
