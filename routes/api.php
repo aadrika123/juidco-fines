@@ -73,7 +73,7 @@ Route::middleware([])->group(function () {
      * | API Violation CRUD operation
          Controller No : 4
      */
-    Route::controller(ViolationController::class)->group(function () { 
+    Route::controller(ViolationController::class)->group(function () {
         Route::post('fines/violation/crud/save', 'createViolation');                                                  #_Save -------------------------------- 0401
         Route::post('violation/crud/edit', 'updateViolation');                                                  #_Edit  ------------------------------- 0402
         Route::post('fines/violation/crud/get', 'ViolationById');                                                     #_Get By Id --------------------------- 0403
@@ -81,7 +81,7 @@ Route::middleware([])->group(function () {
         Route::post('fines/violation/crud/delete', 'deleteViolation');                                                #_Delete ------------------------------ 0405
         Route::post('fines/violation/by-department', 'violationByDepartment');                                        #_Violation By Department-------------- 0406
         Route::post('fines/violation/onspot', 'onSpotViolation');                                                     #_Get All ----------------------------- 0407
-        Route::post('fines/v2/violation/crud/list', 'getViolation')->withoutMiddleware(['auth:sanctum','expireBearerToken']);               #_Violation List Outside MiddleWare --- 0404
+        Route::post('fines/v2/violation/crud/list', 'getViolation')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);               #_Violation List Outside MiddleWare --- 0404
 
     });
 
@@ -119,9 +119,9 @@ Route::middleware([])->group(function () {
         Route::post('fines/penalty-record/recent-applications', 'recentApplications');                                           #_get recent applications --------- 0610
         Route::post('fines/penalty-record/recent-challans', 'recentChallans');                                                   #_get recent challans ------------- 0611
         Route::post('fines/penalty-record/challan-search', 'searchChallan');                                                     #_get search challans ------------- 0612
-        Route::post('fines/penalty-record/get-challan', 'challanDetails')->withoutMiddleware(['auth:sanctum','expireBearerToken']);                    #_get challans details ------------ 0613
+        Route::post('fines/penalty-record/get-challan', 'challanDetails')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);                    #_get challans details ------------ 0613
         Route::post('fines/penalty-record/offline-challan-payment', 'offlinechallanPayment');                                    #_challan payment  ---------------- 0614
-        Route::post('fines/penalty-record/payment-receipt', 'paymentReceipt')->withoutMiddleware(['auth:sanctum','expireBearerToken']);                #_get payment receipt details ----- 0615
+        Route::post('fines/penalty-record/payment-receipt', 'paymentReceipt')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);                #_get payment receipt details ----- 0615
         Route::post('fines/penalty-record/on-spot-challan', 'onSpotChallan');                                                    #_get on-spot challans ------------ 0616
         Route::post('fines/report/violation-wise', 'violationData');                                                             #_violations wise report ---------- 0617
         Route::post('fines/report/challan-wise', 'challanData');                                                                 #_challan wise report ------------- 0618
@@ -129,15 +129,20 @@ Route::middleware([])->group(function () {
         Route::post('fines/report/comparison', 'comparisonReport');                                                              #_comparison report --------------- 0620
         Route::post('fines/v2/penalty-record/get-challan', 'mobileChallanDetails');                                              #_get challans details mobile ----- 0621
         Route::post('fines/v2/penalty-record/crud/show', 'showV2');                                                              #_penalty record ------------------ 0622
-        Route::post('fines/penalty-record/citizen-challan-search', 'citizenSearchChallan')->withoutMiddleware(['auth:sanctum','expireBearerToken']);   #_get search challans ------------- 0623
-        Route::post('fines/penalty-record/get-tran-no', 'getTranNo')->withoutMiddleware(['auth:sanctum','expireBearerToken']);                         #_Get Tran No --------------------- 0624
-        
+        Route::post('fines/penalty-record/citizen-challan-search', 'citizenSearchChallan')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);   #_get search challans ------------- 0623
+        Route::post('fines/penalty-record/get-tran-no', 'getTranNo')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);                         #_Get Tran No --------------------- 0624
+
         #_Dashboard
         Route::post('fines/mini-dashboard', 'miniLiveDashboard');                                                                  #_Mini Live Dashboard --------------------- 0625
         Route::post('fines/top-collection', 'topUlbCollection');                                                                  #_Top Ulb Collections --------------------- 0626
         Route::post('fines/today-ulb-collection', 'todayUlbCollection');                                                          #_Today Ulb Collections --------------------- 0627
-       
-        Route::post('testWhatsapp', 'testWhatsapp')->withoutMiddleware(['auth:sanctum','expireBearerToken']);                     #_Whatsaap Test --------------------- 0624
+        //_ Citizen Care Taker
+        // Arshad
+        Route::post('fines/care-taker-otp', 'fineCaretakerOtp');                                                                #_Citizen Care Taker otp --------------------- 0628
+        Route::post('fines/caretaker-challan-tagging', 'caretakerChallanTag');                                                  #_Citizen Care Taker Challan Tagging --------------------- 0629
+        Route::post('fines/caretaken-connections', 'viewCaretakenConnection');                           // Citiizen Care Taker Connections --------------------- 0630
+
+        Route::post('testWhatsapp', 'testWhatsapp')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);                     #_Whatsaap Test --------------------- 0624
     });
 
     /**
@@ -146,11 +151,11 @@ Route::middleware([])->group(function () {
      */
     Route::controller(PaymentController::class)->group(function () {
         Route::post('fines/razorpay/initiate-payment', 'initiatePayment');                                        #_Initiate Online Payment ----------------- 0701
-        Route::post('fines/razorpay/save-response', 'saveRazorpayResponse')->withoutMiddleware(['auth:sanctum','expireBearerToken']);   #_Save Response of Online Payment --------- 0702
+        Route::post('fines/razorpay/save-response', 'saveRazorpayResponse')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);   #_Save Response of Online Payment --------- 0702
         Route::post('fines/cash-verification-list', 'listCashVerification');                                      #_List of Cash Verification --------------- 0703
         Route::post('fines/cash-verification-dtl', 'cashVerificationDtl');                                        #_Cash Verification Detail ---------------- 0704
         Route::post('fines/verify-cash', 'verifyCash');                                                           #_Verify Cash ----------------------------- 0705
-        Route::post('fines/citizen-online-payment', 'initiatePayment')->withoutMiddleware(['auth:sanctum','expireBearerToken']);        #_Initiate Online Payment By Citizen ------ 0701
+        Route::post('fines/citizen-online-payment', 'initiatePayment')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);        #_Initiate Online Payment By Citizen ------ 0701
     });
 
     /**
@@ -175,7 +180,7 @@ Route::middleware([])->group(function () {
         Route::post('user/crud/get', 'getUserById');                                            #_Get By Id --------------- 0903
         Route::post('user/crud/list', 'getUserList');                                           #_Get All ----------------- 0904
         Route::post('user/crud/delete', 'deleteUser');                                          #_Delete ------------------ 0905
-        Route::post('user/set-password', 'setPassword')->withoutMiddleware(['auth:sanctum','expireBearerToken']);     #_Set Password ------------ 0906
+        Route::post('user/set-password', 'setPassword')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);     #_Set Password ------------ 0906
         // Route::post('fines/ward-list', 'wardList');                                                   #_Ward List --------------- 0907
         Route::post('user/role-assign', 'roleAssign');                                          #_Role Assignment --------- 0908
         Route::post('fines/user/enf-officer', 'getOfficers');      #_Get Officer Details ----- 0909
@@ -185,9 +190,9 @@ Route::middleware([])->group(function () {
      * | Deactivation Conroller
          Controller No : 10
      */
-    Route::post('fines/deactivate-application', [DeactivationController::class, 'deactivateApplication'])->withoutMiddleware(['auth:sanctum','expireBearerToken']);   #_Deactivate Application ------------1001
-    Route::post('fines/deactivate-challan', [DeactivationController::class, 'deactivateChallan'])->withoutMiddleware(['auth:sanctum','expireBearerToken']);           #_Deactivate Application ------------1002
-    Route::post('fines/deactivate-payment', [DeactivationController::class, 'deactivatePayment'])->withoutMiddleware(['auth:sanctum','expireBearerToken']);           #_Deactivate Application ------------1003
+    Route::post('fines/deactivate-application', [DeactivationController::class, 'deactivateApplication'])->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);   #_Deactivate Application ------------1001
+    Route::post('fines/deactivate-challan', [DeactivationController::class, 'deactivateChallan'])->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);           #_Deactivate Application ------------1002
+    Route::post('fines/deactivate-payment', [DeactivationController::class, 'deactivatePayment'])->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);           #_Deactivate Application ------------1003
 
 
 });

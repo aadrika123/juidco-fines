@@ -32,6 +32,7 @@ use App\Models\MarRejectedHostel;
 use App\Models\MarRejectedLodge;
 use App\Models\MarToll;
 use App\Models\MarTollPayment;
+use App\Models\Master\ActiveCitizenUndercare;
 use App\Models\Master\Section;
 use App\Models\Master\UlbMaster;
 use App\Models\Master\Violation;
@@ -58,6 +59,7 @@ use App\Models\WtBooking;
 use App\Models\WtCancellation;
 use App\Pipelines\FinePenalty\SearchByApplicationNo;
 use App\Pipelines\FinePenalty\SearchByChallan;
+use App\Pipelines\FinePenalty\SearchHoldingNo;
 use App\Pipelines\FinePenalty\SearchByMobile;
 use App\Traits\Fines\FinesTrait;
 use App\Traits\Workflow\Workflow;
@@ -69,6 +71,7 @@ use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\Config;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\Http;
 
 /**
  * =======================================================================================================
@@ -2145,5 +2148,185 @@ class PenaltyRecordController extends Controller
             "content_type" => "text",
             $message
         ]);
+    }
+
+    public function fineCaretakerOtp(Request $req)
+    {
+        try {
+            $user = authUser($req);
+            $userId = $user->id;
+
+            $mActiveCitizenUndercare = new ActiveCitizenUndercare();
+            $Url = Config::get('constants.URL');
+
+            // ✅ Use pipeline to filter challan
+            $challan = app(Pipeline::class)
+                ->send(
+                    PenaltyChallan::query()
+                        ->where('penalty_challans.status', 1)
+                        ->join('penalty_final_records', 'penalty_final_records.id', '=', 'penalty_challans.penalty_record_id')
+                        ->select('penalty_challans.*', 'penalty_final_records.holding_no', 'penalty_final_records.mobile')
+                )
+                ->through([
+                    SearchByChallan::class,
+                    SearchHoldingNo::class,
+                ])
+                ->thenReturn()
+                ->first();
+
+            $existingData = $mActiveCitizenUndercare->getDetailsForUnderCare($userId, $challan->id);
+            if (!is_null($existingData)) {
+                throw new Exception("Consumer No. caretaker already exist!");
+            }
+
+            $applicantMobile = $challan->mobile;
+
+            // ✅ Call external OTP API
+            $refResponse = Http::withHeaders([
+                "api-key" => "eff41ef6-d430-4887-aa55-9fcf46c72c99"
+            ])
+                ->post($Url . 'api/user/send-otp', [
+                    'mobileNo' => $applicantMobile
+                ]);
+
+            $response = $refResponse->json();
+
+            $data = [
+                'otp' => $response['data'] ?? null,
+                'mobileNo' => $applicantMobile
+            ];
+
+            return response()->json([
+                "status" => true,
+                "message" => "OTP sent successfully",
+                "data" => $data
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json(['status' => false, 'msg' => $e->getMessage()], 500);
+        }
+    }
+    /**
+     * | Care taker property tag (for Fines flow)
+     */
+    public function caretakerChallanTag(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'otp'       => 'required|digits:6',
+                'challanNo' => 'nullable|string|max:255',
+                'holdingNo' => 'nullable|string|max:255',
+            ]
+        );
+
+        if ($validated->fails()) {
+            return response()->json([
+                "status" => false,
+                "msg"    => $validated->errors()->first()
+            ], 422);
+        }
+
+        try {
+            $user   = authUser($req);
+            $userId = $user->id;
+
+            $mActiveCitizenUndercare = new ActiveCitizenUndercare();
+            $Url                     = Config::get('constants.URL');
+
+            // ✅ Get challan details via pipeline (same as fineCaretakerOtp)
+            $challan = app(Pipeline::class)
+                ->send(
+                    PenaltyChallan::query()
+                        ->where('penalty_challans.status', 1)
+                        ->join(
+                            'penalty_final_records',
+                            'penalty_final_records.id',
+                            '=',
+                            'penalty_challans.penalty_record_id'
+                        )
+                        ->select(
+                            'penalty_challans.*',
+                            'penalty_final_records.holding_no',
+                            'penalty_final_records.mobile'
+                        )
+                )
+                ->through([
+                    SearchByChallan::class,
+                    SearchHoldingNo::class,
+                ])
+                ->thenReturn()
+                ->first();
+
+            if (!$challan) {
+                throw new Exception("Challan not found!");
+            }
+
+            // ✅ Verify OTP from external service
+            $refResponse = Http::withHeaders([
+                "api-key" => "eff41ef6-d430-4887-aa55-9fcf46c72c99"
+            ])
+                ->post($Url . 'api/user/verify-otp', [
+                    'mobileNo' => $challan->mobile,
+                    'otp'      => $req->otp
+                ]);
+
+            $response = $refResponse->json();
+            if (!($response['status'] ?? false)) {
+                throw new Exception("OTP not validated!");
+            }
+
+            // ✅ Check if caretaker mapping already exists
+            $existingData = $mActiveCitizenUndercare->getDetailsForUnderCare($userId, $challan->id);
+            if (!is_null($existingData)) {
+                throw new Exception("ConsumerNo caretaker already exist!");
+            }
+
+            // ✅ Save caretaker details
+            DB::beginTransaction();
+            $mActiveCitizenUndercare->saveCaretakeDetails($challan->id, $challan->mobile, $userId);
+            DB::commit();
+
+            return response()->json([
+                "status"  => true,
+                "message" => "Challan successfully attached!"
+            ], 200);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'msg'    => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * | View details of the caretaken swm connection
+     * | using user id
+        | Working
+        | Serial No : 07
+     */
+    public function viewCaretakenConnection(Request $request)
+    {
+        try {
+            $mPenaltyChallan               = new PenaltyChallan();
+            $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
+
+            $connectionDetails = $mActiveCitizenUndercare->getDetailsByCitizenId($request);
+            $check = collect($connectionDetails)->first();
+            if (is_null($check))
+                throw new Exception("Under taken data not found!");
+
+            $challanIds = collect($connectionDetails)->pluck('challan_id');
+            $challanDtl = $mPenaltyChallan->details()
+                ->whereIn('penalty_challans.id', $challanIds)
+                ->get();
+            $checkChallan = collect($challanDtl)->first();
+            if (is_null($checkChallan)) {
+                throw new Exception("Challan Details Not Found!");
+            }
+            return response()->json(["status" => true, "message" => "List of undertaken fines connections!!", "data" => $checkChallan], 200);
+        } catch (Exception $e) {
+            return response()->json(['status' => false, 'msg' => $e->getMessage()], 500);
+        }
     }
 }
