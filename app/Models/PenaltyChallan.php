@@ -42,6 +42,7 @@ class PenaltyChallan extends Model
             'penalty_final_records.full_name',
             'penalty_final_records.mobile',
             'penalty_final_records.application_no',
+            'penalty_final_records.holding_no',
             'penalty_final_records.payment_status',
             'tran_no as transaction_no',
             'penalty_transactions.tran_no',
