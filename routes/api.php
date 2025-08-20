@@ -140,7 +140,8 @@ Route::middleware([])->group(function () {
         // Arshad
         Route::post('fines/care-taker-otp', 'fineCaretakerOtp');                                                                #_Citizen Care Taker otp --------------------- 0628
         Route::post('fines/caretaker-challan-tagging', 'caretakerChallanTag');                                                  #_Citizen Care Taker Challan Tagging --------------------- 0629
-        Route::post('fines/caretaken-connections', 'viewCaretakenConnection');                           // Citiizen Care Taker Connections --------------------- 0630
+        Route::post('fines/caretaken-connections', 'viewCaretakenConnection');                           //_Citizen Care Taker Connections --------------------- 0630
+        Route::post('fines/get-filter-fines-details', 'finesListByKey');                           // _Get Filter Fines Details --------------------- 0631
 
         Route::post('testWhatsapp', 'testWhatsapp')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);                     #_Whatsaap Test --------------------- 0624
     });

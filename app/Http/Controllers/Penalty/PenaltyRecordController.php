@@ -2329,4 +2329,73 @@ class PenaltyRecordController extends Controller
             return response()->json(['status' => false, 'msg' => $e->getMessage()], 500);
         }
     }
+    /**
+     * | Get Property GB List by Filter Key
+     * | Filtered by: holdingNo / zoneId / wardId / legacy flag
+     */
+    public function finesListByKey(Request $request)
+    {
+        // ✅ Step 1: Validate request inputs
+        $request->validate([
+            'filteredBy' => "required|string",
+            'parameter'  => "nullable|string",
+            'zoneId'     => "nullable|digits_between:1,9223372036854775807",
+            'wardId'     => "nullable|digits_between:1,9223372036854775807",
+            'isLegacy'   => "nullable|boolean",
+            'perPage'    => "nullable|integer|min:1",
+        ]);
+
+        try {
+            // ✅ Step 2: Initialize
+            $mPenaltyFinalRecord = new PenaltyFinalRecord();
+            $user     = authUser($request);
+            $userId   = $user->id;
+            $userType = $user->user_type;
+            $ulbId    = $user->ulb_id ?? $request->ulbId;
+
+            $key       = $request->filteredBy;
+            $parameter = $request->parameter;
+            $isLegacy  = $request->isLegacy ?? false;
+            $perPage   = $request->perPage ?? 10;
+
+            // ✅ Step 3: Base query
+            $query = $mPenaltyFinalRecord->recordDetail();
+
+            // ✅ Step 4: Apply filters based on key
+            switch ($key) {
+                case "holdingNo":
+                    $query->where('penalty_final_records.holding_no', $parameter);
+                    break;
+
+                case "zoneId":
+                    $query->where('penalty_final_records.zone_id', $request->zoneId);
+                    break;
+
+                case "wardId":
+                    $query->where('penalty_final_records.ward_id', $request->wardId);
+                    break;
+
+                case "legacy":
+                    $query->where('penalty_final_records.is_legacy', $isLegacy);
+                    break;
+
+                default:
+                    throw new Exception("Invalid filter key provided!");
+            }
+
+            // ✅ Step 5: Paginate results
+            $paginator = $query->paginate($perPage);
+
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page"    => $paginator->lastPage(),
+                "data"         => $paginator->items(),
+                "total"        => $paginator->total(),
+            ];
+
+            return responseMsgs(true, "Application Details", remove_null($list), "011302", "1.0", responseTime(), "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011302", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+    }
 }
