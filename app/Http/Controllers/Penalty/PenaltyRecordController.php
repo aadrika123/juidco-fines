@@ -2359,7 +2359,7 @@ class PenaltyRecordController extends Controller
             $perPage   = $request->perPage ?? 10;
 
             // ✅ Step 3: Base query
-            $query = $mPenaltyFinalRecord->recordDetail();
+            $query = $mPenaltyFinalRecord->recordDetailv1();
 
             // ✅ Step 4: Apply filters based on key
             switch ($key) {

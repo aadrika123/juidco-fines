@@ -52,4 +52,35 @@ class PenaltyFinalRecord extends Model
             ->join('departments', 'departments.id', 'violations.department_id')
             ->orderByDesc('penalty_final_records.id');
     }
+    /**
+     * |
+     */
+    public function recordDetailv1()
+    {
+        return PenaltyFinalRecord::select(
+            'penalty_final_records.*',
+            'penalty_challans.challan_no',
+            'ulb_ward_masters.ward_name as ward_no',
+            'violations.violation_name',
+            'violations.section_id',
+            'violations.violation_name as section_definition',
+            'sections.violation_section',
+            'departments.department_name as department',
+            DB::raw(
+                "CASE 
+                        WHEN penalty_final_records.status = '1' THEN 'Active'
+                        WHEN penalty_final_records.status = '0' THEN 'Deactivated'  
+                        WHEN penalty_final_records.status = '2' THEN 'Approved'  
+                    END as status,
+                    TO_CHAR(penalty_final_records.created_at::date,'dd-mm-yyyy') as date,
+                    TO_CHAR(penalty_final_records.created_at,'HH12:MI:SS AM') as time",
+            )
+        )
+            ->join('violations', 'violations.id', '=', 'penalty_final_records.violation_id')
+            ->join('sections', 'sections.id', '=', 'violations.section_id')
+            ->join('departments', 'departments.id', 'violations.department_id')
+            ->join('penalty_challans', 'penalty_challans.penalty_record_id', 'penalty_final_records.id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'penalty_final_records.ward_id')
+            ->orderByDesc('penalty_final_records.id');
+    }
 }
