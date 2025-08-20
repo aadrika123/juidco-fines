@@ -594,7 +594,7 @@ class PaymentController extends Controller
                 "tran_no"        => $transactionNo,
                 "tran_date"      => $req->date ?? Carbon::now()->format('Y-m-d'),
                 "tran_by"        => $req->userId ?? 0,
-                "citzen_id"        => $req->userId ?? 0,
+                "citizen_id"        => $req->userId ?? 0,
                 "payment_mode"   => strtoupper('ONLINE'),
                 "amount"         => $challanDetails->amount,
                 "penalty_amount" => $challanDetails->penalty_amount,
