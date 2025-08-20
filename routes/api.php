@@ -157,7 +157,8 @@ Route::middleware([])->group(function () {
         Route::post('fines/verify-cash', 'verifyCash');                                                           #_Verify Cash ----------------------------- 0705
         Route::post('fines/citizen-online-payment', 'initiatePayment')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);        #_Initiate Online Payment By Citizen ------ 0701
         Route::post('fines/citizen-online-challan-payment', 'initiateOnlineChallanPayment');                                            #_Initiate Online Payment By Citizen with Auth User------ 0701
-        Route::post('fines/citizen-online-payment-success-failure', 'paymentSuccessOrFailure')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);                                         #_Initiate Online Payment By Citizen with Auth User------ 0701
+        Route::post('fines/citizen-online-payment-success-failure', 'paymentSuccessOrFailure')->withoutMiddleware(['auth:sanctum', 'expireBearerToken']);                                   #_Initiate Online Payment By Citizen with Auth User------ 0701
+        Route::post('fines/citizen-payment-history', 'getCitizenPaymentHistory');                                   #_Get Citizen Payment History ------ 0701
     });
 
     /**

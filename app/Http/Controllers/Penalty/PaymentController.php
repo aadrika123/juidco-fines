@@ -450,7 +450,7 @@ class PaymentController extends Controller
                 'applicationId' => $request->applicationId,
                 'challanId'     => $request->challanId,
                 'payment_method' => "ONLINE",
-                'workflow_id'   => 0 // Static
+                'workflow_id'   => 0, // Static
             ];
             return responseMsgs(true, "Payment OrderId Generated Successfully !!!", $temp, "",  "01",  ".ms",  "POST",  $request->deviceId);
         } catch (Exception $e) {
@@ -593,7 +593,8 @@ class PaymentController extends Controller
                 "challan_id"     => $challanDetails->id,
                 "tran_no"        => $transactionNo,
                 "tran_date"      => $req->date ?? Carbon::now()->format('Y-m-d'),
-                "tran_by"        => $req->user_id ?? 0,
+                "tran_by"        => $req->userId ?? 0,
+                "citzen_id"        => $req->userId ?? 0,
                 "payment_mode"   => strtoupper('ONLINE'),
                 "amount"         => $challanDetails->amount,
                 "penalty_amount" => $challanDetails->penalty_amount,
@@ -632,6 +633,41 @@ class PaymentController extends Controller
             return responseMsgs(true, "Data Saved", $data, $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    /**
+     * | Get citizen payment history to show 
+     * | Using user Id for displaying data
+        | Selail No : 12
+        | Use 
+        | Show the payment from jsk also
+     */
+    public function getCitizenPaymentHistory(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'pages' => 'required|int'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $citizen        = authUser($request);
+            $citizenId      = $citizen->id ?? 36;
+            $mfineTran     = new PenaltyTransaction();
+            $refUserType    = Config::get("constants.USER_TYPE");
+
+            if ($citizen->user_type != $refUserType["Citizen"]) {
+                throw new Exception("You're user type is not citizen!");
+            }
+            $transactionDetails = $mfineTran->getTransByCitizenId($citizenId)
+                ->paginate($request->pages);
+            return responseMsgs(true, "List of transactions", remove_null($transactionDetails), "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
         }
     }
 }

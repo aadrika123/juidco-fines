@@ -69,4 +69,11 @@ class PenaltyTransaction extends Model
             ->where('verify_status', 2)
             ->where('tran_date', $date);
     }
+
+    public function getTransByCitizenId($citizenId)
+    {
+        return PenaltyTransaction::where('citizen_id', $citizenId)
+            ->where('payment_mode', 'ONLINE')
+            ->orderByDesc('id');
+    }
 }
