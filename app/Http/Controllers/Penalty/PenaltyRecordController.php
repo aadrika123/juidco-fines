@@ -2245,7 +2245,7 @@ class PenaltyRecordController extends Controller
                 ->send(
                     PenaltyChallan::query()
                         ->where('penalty_challans.status', 1)
-                        ->where('penalty_challans.ulb_id', $req->ulbId)
+                        ->where('penalty_final_records.ulb_id', $req->ulbId)
                         ->join(
                             'penalty_final_records',
                             'penalty_final_records.id',
