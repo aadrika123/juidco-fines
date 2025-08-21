@@ -55,7 +55,7 @@ class PenaltyFinalRecord extends Model
     /**
      * |
      */
-    public function recordDetailv1()
+    public function recordDetailv1($ulbId)
     {
         return PenaltyFinalRecord::select(
             'penalty_final_records.*',
@@ -81,6 +81,7 @@ class PenaltyFinalRecord extends Model
             ->join('departments', 'departments.id', 'violations.department_id')
             ->join('penalty_challans', 'penalty_challans.penalty_record_id', 'penalty_final_records.id')
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'penalty_final_records.ward_id')
+            ->where('penalty_final_records.ulb_id', $ulbId)
             ->orderByDesc('penalty_final_records.id');
     }
 }

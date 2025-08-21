@@ -2155,6 +2155,7 @@ class PenaltyRecordController extends Controller
         try {
             $user = authUser($req);
             $userId = $user->id;
+            $ulbId = $req->ulb_id;
 
             $mActiveCitizenUndercare = new ActiveCitizenUndercare();
             $Url = Config::get('constants.URL');
@@ -2165,6 +2166,7 @@ class PenaltyRecordController extends Controller
                     PenaltyChallan::query()
                         ->where('penalty_challans.status', 1)
                         ->join('penalty_final_records', 'penalty_final_records.id', '=', 'penalty_challans.penalty_record_id')
+                        ->where('penalty_final_records.ulb_id', $ulbId)
                         ->select('penalty_challans.*', 'penalty_final_records.holding_no', 'penalty_final_records.mobile')
                 )
                 ->through([
@@ -2173,6 +2175,9 @@ class PenaltyRecordController extends Controller
                 ])
                 ->thenReturn()
                 ->first();
+            if (is_null($challan)) {
+                throw new Exception("Challan not found!");
+            }
 
             $existingData = $mActiveCitizenUndercare->getDetailsForUnderCare($userId, $challan->id);
             if (!is_null($existingData)) {
@@ -2216,6 +2221,7 @@ class PenaltyRecordController extends Controller
                 'otp'       => 'required|digits:6',
                 'challanNo' => 'nullable|string|max:255',
                 'holdingNo' => 'nullable|string|max:255',
+                'ulbId'     =>  'required|digits_between:1,9223372036854775807',
             ]
         );
 
@@ -2238,6 +2244,7 @@ class PenaltyRecordController extends Controller
                 ->send(
                     PenaltyChallan::query()
                         ->where('penalty_challans.status', 1)
+                        ->where('penalty_challans.ulb_id', $req->ulbId)
                         ->join(
                             'penalty_final_records',
                             'penalty_final_records.id',
@@ -2343,6 +2350,7 @@ class PenaltyRecordController extends Controller
             'wardId'     => "nullable|digits_between:1,9223372036854775807",
             'isLegacy'   => "nullable|boolean",
             'perPage'    => "nullable|integer|min:1",
+            "ulbId"    => "required|digits_between:1,9223372036854775807",
         ]);
 
         try {
@@ -2351,7 +2359,7 @@ class PenaltyRecordController extends Controller
             $user     = authUser($request);
             $userId   = $user->id;
             $userType = $user->user_type;
-            $ulbId    = $user->ulb_id ?? $request->ulbId;
+            $ulbId    = $request->ulbId;
 
             $key       = $request->filteredBy;
             $parameter = $request->parameter;
@@ -2359,7 +2367,7 @@ class PenaltyRecordController extends Controller
             $perPage   = $request->perPage ?? 10;
 
             // ✅ Step 3: Base query
-            $query = $mPenaltyFinalRecord->recordDetailv1();
+            $query = $mPenaltyFinalRecord->recordDetailv1($ulbId);
 
             // ✅ Step 4: Apply filters based on key
             switch ($key) {
@@ -2381,6 +2389,9 @@ class PenaltyRecordController extends Controller
 
                 default:
                     throw new Exception("Invalid filter key provided!");
+            }
+            if ($query->count() == 0) {
+                throw new Exception("No records found for the given filter!");
             }
 
             // ✅ Step 5: Paginate results
