@@ -2155,7 +2155,7 @@ class PenaltyRecordController extends Controller
         try {
             $user = authUser($req);
             $userId = $user->id;
-            $ulbId = $req->ulb_id;
+            $ulbId = $req->ulbId;
 
             $mActiveCitizenUndercare = new ActiveCitizenUndercare();
             $Url = Config::get('constants.URL');
@@ -2165,8 +2165,9 @@ class PenaltyRecordController extends Controller
                 ->send(
                     PenaltyChallan::query()
                         ->where('penalty_challans.status', 1)
-                        ->join('penalty_final_records', 'penalty_final_records.id', '=', 'penalty_challans.penalty_record_id')
                         ->where('penalty_final_records.ulb_id', $ulbId)
+                        ->join('penalty_final_records', 'penalty_final_records.id', '=', 'penalty_challans.penalty_record_id')
+                        
                         ->select('penalty_challans.*', 'penalty_final_records.holding_no', 'penalty_final_records.mobile')
                 )
                 ->through([
