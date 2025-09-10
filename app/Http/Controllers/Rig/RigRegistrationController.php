@@ -454,13 +454,20 @@ class RigRegistrationController extends Controller
             try {
                 $refAppDetails = $mRigActiveRegistration->getAllApplicationDetails($user->id, $confDbKey['1'])
                     ->select(
+                        DB::raw("DISTINCT ON (rig_active_registrations.id) rig_active_registrations.id"),
                         DB::raw("REPLACE(rig_active_registrations.application_type, '_', ' ') AS ref_application_type"),
                         DB::raw("TO_CHAR(rig_active_registrations.application_apply_date, 'DD-MM-YYYY') as ref_application_apply_date"),
                         "rig_active_registrations.*",
                         "rig_active_applicants.applicant_name",
-                        "wf_roles.role_name"
+                        "wf_roles.role_name",
+                        DB::raw("CASE WHEN rig_active_registrations.parked = true THEN workflow_tracks.message ELSE NULL END as remarks")
                     )
-                    ->orderByDesc('rig_active_registrations.id')
+                    ->leftJoin("workflow_tracks", function ($join) use ($user) {
+                        $join->on(DB::raw("CAST(workflow_tracks.ref_table_id_value AS BIGINT)"), "=", "rig_active_registrations.id")
+                            ->where("workflow_tracks.citizen_id", $user->id);
+                    })
+                    ->orderBy("rig_active_registrations.id")
+                    ->orderByRaw("workflow_tracks.message IS NULL") // ✅ prefer rows with message first
                     ->get();
             } catch (QueryException $q) {
                 return responseMsgs(false, "An error occurred during the query!", $q->getMessage(), "", "01", ".ms", "POST", $req->deviceId);
@@ -723,7 +730,7 @@ class RigRegistrationController extends Controller
     public function getApproveRegistration(Request $req)
     {
         try {
-           $user                 = authUser($req);
+            $user                 = authUser($req);
             $confUserType               = $this->_userType;
             $mRigApprovedRegistration   = new RigApprovedRegistration();
 
