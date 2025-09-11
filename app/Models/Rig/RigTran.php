@@ -163,7 +163,7 @@ class RigTran extends Model
             'rig_cheque_dtls.branch_name'
         )
             ->join('users', 'users.id', 'rig_trans.emp_dtl_id')
-            ->leftjoin('rig_cheque_dtls', 'rig_cheque_dtls.application_id', 'rig_trans.related_id')
+            ->leftjoin('rig_cheque_dtls', 'rig_cheque_dtls.transaction_id', 'rig_trans.id')
             ->where('rig_trans.status', 1)
             // ->where('rig_trans.ulb_id',$ulbId)
             ->whereIn('rig_trans.verify_status', [0, 2])
