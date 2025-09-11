@@ -1240,6 +1240,7 @@ class RigWorkflowController extends Controller
             $metaReqs['ulbId'] = $mRigActiveRegistration->ulb_id;
             $metaReqs['verificationStatus'] = 2;
             $metaReqs['citizenId'] = $mRigActiveRegistration->citizen_id;
+            $metaReqs['userId'] = $mRigActiveRegistration->user_id;
             $req->request->add($metaReqs);
 
             $req->request->add($metaReqs);

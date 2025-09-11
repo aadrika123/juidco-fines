@@ -100,6 +100,48 @@ class RigActiveRegistration extends Model
     /**
      * | Get Application by applicationId
      */
+    // public function getrigApplicationById($applicationId)
+    // {
+    //     return RigActiveRegistration::select(
+    //         'rig_active_registrations.id as ref_application_id',
+    //         DB::raw("REPLACE(rig_active_registrations.application_type, '_', ' ') AS ref_application_type"),
+    //         'rig_vehicle_active_details.application_id as ref_rig_id',
+    //         'rig_active_applicants.application_id as ref_applicant_id',
+    //         'rig_active_applicants.*',
+    //         'rig_vehicle_active_details.*',
+    //         'rig_active_registrations.*',
+    //         'rig_active_registrations.id as id',
+    //         'rig_active_registrations.status as registrationStatus',
+    //         'rig_vehicle_active_details.status as rigStatus',
+    //         'rig_approved_registrations.status as applicantsStatus',
+    //         'ulb_ward_masters.ward_name',
+    //         'ulb_masters.ulb_name',
+    //         'rig_approved_registrations.approve_end_date',
+    //         'rig_approved_registrations.registration_id',
+    //         DB::raw("CASE 
+    //         WHEN rig_vehicle_active_details.sex = '1' THEN 'Male'
+    //         WHEN rig_vehicle_active_details.sex = '2' THEN 'Female'
+    //         END AS ref_gender"),
+    //         'wf_roles.role_name AS roleName'
+    //     )
+    //         ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
+    //         ->join('rig_vehicle_active_details', 'rig_vehicle_active_details.application_id', 'rig_active_registrations.id')
+    //         ->join('ulb_masters', 'ulb_masters.id', '=', 'rig_active_registrations.ulb_id')
+    //         ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_active_registrations.ward_id')
+    //         ->leftjoin('wf_roles', 'wf_roles.id', 'rig_active_registrations.current_role_id')
+    //         ->leftJoin('rig_approved_registrations', function ($join) {
+    //             $join->on('rig_approved_registrations.application_id', '=', 'rig_active_registrations.id')
+    //                 ->where('rig_approved_registrations.status', 1);
+    //         })
+    //         ->leftJoin('workflow_tracks', function ($join) {
+    //             $join->on(DB::raw("CAST(workflow_tracks.ref_table_id_value AS BIGINT)"), '=', 'rig_active_registrations.id')
+    //                 ->where('workflow_tracks.module_id', 15)
+    //                 ->where('workflow_tracks.verify_status', 2);
+    //         })
+    //         ->where('rig_active_registrations.id', $applicationId)
+    //         ->orderByRaw("workflow_tracks.message IS NULL");
+    //     // ->where('rig_active_registrations.status', '<>', 0);
+    // }
     public function getrigApplicationById($applicationId)
     {
         return RigActiveRegistration::select(
@@ -119,23 +161,36 @@ class RigActiveRegistration extends Model
             'rig_approved_registrations.approve_end_date',
             'rig_approved_registrations.registration_id',
             DB::raw("CASE 
+            WHEN rig_active_registrations.parked = true 
+                 AND workflow_tracks.module_id = 15 
+                 AND workflow_tracks.workflow_id = 200 
+                 AND workflow_tracks.verification_status = 2
+            THEN workflow_tracks.message 
+            ELSE NULL 
+        END as remarks"),
+            DB::raw("CASE 
             WHEN rig_vehicle_active_details.sex = '1' THEN 'Male'
             WHEN rig_vehicle_active_details.sex = '2' THEN 'Female'
-            END AS ref_gender"),
+        END AS ref_gender"),
             'wf_roles.role_name AS roleName'
         )
             ->join('rig_active_applicants', 'rig_active_applicants.application_id', 'rig_active_registrations.id')
             ->join('rig_vehicle_active_details', 'rig_vehicle_active_details.application_id', 'rig_active_registrations.id')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'rig_active_registrations.ulb_id')
-            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_active_registrations.ward_id')
-            ->leftjoin('wf_roles', 'wf_roles.id', 'rig_active_registrations.current_role_id')
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_active_registrations.ward_id')
+            ->leftJoin('wf_roles', 'wf_roles.id', 'rig_active_registrations.current_role_id')
             ->leftJoin('rig_approved_registrations', function ($join) {
                 $join->on('rig_approved_registrations.application_id', '=', 'rig_active_registrations.id')
                     ->where('rig_approved_registrations.status', 1);
             })
-
+            ->leftJoin('workflow_tracks', function ($join) {
+                $join->on(DB::raw("CAST(workflow_tracks.ref_table_id_value AS BIGINT)"), '=', 'rig_active_registrations.id')
+                    ->where('workflow_tracks.module_id', 15)
+                    ->where('workflow_tracks.workflow_id', 200)
+                    ->where('workflow_tracks.verification_status', 2);
+            })
             ->where('rig_active_registrations.id', $applicationId);
-        // ->where('rig_active_registrations.status', '<>', 0);
+        // ->first();
     }
 
     /**
@@ -193,8 +248,10 @@ class RigActiveRegistration extends Model
             'rig_active_applicants.mobile_no',
             'rig_active_applicants.applicant_name',
             'rig_active_registrations.user_type',
+            'rig_active_registrations.parked',
             DB::raw("CASE 
-            WHEN rig_active_registrations.status= '1' THEN 'Pending'
+            WHEN rig_active_registrations.parked = 'true' THEN 'BTC'
+            WHEN rig_active_registrations.status = '1' THEN 'Pending'
             WHEN rig_active_registrations.status = '2' THEN 'Approve'
             WHEN rig_active_registrations.status = '0' THEN 'Rejected'
             END AS application_status"),
