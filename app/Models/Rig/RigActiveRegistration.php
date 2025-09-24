@@ -159,7 +159,7 @@ class RigActiveRegistration extends Model
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
             'rig_approved_registrations.approve_end_date',
-            'rig_approved_registrations.registration_id',
+            // 'rig_approved_registrations.registration_id',
             DB::raw("CASE 
             WHEN rig_active_registrations.parked = true 
                  AND workflow_tracks.module_id = 15 
