@@ -41,6 +41,7 @@ use App\Models\WfWorkflowrolemap;
 use App\Models\Rig\WfActiveDocument;
 use App\Models\Rig\CustomDetail;
 use App\Models\Rig\RigAudit;
+use App\Models\RigLicenseDuration;
 use App\Models\WfRoleusermap;
 use Illuminate\Support\Collection;
 use Termwind\Components\Raw;
@@ -68,7 +69,7 @@ class RigRegistrationController extends Controller
     protected $_DB;
     protected $_DB_NAME2;
     protected $_DB2;
-    # Class constructer 
+    # Class constructer
     public function __construct()
     {
         $this->_masterDetails       = Config::get("rig.MASTER_DATA");
@@ -142,7 +143,7 @@ class RigRegistrationController extends Controller
 
     /**
      * | Apply for the Rig Registration
-     * | Save form data 
+     * | Save form data
      * | @param req
         | Serial No : 0
         | Need Modifications in saving charges
@@ -167,7 +168,7 @@ class RigRegistrationController extends Controller
             $confApplyThrough           = $this->_masterDetails['REGISTRATION_THROUGH'];
             $section                    = 0;
 
-            # Get iniciater and finisher for the workflow 
+            # Get iniciater and finisher for the workflow
             $ulbWorkflowId = $mWfWorkflow->getulbWorkflowId($workflowMasterId, $ulbId);
             if (!$ulbWorkflowId) {
                 throw new Exception("Respective Ulb is not maped to 'rig Registration' Workflow!");
@@ -191,15 +192,15 @@ class RigRegistrationController extends Controller
                 $citzenId = $user->id;
             }
 
-            # Get the Initiator and Finisher details 
+            # Get the Initiator and Finisher details
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
             $refFinisherRoleId  = $this->getFinisherId($ulbWorkflowId->id);
             $finisherRoleId     = collect(DB::select($refFinisherRoleId))->first()->role_id;
             $initiatorRoleId    = collect(DB::select($refInitiatorRoleId))->first()->role_id;
 
-            # Data Base interaction 
+            # Data Base interaction
             DB::beginTransaction();
-            $idGeneration = new IdGeneration($rigParamId['REGISTRATION'], $ulbId, $section, 0);                                     // Generate the application no 
+            $idGeneration = new IdGeneration($rigParamId['REGISTRATION'], $ulbId, $section, 0);                                     // Generate the application no
             $rigApplicationNo = $idGeneration->generateId();
             $refData = [
                 "finisherRoleId"    => $finisherRoleId,
@@ -228,7 +229,7 @@ class RigRegistrationController extends Controller
                 ];
                 $req->merge($refData);
             }
-            # Save active details 
+            # Save active details
             $applicationDetails = $mRigActiveRegistration->saveRegistration($req, $user, $ulbId);
             $mRigActiveApplicant->saveApplicants($req, $applicationDetails['id']);
             $mRigActiveDetail->saverigDetails($req, $applicationDetails['id']);
@@ -301,7 +302,7 @@ class RigRegistrationController extends Controller
     public function storeDocument($req, $ApplicationId, $workflowId, $ulbId, $mDocuments)
     {
         try {
-            #initiatialise variable 
+            #initiatialise variable
 
             $data = [];
             $docUpload = new DocUpload;
@@ -339,7 +340,7 @@ class RigRegistrationController extends Controller
 
                 // Save document metadata in wfActiveDocuments
                 $mWfActiveDocument->postDocuments(new Request($metaReqs), $user);
-                //update docupload  status 
+                //update docupload  status
                 $mRigActiveRegistration->updateUploadStatus($ApplicationId, true);
             }
 
@@ -433,8 +434,8 @@ class RigRegistrationController extends Controller
 
 
     /**
-     * | Get Application list for the respective user 
-     * | List the application filled by the user 
+     * | Get Application list for the respective user
+     * | List the application filled by the user
         | Serial No :
         | Working
      */
@@ -450,7 +451,7 @@ class RigRegistrationController extends Controller
             if ($user->user_type != $confUserType['1']) {                                       // If not a citizen
                 throw new Exception("You are not an autherised Citizen!");
             }
-            # Collect querry Exceptions 
+            # Collect querry Exceptions
             try {
                 $refAppDetails = $mRigActiveRegistration->getAllApplicationDetails($user->id, $confDbKey['1'])
                     ->select(
@@ -536,7 +537,7 @@ class RigRegistrationController extends Controller
                 throw new Exception("Charges for respective application not found!");
             }
             if ($chargeDetails->paid_status != 0) {
-                # Get Transaction details 
+                # Get Transaction details
                 $tranDetails = $mRigTran->getTranByApplicationId($applicationId)->first();
                 if (!$tranDetails) {
                     throw new Exception("Transaction details not found there is some error in data !");
@@ -568,7 +569,7 @@ class RigRegistrationController extends Controller
 
     /**
      * | Get the upoaded docunment
-        | Serial No : 
+        | Serial No :
         | Working
      */
     public function getUploadDocuments(Request $req)
@@ -615,10 +616,10 @@ class RigRegistrationController extends Controller
     }
 
     /**
-     * | Apply the renewal for Rig 
+     * | Apply the renewal for Rig
      * | registered Rig renewal process
         | Serial No :
-        | Under Con 
+        | Under Con
         | Check
      */
     public function applyRigRenewal(Request $request)
@@ -668,7 +669,7 @@ class RigRegistrationController extends Controller
 
             DB::beginTransaction();
             # Apply so that appliction get to workflow
-            $applyDetails = $this->applyRigRegistration($rigRegistrationReq);                   // Here 
+            $applyDetails = $this->applyRigRegistration($rigRegistrationReq);                   // Here
             if ($applyDetails->original['status'] == false) {
                 throw new Exception($applyDetails->original['message'] ?? "Renewal Process can't be done!");
             };
@@ -697,7 +698,7 @@ class RigRegistrationController extends Controller
         $mRigApprovedRegistration->updateRelatedStatus($previousApproveDetils->approveId, $updateReq);
     }
     /**
-     * | check param for renewal of Rig 
+     * | check param for renewal of Rig
         | Serial No :
         | Under con
         | ❗❗ Uncomment the restriction for yearly licence check ❗❗
@@ -713,7 +714,7 @@ class RigRegistrationController extends Controller
             throw new Exception("Renewal of the Application is in process!");
         }
 
-        # Check the lecence year difference 
+        # Check the lecence year difference
         // $approveDate = Carbon::parse($refApprovedDetails->approve_date);
         // $approveDate = $approveDate->copy()->addDays(7);
         // $yearDifferernce = $approveDate->diffInYears($now);
@@ -737,7 +738,7 @@ class RigRegistrationController extends Controller
             // if ($user->user_type != $confUserType['1']) {                                       // If not a citizen
             //     throw new Exception("You are not an autherised Citizen!");
             // }
-            # Collect querry Exceptions 
+            # Collect querry Exceptions
             try {
                 $refApproveDetails = $mRigApprovedRegistration->getAllApprovdApplicationDetails()
                     ->select(
@@ -766,7 +767,7 @@ class RigRegistrationController extends Controller
                         "rig_trans.tran_no as transactionNo",
                         "rig_approved_registrations.workflow_id",
                         "rig_approved_registrations.status as registrationSatus",
-                        DB::raw("CASE 
+                        DB::raw("CASE
                         WHEN rig_approved_registrations.status = 1 THEN 'Approved'
                         WHEN rig_approved_registrations.status = 2 THEN 'Under Renewal Process'
                         END as current_status")
@@ -809,7 +810,7 @@ class RigRegistrationController extends Controller
             if ($user->user_type != $confUserType['1']) {                                       // If not a citizen
                 throw new Exception("You are not an autherised Citizen!");
             }
-            # Collect querry Exceptions 
+            # Collect querry Exceptions
             try {
                 $refRejectedDetails = $mRigRejectedRegistration->getAllRejectedApplicationDetails()
                     ->select(
@@ -836,7 +837,7 @@ class RigRegistrationController extends Controller
                         "wf_roles.role_name",
                         "rig_rejected_registrations.status as registrationSatus",
 
-                        DB::raw("CASE 
+                        DB::raw("CASE
                         WHEN rig_rejected_registrations.status = 1 THEN 'Rejected'
                         WHEN rig_rejected_registrations.status = 2 THEN 'Under Renewal Process'
                         END as current_status")
@@ -858,7 +859,7 @@ class RigRegistrationController extends Controller
 
     //BEGIN///////////////////////////////////////////////////////////////////////////////
     /**
-     * | Get Application details for workflow view 
+     * | Get Application details for workflow view
      * | @param request
      * | @var ownerDetails
      * | @var applicantDetails
@@ -866,7 +867,7 @@ class RigRegistrationController extends Controller
      * | @var returnDetails
      * | @return returnDetails : list of individual applications
         | Serial No : 08
-        | Workinig 
+        | Workinig
      */
     public function getApplicationsDetails(Request $request)
     {
@@ -880,7 +881,7 @@ class RigRegistrationController extends Controller
             return validationError($validated);
 
         try {
-            # object assigning              
+            # object assigning
             $mRigActiveRegistration = new RigActiveRegistration();
             $mRigActiveApplicant    = new RigActiveApplicant();
             $mWorkflowMap           = new WfWorkflowrolemap();
@@ -977,7 +978,7 @@ class RigRegistrationController extends Controller
      * | @param applicationDetails
      * | @var collectionApplications
         | Serial No : 08.01
-        | Workinig 
+        | Workinig
      */
     public function getBasicDetails($applicationDetails)
     {
@@ -1008,7 +1009,7 @@ class RigRegistrationController extends Controller
      * | @var propertyDetails
      * | @var collectionApplications
         | Serial No : 08.02
-        | Workinig 
+        | Workinig
      */
     public function getpropertyDetails($applicationDetails)
     {
@@ -1035,7 +1036,7 @@ class RigRegistrationController extends Controller
      * |------------------ Owner details ------------------|
      * | @param ownerDetails
         | Serial No : 08.04
-        | Workinig 
+        | Workinig
      */
     public function getrefRigDetails($applicationDetails)
     {
@@ -1056,7 +1057,7 @@ class RigRegistrationController extends Controller
      * | @var ownerDetail
      * | @var collectionApplications
         | Serial No : 08.05
-        | Workinig 
+        | Workinig
      */
     public function getCardDetails($applicationDetails)
     {
@@ -1074,7 +1075,7 @@ class RigRegistrationController extends Controller
      * |------------------ Owner details ------------------|
      * | @param ownerDetails
         | Serial No : 08.04
-        | Workinig 
+        | Workinig
      */
     public function getOwnerDetails($ownerDetails)
     {
@@ -1090,7 +1091,7 @@ class RigRegistrationController extends Controller
     }
 
     /**
-     * | Get the rejected application details 
+     * | Get the rejected application details
         | Serial No :
         | Working
      */
@@ -1142,7 +1143,7 @@ class RigRegistrationController extends Controller
                     throw new Exception("Transaction details not found there is some error in data !");
                 }
             }
-            # return Details 
+            # return Details
             $rejectedApplicationDetails['transactionDetails']    = $tranDetails;
             $chargeDetails['roundAmount']                       = round($chargeDetails['amount']);
             $rejectedApplicationDetails['charges']               = $chargeDetails;
@@ -1207,11 +1208,11 @@ class RigRegistrationController extends Controller
             if (is_null($chargeDetails)) {
                 throw new Exception("Charges for respective application not found!");
             }
-            #Ulb Details 
+            #Ulb Details
             $ulbDetails         =  $mUlbMater->getUlbDetails($approveApplicationDetails->ulb_id);
             # Get Transaction details
             $tranDetails = null;
-            if (in_array($chargeDetails->paid_status, [1, 2])) {                                                            // 2 for Cheque reconcilation 
+            if (in_array($chargeDetails->paid_status, [1, 2])) {                                                            // 2 for Cheque reconcilation
                 $tranDetails = $mPetTran->getTranByApplicationId($approveApplicationDetails->application_id)->first();
                 if (!$tranDetails) {
                     throw new Exception("Transaction details not found there is some error in data !");
@@ -1227,7 +1228,7 @@ class RigRegistrationController extends Controller
             //     $canTakePayment = true;
             // }
 
-            # return Details 
+            # return Details
             $approveApplicationDetails['transactionDetails']    = $tranDetails;
             $chargeDetails['roundAmount']                       = round($chargeDetails['amount']);
             $approveApplicationDetails['charges']               = $chargeDetails;
@@ -1297,67 +1298,181 @@ class RigRegistrationController extends Controller
 
     /**
      * | get license data
+    */
+
+    // public function getLicnenseDetails(Request $req)
+    // {
+    //     $validated = Validator::make(
+    //         $req->all(),
+    //         [
+    //             'registrationId' => 'required'
+    //         ]
+    //     );
+    //     if ($validated->fails())
+    //         return validationError($validated);
+
+    //     try {
+    //         $user                       = authUser($req);
+    //         $viewRenewButton            = false;
+    //         $applicationId              = $req->registrationId;
+    //         $mRigApprovedRegistration   = new RigApprovedRegistration();
+    //         $mRigRegistrationCharge     = new RigRegistrationCharge();
+    //         $mRigTran                   = new RigTran();
+
+    //         $approveApplicationDetails = $mRigApprovedRegistration->getRigApprovedApplicationById($applicationId)
+    //             ->where('rig_approved_registrations.status', '<>', 0)                                                       // Static
+    //             ->first();
+    //         if (is_null($approveApplicationDetails)) {
+    //             throw new Exception("application Not found!");
+    //         }
+    //         $chargeDetails = $mRigRegistrationCharge->getChargesbyId($approveApplicationDetails->application_id)
+    //             ->select(
+    //                 'id AS chargeId',
+    //                 'amount',
+    //                 'registration_fee',
+    //                 'paid_status',
+    //                 'charge_category',
+    //                 'charge_category_name'
+    //             )
+    //             ->where('paid_status', 1)
+    //             ->first();
+    //         if (is_null($chargeDetails)) {
+    //             throw new Exception("Charges for respective application not found!");
+    //         }
+    //         # Get Transaction details
+    //         $tranDetails = $mRigTran->getTranByApplicationId($approveApplicationDetails->application_id)->first();
+    //         if (!$tranDetails) {
+    //             throw new Exception("Transaction details not found");
+    //         }
+
+    //         # Check for jsk for renewal button
+    //         if ($user->user_type == 'JSK') {                                                                                // Static
+    //             $viewRenewButton = true;
+    //         }
+
+    //         # return Details
+    //         $approveApplicationDetails['transactionDetails']    = $tranDetails;
+    //         $chargeDetails['roundAmount']                       = round($chargeDetails['amount']);
+    //         $approveApplicationDetails['charges']               = $chargeDetails;
+    //         $approveApplicationDetails['viewRenewalButton']     = $viewRenewButton;
+    //         return responseMsgs(true, "Listed application details!", remove_null($approveApplicationDetails), "", "01", ".ms", "POST", $req->deviceId);
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
+    //     }
+    // }
+
+     /**
+     * | get license data
+    */
+   /**
+     * | Get license details using Model methods
      */
     public function getLicnenseDetails(Request $req)
     {
-        $validated = Validator::make(
-            $req->all(),
-            [
-                'registrationId' => 'required'
-            ]
-        );
-        if ($validated->fails())
-            return validationError($validated);
+        $validated = Validator::make($req->all(), ['registrationId' => 'required']);
+        if ($validated->fails()) return validationError($validated);
 
         try {
-            $user                       = authUser($req);
-            $viewRenewButton            = false;
-            $applicationId              = $req->registrationId;
-            $mRigApprovedRegistration   = new RigApprovedRegistration();
-            $mRigRegistrationCharge     = new RigRegistrationCharge();
-            $mRigTran                   = new RigTran();
+            $user = authUser($req);
+            $mRigApprovedRegistration = new RigApprovedRegistration();
+            $viewRenewButton = false;
 
-            $approveApplicationDetails = $mRigApprovedRegistration->getRigApprovedApplicationById($applicationId)
-                ->where('rig_approved_registrations.status', '<>', 0)                                                       // Static
-                ->first();
-            if (is_null($approveApplicationDetails)) {
-                throw new Exception("application Not found!");
-            }
-            $chargeDetails = $mRigRegistrationCharge->getChargesbyId($approveApplicationDetails->application_id)
-                ->select(
-                    'id AS chargeId',
-                    'amount',
-                    'registration_fee',
-                    'paid_status',
-                    'charge_category',
-                    'charge_category_name'
-                )
-                ->where('paid_status', 1)
-                ->first();
-            if (is_null($chargeDetails)) {
-                throw new Exception("Charges for respective application not found!");
-            }
-            # Get Transaction details
-            $tranDetails = $mRigTran->getTranByApplicationId($approveApplicationDetails->application_id)->first();
-            if (!$tranDetails) {
-                throw new Exception("Transaction details not found");
+            # 1. Model se data fetch karein (Join logic model ke andar hai)
+            $approveDetails = $mRigApprovedRegistration->getRigApprovedApplicationById($req->registrationId)->first();
+
+            if (!$approveDetails) {
+                throw new Exception("Application Details Not found!");
             }
 
-            # Check for jsk for renewal button
-            if ($user->user_type == 'JSK') {                                                                                // Static
+            # 2. Smart Expiry & Renewal Logic
+            $approveEndDate = Carbon::parse($approveDetails->approve_end_date);
+            $renewalWindow = $approveEndDate->copy()->subMonth();
+            $isRenewalAllowed = Carbon::now()->gte($renewalWindow);
+
+            # 3. JSK Button Permission
+            if ($user && $user->user_type == 'JSK' && $isRenewalAllowed) {
                 $viewRenewButton = true;
             }
 
-            # return Details 
-            $approveApplicationDetails['transactionDetails']    = $tranDetails;
-            $chargeDetails['roundAmount']                       = round($chargeDetails['amount']);
-            $approveApplicationDetails['charges']               = $chargeDetails;
-            $approveApplicationDetails['viewRenewalButton']     = $viewRenewButton;
-            return responseMsgs(true, "Listed application details!", remove_null($approveApplicationDetails), "", "01", ".ms", "POST", $req->deviceId);
+            # 4. Fetch Charges & Transactions (Existing Logic)
+            $chargeDetails = RigRegistrationCharge::where('application_id', $approveDetails->application_id)
+                ->where('paid_status', 1)->first();
+            $tranDetails = RigTran::where('related_id', $approveDetails->application_id)->first();
+
+            # 5. Data Formatting
+            $approveDetails['transactionDetails'] = $tranDetails;
+            $approveDetails['isRenewal']          = $isRenewalAllowed;
+            $approveDetails['viewRenewalButton']  = $viewRenewButton;
+
+            if ($chargeDetails) {
+                $chargeDetails['roundAmount'] = (int)round($chargeDetails['amount']);
+                $approveDetails['charges']    = $chargeDetails;
+            }
+
+            return responseMsgs(true, "Listed details!", remove_null($approveDetails), "", "01", ".ms", "POST", $req->deviceId);
+
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
         }
     }
+
+   /**
+     * | Finalized Renew License logic with Model integration
+     */
+    public function renewLicense(Request $req)
+    {
+        $validated = Validator::make($req->all(), [
+            'registrationId' => 'required'
+        ]);
+
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $registrationId = $req->registrationId;
+            $mRigApprovedRegistration = new RigApprovedRegistration();
+
+            // 1. Record dhundein (Using Model Method)
+            $approveDetails = $mRigApprovedRegistration->getActiveByRegId($registrationId);
+
+            if (!$approveDetails)
+                throw new Exception("Active License not found!");
+
+            // 2. Dynamic Years fetch karein (Using Model RigLicenseDuration)
+            $duration = RigLicenseDuration::where('ulb_id', $approveDetails->ulb_id)
+                   ->where('status', 1)
+                   ->first();
+
+            $yearsToAdd = $duration ? $duration->license_duration_years : 1;
+
+            // 3. Date logic using Carbon
+            $endDate = Carbon::parse($approveDetails->approve_end_date);
+            $newEndDate = ($endDate->isPast()) ?
+                          Carbon::now()->addYears($yearsToAdd) :
+                          $endDate->addYears($yearsToAdd);
+
+            // 4. Database Transaction Start
+            DB::beginTransaction();
+
+            $approveDetails->approve_end_date = $newEndDate->format('Y-m-d');
+
+            # Status update with explanatory comments
+            $approveDetails->status = 2; // 0. Inactive, 1. Approved, 2. Under Renewal, 3. Expired
+
+            # Renewal flag update (0 to 1)
+            $approveDetails->renewal = 1; // Mark as a renewed application record
+
+            $approveDetails->save();
+            DB::commit();
+
+            return responseMsgs(true, "Renewed for $yearsToAdd Years!", $approveDetails, "", "01", ".ms", "POST", $req->deviceId);
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
+        }
+    }
+
     /**
      * |dashboard data
      */
@@ -1420,7 +1535,7 @@ class RigRegistrationController extends Controller
     public function reuploadDocument($req, $Image, $docId)
     {
         try {
-            #initiatialise variable 
+            #initiatialise variable
 
             $data = [];
             $docUpload = new DocUpload;
@@ -1503,7 +1618,7 @@ class RigRegistrationController extends Controller
                 throw new Exception("Respective Ulb is not maped to 'rig Registration' Workflow!");
             }
             DB::beginTransaction();
-            # operate with the data from above calling function 
+            # operate with the data from above calling function
             $RigActiveRegistrationDtl = $mRigActiveRegistration->getApplicationDtls($applicationId)->first();
             $rigDetails           = $mRigActiveDetail->getrigDetailsByApplicationId($applicationId)->first();
             $rigApplicantDtls     = $mRIgActiveApllicants->getRigActiveApplicants($applicationId)->first();
@@ -1564,7 +1679,7 @@ class RigRegistrationController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
         }
     }
-    #edit document 
+    #edit document
     public function updateDocumentsV1($req, $auth, $applicationId, $moduleId)
     {
         $metaReqs = WfActiveDocument::where('active_id', $applicationId)
@@ -1590,8 +1705,8 @@ class RigRegistrationController extends Controller
 
 
     /**
-     * | Check Param for update the pet Application details 
-        | Serial No : 
+     * | Check Param for update the pet Application details
+        | Serial No :
         | Working
      */
     public function checkParamForRigUdate($req)
@@ -1624,7 +1739,7 @@ class RigRegistrationController extends Controller
                 //     throw new Exception("User Dont have any role!");
                 // }
 
-                # Check for jsk 
+                # Check for jsk
                 // $roleId = $readRoleDtls->wf_role_id;
                 // if ($roleId != $confRoles['JSK']) {
                 //     throw new Exception("You are not Permited to edit the application!");
@@ -1647,7 +1762,7 @@ class RigRegistrationController extends Controller
                 break;
         }
 
-        # Checking the transaction details 
+        # Checking the transaction details
         $transactionDetails = $mRigTran->getTranByApplicationId($applicationId)->first();
         if ($transactionDetails) {
             throw new Exception("Transaction data exist application cannot be updated!");
@@ -1777,7 +1892,7 @@ class RigRegistrationController extends Controller
             $mRigRenewalRegistration    = new RigActiveRegistration();
             $mRigTran                   = new RigTran();
 
-            # Application detial 
+            # Application detial
             $renewalApplicationDetails = $mRigRenewalRegistration->getRigRenewalApplicationById($applicationId)
                 ->where('rig_active_registrations.status', '<>', 0)                                                       // Static
                 ->where('rig_active_registrations.renewal', 1)                                                       // Static
@@ -1785,13 +1900,13 @@ class RigRegistrationController extends Controller
             if (is_null($renewalApplicationDetails)) {
                 throw new Exception("application Not found!");
             }
-            # Get Transaction details 
+            # Get Transaction details
             $tranDetails = $mRigTran->getTranByApplicationId($renewalApplicationDetails->id)->first();
             if (!$tranDetails) {
                 throw new Exception("Transaction details not found there is some error in data !");
             }
 
-            # Return Details 
+            # Return Details
             $renewalApplicationDetails['transactionDetails']    = $tranDetails;
             $renewalApplicationDetails['viewRenewalButton']     = $viewRenewButton;
             return responseMsgs(true, "Listed application details!", remove_null($renewalApplicationDetails), "", "01", responseTime(), $req->getMethod(), $req->deviceId);
@@ -1829,14 +1944,14 @@ class RigRegistrationController extends Controller
             $msg                        = "Approve application list!";
             $mRigActiveRegistration    = new RigActiveRegistration();
 
-            # Check params for role user 
+            # Check params for role user
             // $roleDetails = $this->getUserRollV2($userId, $user->ulb_id, $confWorkflowMasterId);
             // $this->checkParamForUser($user, $roleDetails);
 
             try {
                 $baseQuerry = $mRigActiveRegistration->getAllApplicationDetail();
 
-                # Collect querry Exceptions 
+                # Collect querry Exceptions
             } catch (QueryException $qurry) {
                 return responseMsgs(false, "An error occurred during the query!", $qurry->getMessage(), "", "01", ".ms", "POST", $request->deviceId);
             }

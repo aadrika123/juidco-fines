@@ -59,7 +59,10 @@ Route::middleware([])->group(function () {
         Route::post('get-approve-registration-list', 'getApprovedApplicationDetails');                          // Admin
         Route::post('get-approve-registration-list-V1', 'getApprovedApplicationDetails');                       // without user
         Route::post('application/searh-application', 'searchApplication');                                      // Admin
+
         Route::post('application/approve-license-data', 'getLicnenseDetails');                                  // Admin
+        Route::post('application/renew-license', 'renewLicense');                                              //Renew Licencse
+
         Route::post('application/dashboard-details', 'rigDashbordDtls');                                        // Admin
 
         Route::post('application/edit-rig-details', 'editRigDetails');                                           // Admin
@@ -74,14 +77,14 @@ Route::middleware([])->group(function () {
     });
 
     /**
-     * | Rig Workflow 
+     * | Rig Workflow
      */
     Route::controller(RigWorkflowController::class)->group(function () {
         Route::post('inbox', 'inbox');                                                                          // Workflow
         Route::post('outbox', 'outbox');                                                                        // Workflow
         Route::post('post-next-level', 'postNextLevel');                                                        // Workflow
         Route::post('special-inbox', 'RigSpecialInbox');                                                        // Workflow
-        Route::post('escalate', 'postEscalate');                                                                // Workflow                     
+        Route::post('escalate', 'postEscalate');                                                                // Workflow
         Route::post('doc-verify-reject', 'docVerifyRejects');                                                   // Workflow
         Route::post('final-verify-reject', 'finalApprovalRejection');                                           // Workflow
         Route::post('list-approved-application', 'listfinisherApproveApplications');                            // Workflow
@@ -96,19 +99,19 @@ Route::middleware([])->group(function () {
 
     });
 
-    // payment operations 
+    // payment operations
     Route::controller(RigPaymentController::class)->group(function () {
         Route::post("application/offline-payment", "offlinePayment");                                           # Admin
-        Route::post('razorpay/initiate-payment', 'initiatePayment');                                            #_Initiate Online Payment ----------------- 0701   
-        Route::post('razorpay/save-response', 'saveRazorpayResponse');                                          #_Save Response of Online Payment --------- 0702   
-        Route::post("application/payment-receipt", "generatePaymentReceipt");                                   # Admin / Citizen 
+        Route::post('razorpay/initiate-payment', 'initiatePayment');                                            #_Initiate Online Payment ----------------- 0701
+        Route::post('razorpay/save-response', 'saveRazorpayResponse');                                          #_Save Response of Online Payment --------- 0702
+        Route::post("application/payment-receipt", "generatePaymentReceipt");                                   # Admin / Citizen
         Route::post('cash-verification-list', 'listCashVerification');                                          #_List of Cash Verification --------------- 0703
         Route::post('cash-verification-dtl', 'cashVerificationDtl');                                            #_Cash Verification Detail ---------------- 0704
-        Route::post('verify-cash', 'verifyCash');                                                               #_Verify Cash ----------------------------- 0705  
-        Route::post('transaction-dactivation', 'deactivatePayment');                                            #_Transaction Deactivation  ----------------------------- 0705                                                                 
-        Route::post('search/transaction-cheque', 'searchTransaction');                                          #_Transaction Deactivation  ----------------------------- 0705                                                                 
-        Route::post('search/transaction-cheque-dtl', 'chequeDtlByIdRig');                                       #_Transaction Deactivation  ----------------------------- 0705                                                                 
-        Route::post('transaction/cheque-clear-bounce', 'chequeClearance');                                       #_Transaction Deactivation  ----------------------------- 0705                                                                 
-        Route::post('transaction/cheque-edit-dtls', 'editChequeNo');                                             #_Transaction Deactivation  ----------------------------- 0705                                                                 
+        Route::post('verify-cash', 'verifyCash');                                                               #_Verify Cash ----------------------------- 0705
+        Route::post('transaction-dactivation', 'deactivatePayment');                                            #_Transaction Deactivation  ----------------------------- 0705
+        Route::post('search/transaction-cheque', 'searchTransaction');                                          #_Transaction Deactivation  ----------------------------- 0705
+        Route::post('search/transaction-cheque-dtl', 'chequeDtlByIdRig');                                       #_Transaction Deactivation  ----------------------------- 0705
+        Route::post('transaction/cheque-clear-bounce', 'chequeClearance');                                       #_Transaction Deactivation  ----------------------------- 0705
+        Route::post('transaction/cheque-edit-dtls', 'editChequeNo');                                             #_Transaction Deactivation  ----------------------------- 0705
     });
 });
