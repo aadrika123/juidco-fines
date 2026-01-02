@@ -11,7 +11,7 @@ class RigApprovedRegistration extends Model
     use HasFactory;
 
     /**
-     * | Get the approve application details using 
+     * | Get the approve application details using
      */
     public function getApproveAppByRegId($id)
     {
@@ -28,7 +28,7 @@ class RigApprovedRegistration extends Model
             ->update($refDetails);
     }
     /**
-     * | Get the approve application details using 
+     * | Get the approve application details using
      */
     public function getApproveAppByAppId($id)
     {
@@ -66,7 +66,7 @@ class RigApprovedRegistration extends Model
             ->update($refReq);
     }
     /**
-     * | Get all details according to key 
+     * | Get all details according to key
      */
     public function getAllApprovdApplicationDetails()
     {
@@ -126,18 +126,37 @@ class RigApprovedRegistration extends Model
             'rig_approved_registrations.ulb_id',
             'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
-         
-            
-            DB::raw("CASE 
+            //  license_duration_years
+            'rld.license_duration_years as policy_years',
+
+
+            DB::raw("CASE
             WHEN rig_approve_active_details.sex = '1' THEN 'Male'
             WHEN rig_approve_active_details.sex = '2' THEN 'Female'
             END AS ref_gender"),
+
         )
-            ->join('ulb_masters', 'ulb_masters.id', 'rig_approved_registrations.ulb_id')
-            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_approved_registrations.ward_id')
-            ->join('rig_approve_applicants', 'rig_approve_applicants.application_id', 'rig_approved_registrations.application_id')
-            ->join('rig_approve_active_details', 'rig_approve_active_details.application_id', 'rig_approved_registrations.application_id')
-            ->join('rig_active_registrations','rig_active_registrations.id','rig_approved_registrations.application_id')
-            ->where('rig_approved_registrations.application_id', $registrationId);
+        ->join('ulb_masters', 'ulb_masters.id', 'rig_approved_registrations.ulb_id')
+
+        //   rig_active_registrations
+        ->join('rig_active_registrations', 'rig_active_registrations.id', 'rig_approved_registrations.application_id')
+        ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', 'rig_approved_registrations.ward_id')
+        ->leftJoin('rig_license_durations as rld', function ($join) {
+            $join->on('rld.ulb_id', '=', 'rig_approved_registrations.ulb_id')
+                 ->where('rld.status', 1);
+        })
+        ->join('rig_approve_applicants', 'rig_approve_applicants.application_id', 'rig_approved_registrations.application_id')
+        ->join('rig_approve_active_details', 'rig_approve_active_details.application_id', 'rig_approved_registrations.application_id')
+        ->where('rig_approved_registrations.registration_id', $registrationId);
+    }
+
+    /**
+     * Renew License
+     */
+    public function getActiveByRegId($registrationId)
+    {
+        return self::where('registration_id', $registrationId)
+                   ->where('status', '<>', 0)
+                   ->first();
     }
 }
