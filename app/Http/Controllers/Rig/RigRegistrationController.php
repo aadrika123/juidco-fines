@@ -1159,8 +1159,97 @@ class RigRegistrationController extends Controller
         | Serial No :
         | Working
      */
+    // public function getApprovedApplicationDetails(Request $req)
+    // {
+    //     $validated = Validator::make(
+    //         $req->all(),
+    //         [
+    //             'registrationId' => 'required'
+    //         ]
+    //     );
+    //     if ($validated->fails())
+    //         return validationError($validated);
+
+    //     try {
+    //         $user                       = null;
+    //         $canTakePayment             = false;
+    //         if ($req->authRequired == true && $req->token != null) {
+    //             $user = authUser($req);
+    //             // Check if user is JSK type for payment
+    //             if (!is_null($user) && $user->user_type == 'JSK') {
+    //                 $canTakePayment = true;
+    //             }
+    //         }
+
+    //         $viewRenewButton            = false;
+    //         $applicationId              = $req->registrationId;
+    //         $mRigApprovedRegistration   = new RigApprovedRegistration();
+    //         $mRigRegistrationCharge     = new RigRegistrationCharge();
+    //         $mPetTran                   = new RigTran();
+    //         $mUlbMater                  = new UlbMaster();
+
+
+    //         $approveApplicationDetails = $mRigApprovedRegistration->getRigApprovedApplicationById($applicationId)
+    //             ->where('rig_approved_registrations.status', '<>', 0)                                                       // Static
+    //             ->first();
+    //         if (is_null($approveApplicationDetails)) {
+    //             throw new Exception("application Not found!");
+    //         }
+    //         $chargeDetails = $mRigRegistrationCharge->getChargesbyId($approveApplicationDetails->application_id)
+    //             ->select(
+    //                 'id AS chargeId',
+    //                 'amount',
+    //                 'registration_fee',
+    //                 'paid_status',
+    //                 'charge_category',
+    //                 'charge_category_name'
+    //             )
+    //             ->first();
+    //         if (is_null($chargeDetails)) {
+    //             throw new Exception("Charges for respective application not found!");
+    //         }
+    //         #Ulb Details
+    //         $ulbDetails         =  $mUlbMater->getUlbDetails($approveApplicationDetails->ulb_id);
+    //         # Get Transaction details
+    //         $tranDetails = null;
+    //         if (in_array($chargeDetails->paid_status, [1, 2])) {                                                            // 2 for Cheque reconcilation
+    //             $tranDetails = $mPetTran->getTranByApplicationId($approveApplicationDetails->application_id)->first();
+    //             if (!$tranDetails) {
+    //                 throw new Exception("Transaction details not found there is some error in data !");
+    //             }
+    //         }
+    //         $approveEndDate = Carbon::parse($approveApplicationDetails->approve_end_date)->subMonth(); // Subtract one month
+    //         $currentDate = Carbon::now();
+    //         $flag = $currentDate->gte($approveEndDate); // Check if current date is equal or greater
+    //         $approveApplicationDetails->isRenewal = $flag;
+
+    //         # Check for jsk for renewal button
+    //         // if ($user->user_type == 'JSK') {                                                                                // Static
+    //         //     $canTakePayment = true;
+    //         // }
+
+    //         # return Details
+    //         $approveApplicationDetails['transactionDetails']    = $tranDetails;
+    //         $chargeDetails['roundAmount']                       = round($chargeDetails['amount']);
+    //         $approveApplicationDetails['charges']               = $chargeDetails;
+    //         // "canTakePayment" => $canTakePayment
+    //         $approveApplicationDetails['canTakePayment']        = $canTakePayment;
+    //         $approveApplicationDetails['ulbDetails']            = $ulbDetails;
+
+    //         return responseMsgs(true, "Listed application details!", remove_null($approveApplicationDetails), "", "01", ".ms", "POST", $req->deviceId);
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
+    //     }
+    // }
+    /**
+     * | Get Approved application details by application id
+     * | collective data with registration charges
+        | Serial No :
+        | Working
+     */
     public function getApprovedApplicationDetails(Request $req)
     {
+        // 1. Validation
         $validated = Validator::make(
             $req->all(),
             [
@@ -1171,31 +1260,34 @@ class RigRegistrationController extends Controller
             return validationError($validated);
 
         try {
-            $user                       = null;
-            $canTakePayment             = false;
+            // User Authentication Check
+            $user             = null;
+            $canTakePayment   = false;
             if ($req->authRequired == true && $req->token != null) {
                 $user = authUser($req);
-                // Check if user is JSK type for payment
                 if (!is_null($user) && $user->user_type == 'JSK') {
                     $canTakePayment = true;
                 }
             }
 
-            $viewRenewButton            = false;
-            $applicationId              = $req->registrationId;
-            $mRigApprovedRegistration   = new RigApprovedRegistration();
-            $mRigRegistrationCharge     = new RigRegistrationCharge();
-            $mPetTran                   = new RigTran();
-            $mUlbMater                  = new UlbMaster();
+            $applicationId = $req->registrationId;
+            $mPetTran      = new RigTran();
+            $mUlbMater     = new UlbMaster();
 
-
-            $approveApplicationDetails = $mRigApprovedRegistration->getRigApprovedApplicationById($applicationId)
-                ->where('rig_approved_registrations.status', '<>', 0)                                                       // Static
+            // -------------------------------------------------------------
+            // FIX: DIRECT QUERY (Custom function hataya)
+            // -------------------------------------------------------------
+            $approveApplicationDetails = RigApprovedRegistration::where('application_id', $applicationId)
+                ->where('status', '<>', 0) // Reject (0) wala nahi uthana
                 ->first();
+
             if (is_null($approveApplicationDetails)) {
-                throw new Exception("application Not found!");
+                throw new Exception("Application not found in Approved List!");
             }
-            $chargeDetails = $mRigRegistrationCharge->getChargesbyId($approveApplicationDetails->application_id)
+            // -------------------------------------------------------------
+
+            // 2. Get Charges
+            $chargeDetails = RigRegistrationCharge::where('application_id', $approveApplicationDetails->application_id)
                 ->select(
                     'id AS chargeId',
                     'amount',
@@ -1205,43 +1297,43 @@ class RigRegistrationController extends Controller
                     'charge_category_name'
                 )
                 ->first();
+
+            // Agar charges nahi mile to empty array bhej sakte ho ya error
             if (is_null($chargeDetails)) {
-                throw new Exception("Charges for respective application not found!");
+                // throw new Exception("Charges details not found!"); // Optional: Uncomment agar strict rakhna hai
+                $chargeDetails = [];
+            } else {
+                $chargeDetails['roundAmount'] = round($chargeDetails['amount']);
             }
-            #Ulb Details
-            $ulbDetails         =  $mUlbMater->getUlbDetails($approveApplicationDetails->ulb_id);
-            # Get Transaction details
+
+            // 3. ULB Details
+            $ulbDetails = $mUlbMater->getUlbDetails($approveApplicationDetails->ulb_id);
+
+            // 4. Transaction Details
             $tranDetails = null;
-            if (in_array($chargeDetails->paid_status, [1, 2])) {                                                            // 2 for Cheque reconcilation
+            // Agar Paid (1) ya Reconcilation (2) hai tabhi transaction dhundo
+            if (!empty($chargeDetails) && in_array($chargeDetails['paid_status'], [1, 2])) {
                 $tranDetails = $mPetTran->getTranByApplicationId($approveApplicationDetails->application_id)->first();
-                if (!$tranDetails) {
-                    throw new Exception("Transaction details not found there is some error in data !");
-                }
             }
-            $approveEndDate = Carbon::parse($approveApplicationDetails->approve_end_date)->subMonth(); // Subtract one month
-            $currentDate = Carbon::now();
-            $flag = $currentDate->gte($approveEndDate); // Check if current date is equal or greater
+
+            // 5. Renewal Logic
+            $approveEndDate = Carbon::parse($approveApplicationDetails->approve_end_date)->subMonth();
+            $currentDate    = Carbon::now();
+            $flag           = $currentDate->gte($approveEndDate);
             $approveApplicationDetails->isRenewal = $flag;
 
-            # Check for jsk for renewal button
-            // if ($user->user_type == 'JSK') {                                                                                // Static
-            //     $canTakePayment = true;
-            // }
-
-            # return Details
-            $approveApplicationDetails['transactionDetails']    = $tranDetails;
-            $chargeDetails['roundAmount']                       = round($chargeDetails['amount']);
-            $approveApplicationDetails['charges']               = $chargeDetails;
-            // "canTakePayment" => $canTakePayment
-            $approveApplicationDetails['canTakePayment']        = $canTakePayment;
-            $approveApplicationDetails['ulbDetails']            = $ulbDetails;
+            // 6. Final Response Formatting
+            $approveApplicationDetails['transactionDetails'] = $tranDetails;
+            $approveApplicationDetails['charges']            = $chargeDetails;
+            $approveApplicationDetails['canTakePayment']     = $canTakePayment;
+            $approveApplicationDetails['ulbDetails']         = $ulbDetails;
 
             return responseMsgs(true, "Listed application details!", remove_null($approveApplicationDetails), "", "01", ".ms", "POST", $req->deviceId);
+
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
         }
     }
-
 
 
     /**
