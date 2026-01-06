@@ -426,14 +426,15 @@ class RigWorkflowController extends Controller
      */
     public function finalApprovalRejection(Request $request)
     {
-        // Validation: 1, 2 (Approve) aur 0 (Reject) allowed
+        // '0,1,2' kar diya taaki 0 (Reject) bhi allow ho jaye
         $validated = Validator::make(
             $request->all(),
             [
                 'applicationId' => 'required|digits_between:1,9223372036854775807',
-                'status'        => 'required|integer|in:1,2'
+                'status'        => 'required|integer|in:0,1,2'
             ]
         );
+
         if ($validated->fails())
             return validationError($validated);
 
@@ -443,22 +444,22 @@ class RigWorkflowController extends Controller
             $applicationId = $request->applicationId;
             $mWfRoleUsermap = new WfRoleusermap();
 
-            // Application Check (Direct DB Query for Speed & Safety)
+            // Application Check
             $application = DB::table('rig_active_registrations')
                 ->where('id', $applicationId)
                 ->first();
 
-            // Agar Active Table mein nahi hai, toh Approved/Rejected mein check karo
+            // Agar Active mein nahi hai to Approved/Rejected check karo
             if (!$application) {
-                 $checkApproved = DB::table('rig_approved_registrations')->where('application_id', $applicationId)->first();
-                 if($checkApproved) {
-                     return responseMsgs(true, "Application is Already Approved!", [], "", "01", responseTime(), "POST", $request->deviceId);
-                 }
-                 $checkRejected = DB::table('rig_rejected_registrations')->where('application_id', $applicationId)->first();
-                 if($checkRejected) {
-                     return responseMsgs(true, "Application is Already Rejected!", [], "", "01", responseTime(), "POST", $request->deviceId);
-                 }
-                 throw new Exception("Application Details not found in Active List!");
+                $checkApproved = DB::table('rig_approved_registrations')->where('application_id', $applicationId)->first();
+                if($checkApproved) {
+                    return responseMsgs(true, "Application is Already Approved!", [], "", "01", responseTime(), "POST", $request->deviceId);
+                }
+                $checkRejected = DB::table('rig_rejected_registrations')->where('application_id', $applicationId)->first();
+                if($checkRejected) {
+                    return responseMsgs(true, "Application is Already Rejected!", [], "", "01", responseTime(), "POST", $request->deviceId);
+                }
+                throw new Exception("Application Details not found in Active List!");
             }
 
             // Role Verification
@@ -471,32 +472,23 @@ class RigWorkflowController extends Controller
 
             DB::beginTransaction();
 
-            # =================================================================
-            #  APPROVE (Input 1 or 2)
-            # =================================================================
+            // APPROVE (Input 1 or 2)
             if ($request->status == 1 || $request->status == 2) {
-
                 if ($application->renewal == 0) {
-                    // Main Approval Logic Call
-                    $approveDetails = $this->finalApproval($request, $application);
-
-                    // Message Set
+                    $approveDetails = $this->finalApproval($request, $application); // Call logic
                     $msg = $approveDetails['message'] ?? "Application Successfully Approved !!";
                 } else {
                     $this->finalApprovalRenewal($request, $application);
                     $msg = "Renewal Application Successfully Approved !!";
                 }
             }
-
-            # =================================================================
-            #REJECT (Input 0)
-            # =================================================================
+            // REJECT (Input 0)
             elseif ($request->status == 0) {
                 $this->finalRejectionOfAppication($request, $application);
                 $msg = "Application Successfully Rejected !!";
             }
 
-            DB::commit(); // Yahan Commit Zaroori Hai
+            DB::commit();
 
             return responseMsgs(true, $msg, ["applicationNo" => $application->application_no], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
 
@@ -629,8 +621,6 @@ class RigWorkflowController extends Controller
     {
         $now = Carbon::now();
         $applicationId = $request->applicationId;
-
-        // 1. Status Capture 1 or 2 ("ACTIVE"    => 1,  "PENDING"   => 2)
         $targetStatus = $request->status;
 
         $rigTrack = new WorkflowTrack();
@@ -641,34 +631,30 @@ class RigWorkflowController extends Controller
 
         $rigParamId = $this->_rigParamId;
 
-        // 2. Application Details Fetch
+        // Fetch Details
         $ApplicationDetails = $mRigActiveRegistration->getApplicationDtls($applicationId)->first();
+
+        // Safety check agar details nahi mili
+        if (!$ApplicationDetails) {
+            throw new Exception("Application Details Not Found during Final Approval");
+        }
+
         $ulbId = $ApplicationDetails->ulb_id;
         $idGeneration = new IdGeneration($rigParamId['APPROVE'], $ulbId, 0, 0);
         $rigApprovalNo = $idGeneration->generateId();
 
-        # ----------------------------------------------------------------
-        # 3. DUPLICATE CHECK & UPDATE (Main Fix Here)
-        # ----------------------------------------------------------------
+        // ----------------------------------------------------------------
+        // DUPLICATE CHECK
+        // ----------------------------------------------------------------
         $someDataExist = $mRigApprovedRegistration->getApproveAppByAppId($applicationId)
             ->whereNot('status', 0)
             ->first();
 
         if ($someDataExist) {
-
-            // Pehle APPROVED Table ka status update karo
-            RigApprovedRegistration::where('application_id', $applicationId)
-                ->update(['status' => $targetStatus]);
-
-            // Phir ACTIVE Tables ka status update karo
-            RigActiveRegistration::where('id', $applicationId)
-                ->update(['status' => $targetStatus]);
-
-            RigActiveApplicant::where('application_id', $applicationId)
-                ->update(['status' => $targetStatus]);
-
-            RigVehicleActiveDetail::where('application_id', $applicationId)
-                ->update(['status' => $targetStatus]);
+            RigApprovedRegistration::where('application_id', $applicationId)->update(['status' => $targetStatus]);
+            RigActiveRegistration::where('id', $applicationId)->update(['status' => $targetStatus]);
+            RigActiveApplicant::where('application_id', $applicationId)->update(['status' => $targetStatus]);
+            RigVehicleActiveDetail::where('application_id', $applicationId)->update(['status' => $targetStatus]);
 
             return [
                 "approveDetails" => $someDataExist,
@@ -677,15 +663,15 @@ class RigWorkflowController extends Controller
             ];
         }
 
-        # ----------------------------------------------------------------
-        # 4. FRESH APPROVAL (agar pehle se exist nahi karega)
-        # ----------------------------------------------------------------
+        // ----------------------------------------------------------------
+        // FRESH APPROVAL
+        // ----------------------------------------------------------------
         $refApplicationDetial = $mRigActiveRegistration->getApplicationDetailsById($applicationId)->first();
         $refOwnerDetails      = $mRigActiveApplicant->getApplicationDetails($applicationId)->first();
         $refrigDetails        = $mRigActiveDetail->getrigDetailsByApplicationId($applicationId)->first();
 
         if(!$refApplicationDetial || !$refOwnerDetails || !$refrigDetails) {
-             throw new Exception("Data missing in Active Table.");
+                throw new Exception("Data missing in Active Table.");
         }
 
         // Save in Approved Tables
@@ -696,7 +682,7 @@ class RigWorkflowController extends Controller
         $approvedrigRegistration->registration_id   = $rigApprovalNo;
         $approvedrigRegistration->approve_end_date  = $now->copy()->addYear()->subDay();
         $approvedrigRegistration->approve_user_id   = authUser($request)->id;
-        $approvedrigRegistration->status            = $targetStatus; // Dynamic Status
+        $approvedrigRegistration->status            = $targetStatus;
         $approvedrigRegistration->save();
 
         $approvedrigApplicant = $refOwnerDetails->replicate();
@@ -709,22 +695,26 @@ class RigWorkflowController extends Controller
         $approvedrigDetails->created_at = $now;
         $approvedrigDetails->save();
 
+        // FIX: ref_application_id handle kiya hai yahan
+        // Agar DB column mein ye value nahi hai, to hum null ya applicationId pass kar denge
+        $refAppIdValue = isset($ApplicationDetails->ref_application_id) ? $ApplicationDetails->ref_application_id : $applicationId;
+
         // Workflow Track
         $metaReqs = [
-            'moduleId'          => $this->_rigModuleId,
-            'workflowId'        => $ApplicationDetails->workflow_id,
-            'refTableDotId'     => 'rig_active_registrations.id',
-            'refTableIdValue'   => $applicationId,
-            'user_id'           => authUser($request)->id,
-            'ulb_id'            => $ApplicationDetails->ulb_id,
+            'moduleId'         => $this->_rigModuleId,
+            'workflowId'       => $ApplicationDetails->workflow_id,
+            'refTableDotId'    => 'rig_active_registrations.id',
+            'refTableIdValue'  => $applicationId,
+            'ref_application_id' => $refAppIdValue, // <--- Added this line specifically
+            'user_id'          => authUser($request)->id,
+            'ulb_id'           => $ApplicationDetails->ulb_id,
             'verificationStatus' => 1
         ];
+
         $request->request->add($metaReqs);
         $rigTrack->saveTrack($request);
 
-        # ----------------------------------------------------------------
-        # 5. STATUS UPDATE ACTIVE TABLE
-        # ----------------------------------------------------------------
+        // STATUS UPDATE
         RigActiveRegistration::where('id', $applicationId)->update(['status' => $targetStatus]);
         RigActiveApplicant::where('application_id', $applicationId)->update(['status' => $targetStatus]);
         RigVehicleActiveDetail::where('application_id', $applicationId)->update(['status' => $targetStatus]);
@@ -849,70 +839,160 @@ class RigWorkflowController extends Controller
         | Under Con
         | Recheck
      */
+    // public function finalRejectionOfAppication($request, $applicationDetails)
+    // {
+    //     $now                        = Carbon::now();
+    //     $status                     = 0;                                               // Static
+    //     $applicationId              = $request->applicationId;
+    //     $rigTrack                 = new WorkflowTrack();
+    //     $mRigRejectedRegistration   = new RigRejectedRegistration();
+    //     $mRigActiveRegistration     = new RigActiveRegistration();
+    //     $mRigActiveApplicant        = new RigActiveApplicant();
+    //     $mRigActiveDetail           = new RigVehicleActiveDetail();
+
+    //     # Check if the rejected application exist
+    //     $someDataExist = $mRigRejectedRegistration->getRejectedAppByAppId($applicationId)
+    //         ->whereNot('status', '<>', 0)
+    //         ->first();
+    //     if ($someDataExist) {
+    //         throw new Exception("Rejected application details exist in rejected table ERROR!");
+    //     }
+
+    //     # Data formating for save the consumer details
+    //     $refApplicationDetial   = $mRigActiveRegistration->getApplicationDetailsById($applicationId)->first();
+    //     $refOwnerDetails        = $mRigActiveApplicant->getApplicationDetails($applicationId)->first();
+    //     $refRigDetails          = $mRigActiveDetail->getRigDetailsByApplicationId($applicationId)->first();
+
+    //     # Saving the data in the rejected application table
+    //     $rejectedRigRegistration = $refApplicationDetial->replicate();
+    //     $rejectedRigRegistration->setTable('rig_rejected_registrations');                           // Static
+    //     $rejectedRigRegistration->application_id    = $applicationId;
+    //     $rejectedRigRegistration->rejected_date     = $now;
+    //     $rejectedRigRegistration->rejected_user_id  = authUser($request)->id;
+    //     $rejectedRigRegistration->save();
+
+    //     # Save the Rig owner details
+    //     $approvedRigApplicant = $refOwnerDetails->replicate();
+    //     $approvedRigApplicant->setTable('rig_rejected_applicants');                                  // Static
+    //     $approvedRigApplicant->created_at = $now;
+    //     $approvedRigApplicant->save();
+
+    //     # Save the Rig detials
+    //     $approvedRigDetails = $refRigDetails->replicate();
+    //     $approvedRigDetails->setTable('rig_vehicle_rejected_details');                                       // Static
+    //     $approvedRigDetails->created_at = $now;
+    //     $approvedRigDetails->save();
+
+    //     # Send record in the track table
+    //     $metaReqs = [
+    //         'moduleId'          =>   $this->_rigModuleId,
+    //         'workflowId'        => $applicationDetails->workflow_id,
+    //         'refTableDotId'     => 'rig_active_registrations.id',                                   // Static
+    //         'refTableIdValue'   => $applicationId,
+    //         'user_id'           => authUser($request)->id,
+    //         'ulb_id'            =>  $refApplicationDetial->ulb_id,
+    //         'verificationStatus' => 3
+    //     ];
+    //     $request->request->add($metaReqs);
+    //     $rigTrack->saveTrack($request);
+
+    //     # Delete the details form the active table
+    //     $refAppReq = [
+    //         "status" => $status
+    //     ];
+    //     $mRigActiveRegistration->saveApplicationStatus($applicationId, $refAppReq);
+    //     $mRigActiveApplicant->updateApplicantDetials($refOwnerDetails->id, $refAppReq);
+    //     $mRigActiveDetail->updateRigStatus($refRigDetails->id, $refAppReq);
+    //     return $rejectedRigRegistration;
+    // }
+
+    /**
+     * | Fianl rejection of the application
+        | Serial No :
+        | Under Con
+        | Recheck
+     */
     public function finalRejectionOfAppication($request, $applicationDetails)
     {
-        $now                        = Carbon::now();
-        $status                     = 0;                                               // Static
-        $applicationId              = $request->applicationId;
-        $rigTrack                 = new WorkflowTrack();
-        $mRigRejectedRegistration   = new RigRejectedRegistration();
-        $mRigActiveRegistration     = new RigActiveRegistration();
-        $mRigActiveApplicant        = new RigActiveApplicant();
-        $mRigActiveDetail           = new RigVehicleActiveDetail();
+        $now            = Carbon::now();
+        $applicationId  = $request->applicationId;
+        $rigTrack       = new WorkflowTrack();
 
-        # Check if the rejected application exist
-        $someDataExist = $mRigRejectedRegistration->getRejectedAppByAppId($applicationId)
-            ->whereNot('status', '<>', 0)
-            ->first();
-        if ($someDataExist) {
-            throw new Exception("Rejected application details exist in rejected table ERROR!");
+        // -------------------------------------------------------------
+        // STEP 1: STRONG DUPLICATE CHECK (Ye duplicate rokega)
+        // -------------------------------------------------------------
+        // Hum check kar rahe hain ki kya ye ID rejected table mein pehle se hai?
+        $alreadyRejected = RigRejectedRegistration::where('application_id', $applicationId)->first();
+
+        if ($alreadyRejected) {
+            // Agar pehle se hai, to wahi return kar do. Dobara insert nahi karega.
+            return $alreadyRejected;
         }
+        // -------------------------------------------------------------
 
-        # Data formating for save the consumer details
-        $refApplicationDetial   = $mRigActiveRegistration->getApplicationDetailsById($applicationId)->first();
-        $refOwnerDetails        = $mRigActiveApplicant->getApplicationDetails($applicationId)->first();
-        $refRigDetails          = $mRigActiveDetail->getRigDetailsByApplicationId($applicationId)->first();
+        // Models
+        $mRigActiveRegistration = new RigActiveRegistration();
+        $mRigActiveApplicant    = new RigActiveApplicant();
+        $mRigActiveDetail       = new RigVehicleActiveDetail();
 
-        # Saving the data in the rejected application table
+        // Data Fetching
+        $refApplicationDetial   = RigActiveRegistration::where('id', $applicationId)->first();
+        $refOwnerDetails        = RigActiveApplicant::where('application_id', $applicationId)->first();
+        $refRigDetails          = RigVehicleActiveDetail::where('application_id', $applicationId)->first();
+
+        // Null Checks
+        if (!$refApplicationDetial) throw new Exception("Application not found in Active List");
+        if (!$refOwnerDetails) throw new Exception("Applicant details not found");
+        if (!$refRigDetails) throw new Exception("Vehicle details not found");
+
+        // -------------------------------------------------------------
+        // STEP 2: SAVE REJECTED APPLICATION
+        // -------------------------------------------------------------
         $rejectedRigRegistration = $refApplicationDetial->replicate();
-        $rejectedRigRegistration->setTable('rig_rejected_registrations');                           // Static
+        $rejectedRigRegistration->setTable('rig_rejected_registrations');
         $rejectedRigRegistration->application_id    = $applicationId;
         $rejectedRigRegistration->rejected_date     = $now;
         $rejectedRigRegistration->rejected_user_id  = authUser($request)->id;
+
+        // FIX: Force Status to 0 (Reject)
+        $rejectedRigRegistration->status = 0;
+
         $rejectedRigRegistration->save();
 
-        # Save the Rig owner details
-        $approvedRigApplicant = $refOwnerDetails->replicate();
-        $approvedRigApplicant->setTable('rig_rejected_applicants');                                  // Static
-        $approvedRigApplicant->created_at = $now;
-        $approvedRigApplicant->save();
+        // Save Owner
+        $rejectedApplicant = $refOwnerDetails->replicate();
+        $rejectedApplicant->setTable('rig_rejected_applicants');
+        $rejectedApplicant->created_at = $now;
+        $rejectedApplicant->save();
 
-        # Save the Rig detials
-        $approvedRigDetails = $refRigDetails->replicate();
-        $approvedRigDetails->setTable('rig_vehicle_rejected_details');                                       // Static
-        $approvedRigDetails->created_at = $now;
-        $approvedRigDetails->save();
+        // Save Vehicle
+        $rejectedDetails = $refRigDetails->replicate();
+        $rejectedDetails->setTable('rig_vehicle_rejected_details');
+        $rejectedDetails->created_at = $now;
+        $rejectedDetails->save();
 
-        # Send record in the track table
+        // -------------------------------------------------------------
+        // STEP 3: TRACKING & CLEANUP
+        // -------------------------------------------------------------
         $metaReqs = [
-            'moduleId'          =>   $this->_rigModuleId,
+            'moduleId'          => $this->_rigModuleId,
             'workflowId'        => $applicationDetails->workflow_id,
-            'refTableDotId'     => 'rig_active_registrations.id',                                   // Static
+            'refTableDotId'     => 'rig_active_registrations.id',
             'refTableIdValue'   => $applicationId,
+            'ref_application_id'=> $applicationId,
             'user_id'           => authUser($request)->id,
-            'ulb_id'            =>  $refApplicationDetial->ulb_id,
-            'verificationStatus' => 3
+            'ulb_id'            => $refApplicationDetial->ulb_id,
+            'verificationStatus'=> 3
         ];
         $request->request->add($metaReqs);
         $rigTrack->saveTrack($request);
 
-        # Delete the details form the active table
-        $refAppReq = [
-            "status" => $status
-        ];
+        // Update Active Status (or Delete based on requirement)
+        $refAppReq = ["status" => 0];
         $mRigActiveRegistration->saveApplicationStatus($applicationId, $refAppReq);
         $mRigActiveApplicant->updateApplicantDetials($refOwnerDetails->id, $refAppReq);
         $mRigActiveDetail->updateRigStatus($refRigDetails->id, $refAppReq);
+
         return $rejectedRigRegistration;
     }
 
