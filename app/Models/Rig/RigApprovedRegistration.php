@@ -5,6 +5,8 @@ namespace App\Models\Rig;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use App\Models\RigApprovedApplicant;
+use App\Models\RigApprovedActiveDetail;
 
 class RigApprovedRegistration extends Model
 {
@@ -158,5 +160,20 @@ class RigApprovedRegistration extends Model
         return self::where('registration_id', $registrationId)
                    ->where('status', '<>', 0)
                    ->first();
+    }
+
+    public function owner()
+    {
+        // Agar RigApprovedApplicant same folder mein hai to direct class name likho,
+
+        return $this->hasOne(RigApproveApplicant::class, 'application_id', 'application_id');
+    }
+
+    /**
+     * Relationship: Vehicle Details
+     */
+    public function vehicle()
+    {
+        return $this->hasOne(RigApproveActiveDetail::class, 'application_id', 'application_id');
     }
 }

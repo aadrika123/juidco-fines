@@ -46,6 +46,9 @@ use App\Models\WfRoleusermap;
 use Illuminate\Support\Collection;
 use Termwind\Components\Raw;
 
+use App\Models\Rig\RigApprovedApplicant;
+use App\Models\Rig\RigApprovedActiveDetail;
+
 class RigRegistrationController extends Controller
 {
 
@@ -1247,86 +1250,178 @@ class RigRegistrationController extends Controller
         | Serial No :
         | Working
      */
+    // public function getApprovedApplicationDetails(Request $req)
+    // {
+    //     // 1. Validation
+    //     $validated = Validator::make(
+    //         $req->all(),
+    //         [
+    //             'registrationId' => 'required'
+    //         ]
+    //     );
+    //     if ($validated->fails())
+    //         return validationError($validated);
+
+    //     try {
+    //         // User Authentication Check
+    //         $user             = null;
+    //         $canTakePayment   = false;
+    //         if ($req->authRequired == true && $req->token != null) {
+    //             $user = authUser($req);
+    //             if (!is_null($user) && $user->user_type == 'JSK') {
+    //                 $canTakePayment = true;
+    //             }
+    //         }
+
+    //         $applicationId = $req->registrationId;
+    //         $mPetTran      = new RigTran();
+    //         $mUlbMater     = new UlbMaster();
+
+    //         // -------------------------------------------------------------
+    //         // FIX: DIRECT QUERY (Custom function hataya)
+    //         // -------------------------------------------------------------
+    //         $approveApplicationDetails = RigApprovedRegistration::where('application_id', $applicationId)
+    //             ->where('status', '<>', 0) // Reject (0) wala nahi uthana
+    //             ->first();
+
+    //         if (is_null($approveApplicationDetails)) {
+    //             throw new Exception("Application not found in Approved List!");
+    //         }
+    //         // -------------------------------------------------------------
+
+    //         // 2. Get Charges
+    //         $chargeDetails = RigRegistrationCharge::where('application_id', $approveApplicationDetails->application_id)
+    //             ->select(
+    //                 'id AS chargeId',
+    //                 'amount',
+    //                 'registration_fee',
+    //                 'paid_status',
+    //                 'charge_category',
+    //                 'charge_category_name'
+    //             )
+    //             ->first();
+
+    //         // Agar charges nahi mile to empty array bhej sakte ho ya error
+    //         if (is_null($chargeDetails)) {
+    //             // throw new Exception("Charges details not found!"); // Optional: Uncomment agar strict rakhna hai
+    //             $chargeDetails = [];
+    //         } else {
+    //             $chargeDetails['roundAmount'] = round($chargeDetails['amount']);
+    //         }
+
+    //         // 3. ULB Details
+    //         $ulbDetails = $mUlbMater->getUlbDetails($approveApplicationDetails->ulb_id);
+
+    //         // 4. Transaction Details
+    //         $tranDetails = null;
+    //         // Agar Paid (1) ya Reconcilation (2) hai tabhi transaction dhundo
+    //         if (!empty($chargeDetails) && in_array($chargeDetails['paid_status'], [1, 2])) {
+    //             $tranDetails = $mPetTran->getTranByApplicationId($approveApplicationDetails->application_id)->first();
+    //         }
+
+    //         // 5. Renewal Logic
+    //         $approveEndDate = Carbon::parse($approveApplicationDetails->approve_end_date)->subMonth();
+    //         $currentDate    = Carbon::now();
+    //         $flag           = $currentDate->gte($approveEndDate);
+    //         $approveApplicationDetails->isRenewal = $flag;
+
+    //         // 6. Final Response Formatting
+    //         $approveApplicationDetails['transactionDetails'] = $tranDetails;
+    //         $approveApplicationDetails['charges']            = $chargeDetails;
+    //         $approveApplicationDetails['canTakePayment']     = $canTakePayment;
+    //         $approveApplicationDetails['ulbDetails']         = $ulbDetails;
+
+    //         return responseMsgs(true, "Listed application details!", remove_null($approveApplicationDetails), "", "01", ".ms", "POST", $req->deviceId);
+
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $req->deviceId);
+    //     }
+    // }
     public function getApprovedApplicationDetails(Request $req)
     {
         // 1. Validation
-        $validated = Validator::make(
-            $req->all(),
-            [
-                'registrationId' => 'required'
-            ]
-        );
-        if ($validated->fails())
-            return validationError($validated);
+        $validated = Validator::make($req->all(), ['registrationId' => 'required']);
+        if ($validated->fails()) return validationError($validated);
 
         try {
-            // User Authentication Check
-            $user             = null;
-            $canTakePayment   = false;
-            if ($req->authRequired == true && $req->token != null) {
+            // Auth Logic (Short syntax)
+            $user = null;
+            $canTakePayment = false;
+            if ($req->authRequired && $req->token) {
                 $user = authUser($req);
-                if (!is_null($user) && $user->user_type == 'JSK') {
-                    $canTakePayment = true;
-                }
+                if ($user && $user->user_type == 'JSK') $canTakePayment = true;
             }
 
-            $applicationId = $req->registrationId;
-            $mPetTran      = new RigTran();
-            $mUlbMater     = new UlbMaster();
+            $mPetTran  = new RigTran();
+            $mUlbMater = new UlbMaster();
 
             // -------------------------------------------------------------
-            // FIX: DIRECT QUERY (Custom function hataya)
+            // STEP 1: Main Application Fetch
             // -------------------------------------------------------------
-            $approveApplicationDetails = RigApprovedRegistration::where('application_id', $applicationId)
-                ->where('status', '<>', 0) // Reject (0) wala nahi uthana
+            // Humne 'owner' aur 'vehicle' relation load kiya
+            $appDetailsObj = RigApprovedRegistration::with(['owner', 'vehicle'])
+                ->where('application_id', $req->registrationId)
+                ->where('status', '<>', 0)
                 ->first();
 
-            if (is_null($approveApplicationDetails)) {
+            if (!$appDetailsObj) {
                 throw new Exception("Application not found in Approved List!");
             }
-            // -------------------------------------------------------------
 
-            // 2. Get Charges
-            $chargeDetails = RigRegistrationCharge::where('application_id', $approveApplicationDetails->application_id)
-                ->select(
-                    'id AS chargeId',
-                    'amount',
-                    'registration_fee',
-                    'paid_status',
-                    'charge_category',
-                    'charge_category_name'
-                )
+            // -------------------------------------------------------------
+            // IMPORTANT FIX: Convert Object to Array
+            // Isse hum man-chaaha data ghusa sakte hain bina error ke
+            // -------------------------------------------------------------
+            $approveApplicationDetails = $appDetailsObj->toArray();
+
+            // -------------------------------------------------------------
+            // STEP 2: Charges & ULB
+            // -------------------------------------------------------------
+            $chargeDetails = RigRegistrationCharge::where('application_id', $appDetailsObj->application_id)
+                ->select('id AS chargeId', 'amount', 'registration_fee', 'paid_status', 'charge_category', 'charge_category_name')
                 ->first();
 
-            // Agar charges nahi mile to empty array bhej sakte ho ya error
-            if (is_null($chargeDetails)) {
-                // throw new Exception("Charges details not found!"); // Optional: Uncomment agar strict rakhna hai
-                $chargeDetails = [];
-            } else {
+            if ($chargeDetails) {
                 $chargeDetails['roundAmount'] = round($chargeDetails['amount']);
+            } else {
+                $chargeDetails = [];
             }
 
-            // 3. ULB Details
-            $ulbDetails = $mUlbMater->getUlbDetails($approveApplicationDetails->ulb_id);
+            $ulbDetails = $mUlbMater->getUlbDetails($appDetailsObj->ulb_id);
 
-            // 4. Transaction Details
+            // -------------------------------------------------------------
+            // STEP 3: Transaction
+            // -------------------------------------------------------------
             $tranDetails = null;
-            // Agar Paid (1) ya Reconcilation (2) hai tabhi transaction dhundo
             if (!empty($chargeDetails) && in_array($chargeDetails['paid_status'], [1, 2])) {
-                $tranDetails = $mPetTran->getTranByApplicationId($approveApplicationDetails->application_id)->first();
+                $tranDetails = $mPetTran->getTranByApplicationId($appDetailsObj->application_id)
+                    ->orderBy('id', 'desc')
+                    ->first();
             }
 
-            // 5. Renewal Logic
-            $approveEndDate = Carbon::parse($approveApplicationDetails->approve_end_date)->subMonth();
-            $currentDate    = Carbon::now();
-            $flag           = $currentDate->gte($approveEndDate);
-            $approveApplicationDetails->isRenewal = $flag;
+            // -------------------------------------------------------------
+            // STEP 4: Renewal Logic
+            // -------------------------------------------------------------
+            $approveEndDate = Carbon::parse($appDetailsObj->approve_end_date)->subMonth();
+            $approveApplicationDetails['isRenewal'] = Carbon::now()->gte($approveEndDate);
 
-            // 6. Final Response Formatting
+            // -------------------------------------------------------------
+            // STEP 5: FINAL DATA MAPPING (Ye 'N/A' issue solve karega)
+            // -------------------------------------------------------------
+
+            // Agar relation se data nahi aaya, to hum empty array [] bhejenge taaki crash na ho
+            // Frontend ko 'ownerDetails' aur 'vehicleDetails' naam chahiye
+            $approveApplicationDetails['ownerDetails']   = $appDetailsObj->owner ? $appDetailsObj->owner : [];
+            $approveApplicationDetails['vehicleDetails'] = $appDetailsObj->vehicle ? $appDetailsObj->vehicle : [];
+
             $approveApplicationDetails['transactionDetails'] = $tranDetails;
             $approveApplicationDetails['charges']            = $chargeDetails;
             $approveApplicationDetails['canTakePayment']     = $canTakePayment;
             $approveApplicationDetails['ulbDetails']         = $ulbDetails;
+
+            // Relation keys remove kar do taaki duplication na ho
+            unset($approveApplicationDetails['owner']);
+            unset($approveApplicationDetails['vehicle']);
 
             return responseMsgs(true, "Listed application details!", remove_null($approveApplicationDetails), "", "01", ".ms", "POST", $req->deviceId);
 
