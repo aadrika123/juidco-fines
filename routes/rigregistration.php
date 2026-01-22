@@ -28,9 +28,9 @@ use Illuminate\Support\Facades\Route;
  * | close Date  - 09/05/2024
  */
 
-    Route::get('/health-check', function () {
-        return response()->json(['status' => 'ok']);
-    });
+Route::get('/health-check', function () {
+    return response()->json(['status' => 'ok']);
+});
 
 Route::post('/rig-connection', function () {
     return ('Welcome to  rig machine route file');                                                                // 00
