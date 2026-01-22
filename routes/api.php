@@ -25,6 +25,9 @@ use Illuminate\Http\Request;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+    Route::get('fines/health-check', function () {
+        return response()->json(['status' => 'ok']);
+    });
 
 Route::middleware([])->group(function () {
 
