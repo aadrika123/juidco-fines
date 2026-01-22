@@ -530,103 +530,216 @@ class RigWorkflowController extends Controller
         | Serial No :
         | Working
      */
+    // public function finalApprovalRenewal($request, $applicationDetails)
+    // {
+    //     $now                        = Carbon::now();
+    //     $status                     = 2;                                        // Static
+    //     $applicationId              = $request->applicationId;
+    //     $rigTrack                   = new WorkflowTrack();
+    //     $mRigActiveRegistration     = new RigActiveRegistration();
+    //     $mRigActiveApplicant        = new RigActiveApplicant();
+    //     $mRigActiveDetail           = new RigVehicleActiveDetail();
+    //     $mRigApprovedRegistration   = new RigApprovedRegistration();
+    //     $mRigApproveApplicant       = new RigApproveApplicant();
+    //     $mRigApproveDetail          = new RigApproveActiveDetail();
+    //     $lastLicenceDate            = $now->addYear()->subDay();
+    //     $registrationId             = $applicationDetails->registration_id;
+
+    //     # Data formating for save the consumer details 
+    //     $refApplicationDetial   = $mRigActiveRegistration->getApplicationDetailsById($applicationId)->first();
+    //     $refOwnerDetails        = $mRigActiveApplicant->getApplicationDetails($applicationDetails->ref_application_id)->first();
+    //     $refrigDetails          = $mRigActiveDetail->getrigDetailsByApplicationId($applicationDetails->ref_application_id)->first();
+
+    //     # Check data existence
+    //     $approveDataExist = $mRigApprovedRegistration->getApproveAppByRegId($applicationDetails->registration_id)
+    //         ->where('status', 2)                                                // Static
+    //         ->first();
+    //     if ($approveDataExist) {
+    //         throw new Exception("Application is Already Approve");
+    //     }
+
+    //     # get approve application detials 
+    //     $approveApplicantDetail = $mRigApproveApplicant->getApproveApplicant($approveDataExist->application_id)->first();
+    //     $approverigDetail = $mRigApproveDetail->getRigDetailsById($approveDataExist->application_id)->first();
+
+    //     # Saving the data in the approved application table
+    //     $approvedrigRegistration = $refApplicationDetial->replicate();
+    //     $approvedrigRegistration->setTable('rig_approved_registrations');                           // Static
+    //     $approvedrigRegistration->application_id    = $applicationDetails->ref_application_id;
+    //     $approvedrigRegistration->approve_date      = $now;
+    //     $approvedrigRegistration->registration_id   = $registrationId;
+    //     $approvedrigRegistration->approve_end_date  = $lastLicenceDate;
+    //     $approvedrigRegistration->approve_user_id   = authUser($request)->id;
+    //     $approvedrigRegistration->save();
+
+    //     # Save the rig owner details 
+    //     $approvedrigApplicant = $refOwnerDetails->replicate();
+    //     $approvedrigApplicant->setTable('rig_approve_applicants');                                  // Static
+    //     $approvedrigApplicant->created_at = $now;
+    //     $approvedrigApplicant->save();
+
+    //     # Save the rig detials 
+    //     $approvedrigDetails = $refrigDetails->replicate();
+    //     $approvedrigDetails->setTable('rig_approve_active_details');                                       // Static
+    //     $approvedrigDetails->created_at = $now;
+    //     $approvedrigDetails->save();
+
+    //     # Delete the details form the active table # updating the status
+    //     $activeData = [
+    //         "status" => $status
+    //     ];
+    //     $mRigActiveRegistration->saveApplicationStatus($applicationDetails->ref_application_id, $activeData);
+    //     $mRigActiveApplicant->updateApplicantDetials($refOwnerDetails->id, $activeData);
+    //     $mRigActiveDetail->updateRigStatus($refrigDetails->id, $activeData);
+
+    //     # Save approved renewal data in renewal table
+    //     $renewalrigRegistration = $approveDataExist->replicate();
+    //     $renewalrigRegistration->setTable('rig_renewal_registrations');                             // Static  
+    //     $renewalrigRegistration->created_at = $now;
+    //     $renewalrigRegistration->save();
+
+    //     # Save the approved applicant data in renewal table
+    //     $renewalApplicantReg = $approveApplicantDetail->replicate();
+    //     $renewalApplicantReg->setTable('rig_renewal_applicants');                                   // Static
+    //     $renewalApplicantReg->created_at = $now;
+    //     $renewalApplicantReg->save();
+
+    //     # Save the approved rig data in renewal details 
+    //     $renewalrigDetails = $approverigDetail->replicate();
+    //     $renewalrigDetails->setTable('rig_renewal_details');                                        // Static
+    //     $renewalrigDetails->created_at = $now;
+    //     $renewalrigDetails->save();
+
+    //     # Delete the details form the active table # Updating the status
+    //     $approveData = [
+    //         "status" => $status
+    //     ];
+    //     $mRigApprovedRegistration->updateApproveAppStatus($approveDataExist->id, $approveData);
+    //     $mRigApproveApplicant->updateAproveApplicantDetials($approveApplicantDetail->id, $approveData);  /// Not done
+    //     $mRigApproveDetail->updateApproverigStatus($approverigDetail->id, $approveData);             /// Not done   
+
+    //     # Send record in the track table 
+    //     $metaReqs = [
+    //         'moduleId'          => $this->_rigModuleId,
+    //         'workflowId'        => $applicationDetails->workflow_id,
+    //         'refTableDotId'     => 'rig_active_registrations.id',                                   // Static
+    //         'refTableIdValue'   => $applicationDetails->ref_application_id,
+    //         'user_id'           => authUser($request)->id,
+    //         'ulbId'             => $applicationDetails->ulb_id
+    //     ];
+    //     $request->request->add($metaReqs);
+    //     $rigTrack->saveTrack($request);
+    // }
+
     public function finalApprovalRenewal($request, $applicationDetails)
     {
-        $now                        = Carbon::now();
-        $status                     = 2;                                        // Static
-        $applicationId              = $request->applicationId;
-        $rigTrack                   = new WorkflowTrack();
-        $mRigActiveRegistration     = new RigActiveRegistration();
-        $mRigActiveApplicant        = new RigActiveApplicant();
-        $mRigActiveDetail           = new RigVehicleActiveDetail();
-        $mRigApprovedRegistration   = new RigApprovedRegistration();
-        $mRigApproveApplicant       = new RigApproveApplicant();
-        $mRigApproveDetail          = new RigApproveActiveDetail();
-        $lastLicenceDate            = $now->addYear()->subDay();
-        $registrationId             = $applicationDetails->registration_id;
+        $now        = Carbon::now();
+        $status     = 2; // approved
+        $applicationId = $request->applicationId;
 
-        # Data formating for save the consumer details 
-        $refApplicationDetial   = $mRigActiveRegistration->getApplicationDetailsById($applicationId)->first();
-        $refOwnerDetails        = $mRigActiveApplicant->getApplicationDetails($applicationDetails->ref_application_id)->first();
-        $refrigDetails          = $mRigActiveDetail->getrigDetailsByApplicationId($applicationDetails->ref_application_id)->first();
+        $rigTrack = new WorkflowTrack();
 
-        # Check data existence
-        $approveDataExist = $mRigApprovedRegistration->getApproveAppByRegId($applicationDetails->registration_id)
-            ->where('status', 2)                                                // Static
+        $mRigActiveRegistration   = new RigActiveRegistration();
+        $mRigActiveApplicant      = new RigActiveApplicant();
+        $mRigActiveDetail         = new RigVehicleActiveDetail();
+
+        $mRigApprovedRegistration = new RigApprovedRegistration();
+        $mRigApproveApplicant     = new RigApproveApplicant();
+        $mRigApproveDetail        = new RigApproveActiveDetail();
+
+        // --------------------------------------------------
+        // 1️⃣ FETCH ORIGINAL APPROVED REGISTRATION (MANDATORY)
+        // --------------------------------------------------
+        $originalApproved = $mRigApprovedRegistration
+            ->getApproveAppByRegId($applicationDetails->registration_id)
+            ->where('status', '!=', 0)
+            ->orderByDesc('id')
             ->first();
-        if ($approveDataExist) {
-            throw new Exception("Application is Already Approve");
+
+        if (!$originalApproved) {
+            throw new Exception("Original approved application not found for renewal");
         }
 
-        # get approve application detials 
-        $approveApplicantDetail = $mRigApproveApplicant->getApproveApplicant($approveDataExist->application_id)->first();
-        $approverigDetail = $mRigApproveDetail->getRigDetailsById($approveDataExist->application_id)->first();
+        // --------------------------------------------------
+        // 2️⃣ FETCH APPROVED CHILD DATA (SAFE)
+        // --------------------------------------------------
+        $approveApplicantDetail = $mRigApproveApplicant
+            ->getApproveApplicant($originalApproved->application_id)
+            ->first();
 
-        # Saving the data in the approved application table
+        if (!$approveApplicantDetail) {
+            throw new Exception("Approved applicant details missing");
+        }
+
+        $approverigDetail = $mRigApproveDetail
+            ->getRigDetailsById($originalApproved->application_id)
+            ->first();
+
+        if (!$approverigDetail) {
+            throw new Exception("Approved rig details missing");
+        }
+
+        // --------------------------------------------------
+        // 3️⃣ FETCH ACTIVE RENEWAL DATA
+        // --------------------------------------------------
+        $refApplicationDetial = $mRigActiveRegistration
+            ->getApplicationDetailsById($applicationId)
+            ->first();
+
+        if (!$refApplicationDetial) {
+            throw new Exception("Renewal active application not found");
+        }
+
+        $lastLicenceDate = $now->copy()->addYear()->subDay();
+
+        // --------------------------------------------------
+        // 4️⃣ SAVE NEW APPROVED REGISTRATION (RENEWAL)
+        // --------------------------------------------------
         $approvedrigRegistration = $refApplicationDetial->replicate();
-        $approvedrigRegistration->setTable('rig_approved_registrations');                           // Static
-        $approvedrigRegistration->application_id    = $applicationDetails->ref_application_id;
-        $approvedrigRegistration->approve_date      = $now;
-        $approvedrigRegistration->registration_id   = $registrationId;
-        $approvedrigRegistration->approve_end_date  = $lastLicenceDate;
-        $approvedrigRegistration->approve_user_id   = authUser($request)->id;
+        $approvedrigRegistration->setTable('rig_approved_registrations');
+        $approvedrigRegistration->application_id   = $originalApproved->application_id;
+        $approvedrigRegistration->approve_date     = $now;
+        $approvedrigRegistration->registration_id  = $originalApproved->registration_id;
+        $approvedrigRegistration->approve_end_date = $lastLicenceDate;
+        $approvedrigRegistration->approve_user_id  = authUser($request)->id;
         $approvedrigRegistration->save();
 
-        # Save the rig owner details 
-        $approvedrigApplicant = $refOwnerDetails->replicate();
-        $approvedrigApplicant->setTable('rig_approve_applicants');                                  // Static
-        $approvedrigApplicant->created_at = $now;
-        $approvedrigApplicant->save();
+        // --------------------------------------------------
+        // 5️⃣ SAVE RENEWED APPLICANT DATA
+        // --------------------------------------------------
+        $renewedApplicant = $approveApplicantDetail->replicate();
+        $renewedApplicant->setTable('rig_approve_applicants');
+        $renewedApplicant->created_at = $now;
+        $renewedApplicant->save();
 
-        # Save the rig detials 
-        $approvedrigDetails = $refrigDetails->replicate();
-        $approvedrigDetails->setTable('rig_approve_active_details');                                       // Static
-        $approvedrigDetails->created_at = $now;
-        $approvedrigDetails->save();
+        // --------------------------------------------------
+        // 6️⃣ SAVE RENEWED RIG DETAILS
+        // --------------------------------------------------
+        $renewedRigDetails = $approverigDetail->replicate();
+        $renewedRigDetails->setTable('rig_approve_active_details');
+        $renewedRigDetails->created_at = $now;
+        $renewedRigDetails->save();
 
-        # Delete the details form the active table # updating the status
-        $activeData = [
-            "status" => $status
-        ];
-        $mRigActiveRegistration->saveApplicationStatus($applicationDetails->ref_application_id, $activeData);
-        $mRigActiveApplicant->updateApplicantDetials($refOwnerDetails->id, $activeData);
-        $mRigActiveDetail->updateRigStatus($refrigDetails->id, $activeData);
+        // --------------------------------------------------
+        // 7️⃣ CLOSE ACTIVE RENEWAL APPLICATION
+        // --------------------------------------------------
+        $mRigActiveRegistration->saveApplicationStatus($applicationId, [
+            'status' => $status
+        ]);
 
-        # Save approved renewal data in renewal table
-        $renewalrigRegistration = $approveDataExist->replicate();
-        $renewalrigRegistration->setTable('rig_renewal_registrations');                             // Static  
-        $renewalrigRegistration->created_at = $now;
-        $renewalrigRegistration->save();
-
-        # Save the approved applicant data in renewal table
-        $renewalApplicantReg = $approveApplicantDetail->replicate();
-        $renewalApplicantReg->setTable('rig_renewal_applicants');                                   // Static
-        $renewalApplicantReg->created_at = $now;
-        $renewalApplicantReg->save();
-
-        # Save the approved rig data in renewal details 
-        $renewalrigDetails = $approverigDetail->replicate();
-        $renewalrigDetails->setTable('rig_renewal_details');                                        // Static
-        $renewalrigDetails->created_at = $now;
-        $renewalrigDetails->save();
-
-        # Delete the details form the active table # Updating the status
-        $approveData = [
-            "status" => $status
-        ];
-        $mRigApprovedRegistration->updateApproveAppStatus($approveDataExist->id, $approveData);
-        $mRigApproveApplicant->updateAproveApplicantDetials($approveApplicantDetail->id, $approveData);  /// Not done
-        $mRigApproveDetail->updateApproverigStatus($approverigDetail->id, $approveData);             /// Not done   
-
-        # Send record in the track table 
+        // --------------------------------------------------
+        // 8️⃣ WORKFLOW TRACK ENTRY
+        // --------------------------------------------------
         $metaReqs = [
-            'moduleId'          => $this->_rigModuleId,
-            'workflowId'        => $applicationDetails->workflow_id,
-            'refTableDotId'     => 'rig_active_registrations.id',                                   // Static
-            'refTableIdValue'   => $applicationDetails->ref_application_id,
-            'user_id'           => authUser($request)->id,
-            'ulbId'             => $applicationDetails->ulb_id
+            'moduleId'        => $this->_rigModuleId,
+            'workflowId'      => $applicationDetails->workflow_id,
+            'refTableDotId'   => 'rig_active_registrations.id',
+            'refTableIdValue' => $applicationId,
+            'user_id'         => authUser($request)->id,
+            'ulb_id'          => $applicationDetails->ulb_id,
+            'verificationStatus' => 1
         ];
+
         $request->request->add($metaReqs);
         $rigTrack->saveTrack($request);
     }
