@@ -59,7 +59,7 @@ class IdGeneration
         $stringVal =  $code .  $y . $violationSection;  #_Type of Penalty Chalan Missing
 
         $stringSplit = collect(str_split($stringVal));
-        $intVal = $params->int_val;
+        $intVal = (int)$params->int_val;
         // Case for the Increamental
         if ($this->incrementStatus == true) {
             $id = $stringVal . str_pad($intVal, 4, "0", STR_PAD_LEFT);
@@ -94,7 +94,7 @@ class IdGeneration
 
         $stringSplit = collect(str_split($stringVal));
         $flag = ($stringSplit->sum()) % 9;
-        $intVal = $params->int_val;
+        $intVal = (int)$params->int_val;
         // Case for the Increamental
         if ($this->incrementStatus == true) {
             $id = $stringVal . str_pad($intVal, 7, "0", STR_PAD_LEFT);
