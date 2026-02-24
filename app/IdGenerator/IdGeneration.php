@@ -84,17 +84,19 @@ class IdGeneration
         $mUlbMaster = new UlbMaster();
         $ulbDtls = $mUlbMaster::findOrFail($this->ulbId);
 
-        $ulbDistrictCode = $ulbDtls->district_code;
-        $ulbCategory = $ulbDtls->category;
-        $code = $ulbDtls->code;
+        // Use numeric district code (e.g., 20 for district)
+        $ulbDistrictCode = str_pad((int)preg_replace('/[^0-9]/', '', $ulbDtls->district_code), 2, '0', STR_PAD_LEFT);
+        // Use numeric category code (e.g., 01 for category)
+        $ulbCategory = str_pad((int)preg_replace('/[^0-9]/', '', $ulbDtls->category), 2, '0', STR_PAD_LEFT);
+        // Use numeric ULB code (e.g., 03 for code)
+        $code = str_pad((int)$ulbDtls->code, 2, '0', STR_PAD_LEFT);
 
         $params = $mIdGenerationParams->getParams($paramId);
         $prefixString = $params->string_val;
         $stringVal = $ulbDistrictCode . $ulbCategory . $code;
 
-        // Extract only numeric characters for flag calculation
-        $numericOnly = preg_replace('/[^0-9]/', '', $stringVal);
-        $stringSplit = collect(str_split($numericOnly));
+        // Calculate flag from numeric string
+        $stringSplit = collect(str_split($stringVal));
         $flag = ($stringSplit->sum()) % 9;
         $intVal = (int)$params->int_val;
         // Case for the Increamental
