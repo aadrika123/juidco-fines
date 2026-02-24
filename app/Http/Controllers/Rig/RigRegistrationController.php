@@ -198,8 +198,19 @@ class RigRegistrationController extends Controller
             # Get the Initiator and Finisher details
             $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
             $refFinisherRoleId  = $this->getFinisherId($ulbWorkflowId->id);
-            $finisherRoleId     = collect(DB::select($refFinisherRoleId))->first()->role_id;
-            $initiatorRoleId    = collect(DB::select($refInitiatorRoleId))->first()->role_id;
+            
+            $finisherRole = collect(DB::select($refFinisherRoleId))->first();
+            if (!$finisherRole) {
+                throw new Exception("Finisher role not mapped for this workflow!");
+            }
+            
+            $initiatorRole = collect(DB::select($refInitiatorRoleId))->first();
+            if (!$initiatorRole) {
+                throw new Exception("Initiator role not mapped for this workflow!");
+            }
+            
+            $finisherRoleId  = $finisherRole->role_id;
+            $initiatorRoleId = $initiatorRole->role_id;
 
             # Data Base interaction
             DB::beginTransaction();
