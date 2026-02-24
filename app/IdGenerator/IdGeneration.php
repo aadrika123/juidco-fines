@@ -92,7 +92,9 @@ class IdGeneration
         $prefixString = $params->string_val;
         $stringVal = $ulbDistrictCode . $ulbCategory . $code;
 
-        $stringSplit = collect(str_split($stringVal));
+        // Extract only numeric characters for flag calculation
+        $numericOnly = preg_replace('/[^0-9]/', '', $stringVal);
+        $stringSplit = collect(str_split($numericOnly));
         $flag = ($stringSplit->sum()) % 9;
         $intVal = (int)$params->int_val;
         // Case for the Increamental
